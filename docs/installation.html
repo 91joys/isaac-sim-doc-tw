@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>安裝與設定（Installation） — Isaac Sim 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Isaac Sim</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html" class="current">安裝與設定</a>
+        <a href="gui.html">GUI 介面參考</a>
+        <div class="nav-group-title">教學系列</div>
+        <a href="tutorial.html">Script Editor 教學</a>
+        <a href="extension.html">Extension 教學</a>
+        <a href="standalone.html">Standalone Python 教學</a>
+        <div class="nav-group-title">專題章節</div>
+        <a href="robots.html">機器人：匯入・設定・模擬</a>
+        <a href="sensors.html">感測器</a>
+        <a href="physics.html">物理模擬</a>
+        <a href="ros2.html">ROS 2 整合</a>
+        <a href="sdg.html">合成資料生成</a>
+        <a href="isaaclab.html">Isaac Lab／數位孿生</a>
+        <a href="devtools.html">開發工具與擴充開發</a>
+        <div class="nav-group-title">參考</div>
+        <a href="reference.html">資產、USD 與參考資訊</a>
+    </nav>
+    <hr class="sidebar-divider">
+    <div class="sidebar-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#%E6%80%8E%E9%BA%BC%E9%81%B8%E5%AE%89%E8%A3%9D%E6%96%B9%E5%BC%8F">怎麼選安裝方式</a>
+      <a class="toc-h2" href="#%E5%90%84%E5%AE%89%E8%A3%9D%E6%96%B9%E5%BC%8F%E9%87%8D%E9%BB%9E">各安裝方式重點</a>
+      <a class="toc-h3" href="#quick-install%E5%BF%AB%E9%80%9F%E5%AE%89%E8%A3%9D">Quick Install（快速安裝）</a>
+      <a class="toc-h3" href="#workstation-%E5%AE%89%E8%A3%9D">Workstation 安裝</a>
+      <a class="toc-h3" href="#%E5%AE%B9%E5%99%A8%E5%AE%89%E8%A3%9Dcontainer">容器安裝（Container）</a>
+      <a class="toc-h3" href="#python-%E7%92%B0%E5%A2%83%E5%AE%89%E8%A3%9Dpip-conda">Python 環境安裝（pip / conda）</a>
+      <a class="toc-h3" href="#%E9%9B%B2%E7%AB%AF%E9%83%A8%E7%BD%B2">雲端部署</a>
+      <a class="toc-h3" href="#%E4%B8%B2%E6%B5%81%E7%94%A8%E6%88%B6%E7%AB%AFlivestream-clients">串流用戶端（Livestream Clients）</a>
+      <a class="toc-h3" href="#ros-2-%E5%AE%89%E8%A3%9D">ROS 2 安裝</a>
+      <a class="toc-h2" href="#%E4%B8%8B%E8%BC%89%E8%88%87%E7%96%91%E9%9B%A3%E6%8E%92%E8%A7%A3">下載與疑難排解</a>
+      <a class="toc-h2" href="#%E6%9C%AC%E7%AB%A0%E5%AE%98%E6%96%B9%E9%A0%81%E9%9D%A2%E7%B8%BD%E8%A1%A8">本章官方頁面總表</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="安裝與設定installation">安裝與設定（Installation）<a class="anchor" href="#安裝與設定installation" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/index.html">Installation</a> 章節的中文導覽。快速安裝步驟與系統需求詳表見《<a href="docs.html">完整文檔</a>》第 2、3 章，本頁聚焦各安裝方式的差異、選擇建議與完整頁面對照。</p>
+</blockquote>
+<hr>
+<h2 id="怎麼選安裝方式">怎麼選安裝方式<a class="anchor" href="#怎麼選安裝方式" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>你的情境</th>
+<th>建議方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>第一次接觸、想快速看到效果</td>
+<td><strong>Quick Install</strong>（standalone 壓縮包，解壓即用）</td>
+</tr>
+<tr>
+<td>日常桌面開發</td>
+<td><strong>Workstation 安裝</strong>（完整應用＋本機相依）</td>
+</tr>
+<tr>
+<td>需要可重現環境、CI、叢集</td>
+<td><strong>容器（Docker）</strong>——僅限 Linux</td>
+</tr>
+<tr>
+<td>Python 優先、想用 pip/conda 管理</td>
+<td><strong>Python 環境安裝</strong>（<code>pip install isaacsim</code>）</td>
+</tr>
+<tr>
+<td>本機沒有夠力的 GPU</td>
+<td><strong>雲端部署</strong>（AWS／Azure／GCP／Brev 等）＋ WebRTC 串流</td>
+</tr>
+<tr>
+<td>搭配 ROS 2 開發</td>
+<td>任一方式＋ <strong>ROS 2 安裝</strong></td>
+</tr>
+</tbody></table>
+<p>安裝前建議先跑 <strong>Isaac Sim Compatibility Checker</strong>（輕量相容性檢查工具，見 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html">Workstation 安裝頁</a>）確認硬體符合需求。</p>
+<h2 id="各安裝方式重點">各安裝方式重點<a class="anchor" href="#各安裝方式重點" aria-hidden="true">#</a></h2>
+<h3 id="quick-install快速安裝">Quick Install（快速安裝）<a class="anchor" href="#quick-install快速安裝" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/quick-install.html">官方頁面</a>。下載 standalone 壓縮包 → 解壓 → 執行 <code>post_install</code> → 啟動 <code>isaac-sim.sh/.bat</code>。注意：保留 50 GB 磁碟空間、首次啟動需數分鐘暖機、資產需 HTTPS 連線。完整指令見《完整文檔》3.1 節。</p>
+<h3 id="workstation-安裝">Workstation 安裝<a class="anchor" href="#workstation-安裝" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html">官方頁面</a>。完整桌面應用安裝流程，含相容性檢查工具、選用元件與桌面捷徑設定。</p>
+<h3 id="容器安裝container">容器安裝（Container）<a class="anchor" href="#容器安裝container" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_container.html">官方頁面</a>。從 NGC 拉取官方映像在 Docker 中執行，<strong>僅支援 Linux</strong>，需要 NVIDIA Container Toolkit。適合無頭伺服器、叢集與 CI；搭配串流用戶端可遠端看畫面。</p>
+<h3 id="python-環境安裝pip-conda">Python 環境安裝（pip / conda）<a class="anchor" href="#python-環境安裝pip-conda" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_python.html">官方頁面</a>｜<a href="https://pypi.org/project/isaacsim/">PyPI</a>。把 Isaac Sim 當 Python 套件裝進虛擬環境，之後直接用該環境的 <code>python</code> 跑 standalone 腳本——Python 優先工作流程與 Isaac Lab 使用者的首選。</p>
+<h3 id="雲端部署">雲端部署<a class="anchor" href="#雲端部署" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_cloud.html">總覽頁面</a>。官方提供各雲平台部署指南：</p>
+<ul>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_advanced_cloud_setup_launchable.html">Isaac Launchable</a>／<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_advanced_cloud_setup_brev.html">NVIDIA Brev</a>（最快上雲）</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_advanced_cloud_setup_aws.html">AWS</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_advanced_cloud_setup_azure.html">Azure</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_advanced_cloud_setup_gcp.html">Google Cloud</a></li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_advanced_cloud_setup_tencent.html">騰訊雲</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_advanced_cloud_setup_alibaba.html">阿里雲</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_advanced_cloud_setup_volcano.html">火山引擎</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_advanced_cloud_setup_baidu.html">百度雲</a></li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_advanced_remote_setup.html">遠端工作站</a></li>
+</ul>
+<h3 id="串流用戶端livestream-clients">串流用戶端（Livestream Clients）<a class="anchor" href="#串流用戶端livestream-clients" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/manual_livestream_clients.html">官方頁面</a>。遠端／無頭機器上以 <code>isaac-sim.streaming.sh/.bat</code> 啟動，本機用 <strong>Isaac Sim WebRTC Streaming Client</strong> 連線觀看與操作。</p>
+<h3 id="ros-2-安裝">ROS 2 安裝<a class="anchor" href="#ros-2-安裝" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_ros.html">預設平台</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_ros_other_platforms.html">其他平台</a>。設定 ROS 2 Bridge 所需的 ROS 環境；細節與教學見本站《ROS 2》章節頁。</p>
+<h2 id="下載與疑難排解">下載與疑難排解<a class="anchor" href="#下載與疑難排解" aria-hidden="true">#</a></h2>
+<ul>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/download.html">下載 Isaac Sim</a>——各平台最新版與歷史版本。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_faq.html">Setup Tips（安裝技巧與 FAQ）</a>——常見安裝問題、<strong>本地資產包</strong>（離線環境必看）、快取設定。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/overview/troubleshooting.html">Troubleshooting</a>——啟動失敗、驅動、渲染問題總表。</li>
+</ul>
+<h2 id="本章官方頁面總表">本章官方頁面總表<a class="anchor" href="#本章官方頁面總表" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>頁面</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>安裝總覽</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/index.html">https://docs.isaacsim.omniverse.nvidia.com/latest/installation/index.html</a></td>
+</tr>
+<tr>
+<td>Quick Install</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/quick-install.html">https://docs.isaacsim.omniverse.nvidia.com/latest/installation/quick-install.html</a></td>
+</tr>
+<tr>
+<td>系統需求</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/requirements.html">https://docs.isaacsim.omniverse.nvidia.com/latest/installation/requirements.html</a></td>
+</tr>
+<tr>
+<td>下載</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/download.html">https://docs.isaacsim.omniverse.nvidia.com/latest/installation/download.html</a></td>
+</tr>
+<tr>
+<td>Workstation</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html">https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html</a></td>
+</tr>
+<tr>
+<td>容器</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_container.html">https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_container.html</a></td>
+</tr>
+<tr>
+<td>雲端部署</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_cloud.html">https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_cloud.html</a></td>
+</tr>
+<tr>
+<td>串流用戶端</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/manual_livestream_clients.html">https://docs.isaacsim.omniverse.nvidia.com/latest/installation/manual_livestream_clients.html</a></td>
+</tr>
+<tr>
+<td>Python 環境</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_python.html">https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_python.html</a></td>
+</tr>
+<tr>
+<td>ROS 2（預設）</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_ros.html">https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_ros.html</a></td>
+</tr>
+<tr>
+<td>ROS 2（其他平台）</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_ros_other_platforms.html">https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_ros_other_platforms.html</a></td>
+</tr>
+<tr>
+<td>Setup Tips</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_faq.html">https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_faq.html</a></td>
+</tr>
+</tbody></table>
+<hr>
+<p><em>本頁為官方文檔中文導覽，內容以官方為準。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>（6.0.1）。內容如與官方不符，請以官方為準。</footer>
+  </main>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

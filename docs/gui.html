@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GUI 與介面參考（GUI Reference） — Isaac Sim 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Isaac Sim</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與設定</a>
+        <a href="gui.html" class="current">GUI 介面參考</a>
+        <div class="nav-group-title">教學系列</div>
+        <a href="tutorial.html">Script Editor 教學</a>
+        <a href="extension.html">Extension 教學</a>
+        <a href="standalone.html">Standalone Python 教學</a>
+        <div class="nav-group-title">專題章節</div>
+        <a href="robots.html">機器人：匯入・設定・模擬</a>
+        <a href="sensors.html">感測器</a>
+        <a href="physics.html">物理模擬</a>
+        <a href="ros2.html">ROS 2 整合</a>
+        <a href="sdg.html">合成資料生成</a>
+        <a href="isaaclab.html">Isaac Lab／數位孿生</a>
+        <a href="devtools.html">開發工具與擴充開發</a>
+        <div class="nav-group-title">參考</div>
+        <a href="reference.html">資產、USD 與參考資訊</a>
+    </nav>
+    <hr class="sidebar-divider">
+    <div class="sidebar-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#%E5%B7%A5%E4%BD%9C%E5%8D%80%E7%B5%84%E6%88%90">工作區組成</a>
+      <a class="toc-h2" href="#%E5%B8%B8%E7%94%A8%E9%81%B8%E5%96%AE">常用選單</a>
+      <a class="toc-h3" href="#create-%E9%81%B8%E5%96%AE">Create 選單</a>
+      <a class="toc-h3" href="#%E5%85%B6%E4%BB%96%E9%81%B8%E5%96%AE">其他選單</a>
+      <a class="toc-h2" href="#%E5%BF%AB%E6%8D%B7%E9%8D%B5%E8%88%87%E6%93%8D%E4%BD%9C">快捷鍵與操作</a>
+      <a class="toc-h2" href="#gui-%E8%88%87%E7%A8%8B%E5%BC%8F%E7%A2%BC%E7%9A%84%E5%B0%8D%E7%85%A7%E5%AD%B8%E7%BF%92%E6%B3%95">GUI 與程式碼的對照學習法</a>
+      <a class="toc-h2" href="#%E6%9C%AC%E7%AB%A0%E5%AE%98%E6%96%B9%E9%A0%81%E9%9D%A2%E7%B8%BD%E8%A1%A8">本章官方頁面總表</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="gui-與介面參考gui-reference">GUI 與介面參考（GUI Reference）<a class="anchor" href="#gui-與介面參考gui-reference" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/gui/index.html">GUI Reference</a> 章節的中文導覽。GUI 是三種工作流程之一（見《完整文檔》5.1 節），本頁整理介面組成、常用選單與快捷鍵。</p>
+</blockquote>
+<hr>
+<h2 id="工作區組成">工作區組成<a class="anchor" href="#工作區組成" aria-hidden="true">#</a></h2>
+<p>Isaac Sim 預設工作區的主要面板（詳見 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/gui/reference_user_interface.html">User Interface Reference</a>）：</p>
+<table>
+<thead>
+<tr>
+<th>面板</th>
+<th>位置</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Viewport</strong></td>
+<td>中央</td>
+<td>3D 場景視圖；左上有渲染模式、顯示選項（「眼睛」圖示）等控制</td>
+</tr>
+<tr>
+<td><strong>左側工具列</strong></td>
+<td>左緣</td>
+<td>Play／Stop、選取／移動／旋轉／縮放工具</td>
+</tr>
+<tr>
+<td><strong>Stage</strong></td>
+<td>右上</td>
+<td>USD prim 樹——場景中一切物件的階層</td>
+</tr>
+<tr>
+<td><strong>Property</strong></td>
+<td>右下</td>
+<td>選取 prim 的屬性檢視與編輯（Transform、物理、材質…）</td>
+</tr>
+<tr>
+<td><strong>Content Browser</strong></td>
+<td>下方</td>
+<td>檔案與資產瀏覽</td>
+</tr>
+<tr>
+<td><strong>Console</strong></td>
+<td>下方</td>
+<td>日誌與錯誤訊息</td>
+</tr>
+</tbody></table>
+<p>常用視窗都從 <strong>Window</strong> 選單開啟：Script Editor、Extensions、Examples、Graph Editors 等。</p>
+<h2 id="常用選單">常用選單<a class="anchor" href="#常用選單" aria-hidden="true">#</a></h2>
+<h3 id="create-選單">Create 選單<a class="anchor" href="#create-選單" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/gui/menu_create.html">官方參考</a>。快速建立物件的入口：</p>
+<ul>
+<li><strong>Create &gt; Physics</strong>：Ground Plane、Physics Scene 等。</li>
+<li><strong>Create &gt; Shape</strong>：Cube、Sphere、Cylinder 等基本幾何。</li>
+<li><strong>Create &gt; Lights</strong>：Distant／Dome／Sphere Light 等光源。</li>
+<li><strong>Create &gt; Robots</strong>：官方機器人資產（Franka、UR10、Carter…）。</li>
+<li><strong>Create &gt; Environment</strong>：現成環境（Simple Room 等）。</li>
+</ul>
+<h3 id="其他選單">其他選單<a class="anchor" href="#其他選單" aria-hidden="true">#</a></h3>
+<ul>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/gui/menu_replicator.html">Replicator 選單</a>——合成資料錄製與 Replicator 工具。</li>
+<li><strong>Tools &gt; Physics</strong>：Physics Inspector 等物理工具。</li>
+<li><strong>Tools &gt; Robotics</strong>：OmniGraph 控制器產生器、資產工具。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/gui/preferences.html">Preferences（偏好設定）</a>——快取路徑、渲染、資產根路徑等設定。</li>
+</ul>
+<h2 id="快捷鍵與操作">快捷鍵與操作<a class="anchor" href="#快捷鍵與操作" aria-hidden="true">#</a></h2>
+<p>完整清單見 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/gui/reference_keyboard_shortcuts.html">Keyboard Shortcuts Reference</a>。最常用的：</p>
+<table>
+<thead>
+<tr>
+<th>按鍵</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>W / E / R</strong></td>
+<td>移動／旋轉／縮放 Gizmo</td>
+</tr>
+<tr>
+<td><strong>Esc</strong></td>
+<td>取消選取</td>
+</tr>
+<tr>
+<td><strong>F</strong></td>
+<td>鏡頭聚焦到選取物件</td>
+</tr>
+<tr>
+<td><strong>滑鼠右鍵拖曳</strong></td>
+<td>環繞視角</td>
+</tr>
+<tr>
+<td><strong>滑鼠中鍵拖曳</strong></td>
+<td>平移視角</td>
+</tr>
+<tr>
+<td><strong>滾輪</strong></td>
+<td>縮放視角</td>
+</tr>
+<tr>
+<td><strong>Ctrl+Z / Ctrl+Y</strong></td>
+<td>復原／重做</td>
+</tr>
+<tr>
+<td><strong>Ctrl+S</strong></td>
+<td>存檔（在 VS Code 編輯 Extension 時觸發熱重載）</td>
+</tr>
+</tbody></table>
+<p>選取行為的細節（階層選取、選取模式切換）見 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/gui/selection-modes.html">Selection Modes</a>。</p>
+<h2 id="gui-與程式碼的對照學習法">GUI 與程式碼的對照學習法<a class="anchor" href="#gui-與程式碼的對照學習法" aria-hidden="true">#</a></h2>
+<ol>
+<li>打開 <strong>Commands Tool</strong>（<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/utilities/debugging/ext_omni_kit_commands.html">說明</a>）：每個 GUI 操作對應的 Python 命令都會列出來，可直接複製到 Script Editor。</li>
+<li>GUI 建好的場景 <strong>File &gt; Save</strong> 成 USD 後，可在 Standalone 腳本以 <code>add_reference_to_stage()</code> 或 <code>open_stage</code> 載回程式化操作。</li>
+<li>反向亦然：程式建立的 prim 立即出現在 Stage 面板，屬性可在 Property 面板核對。</li>
+</ol>
+<h2 id="本章官方頁面總表">本章官方頁面總表<a class="anchor" href="#本章官方頁面總表" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>頁面</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GUI 總覽</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/gui/index.html">https://docs.isaacsim.omniverse.nvidia.com/latest/gui/index.html</a></td>
+</tr>
+<tr>
+<td>介面參考</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/gui/reference_user_interface.html">https://docs.isaacsim.omniverse.nvidia.com/latest/gui/reference_user_interface.html</a></td>
+</tr>
+<tr>
+<td>快捷鍵參考</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/gui/reference_keyboard_shortcuts.html">https://docs.isaacsim.omniverse.nvidia.com/latest/gui/reference_keyboard_shortcuts.html</a></td>
+</tr>
+<tr>
+<td>Create 選單</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/gui/menu_create.html">https://docs.isaacsim.omniverse.nvidia.com/latest/gui/menu_create.html</a></td>
+</tr>
+<tr>
+<td>Replicator 選單</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/gui/menu_replicator.html">https://docs.isaacsim.omniverse.nvidia.com/latest/gui/menu_replicator.html</a></td>
+</tr>
+<tr>
+<td>偏好設定</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/gui/preferences.html">https://docs.isaacsim.omniverse.nvidia.com/latest/gui/preferences.html</a></td>
+</tr>
+<tr>
+<td>選取模式</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/gui/selection-modes.html">https://docs.isaacsim.omniverse.nvidia.com/latest/gui/selection-modes.html</a></td>
+</tr>
+</tbody></table>
+<hr>
+<p><em>本頁為官方文檔中文導覽，內容以官方為準。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>（6.0.1）。內容如與官方不符，請以官方為準。</footer>
+  </main>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

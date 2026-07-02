@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Isaac Lab 與數位孿生（Isaac Lab &amp; Digital Twin） — Isaac Sim 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Isaac Sim</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與設定</a>
+        <a href="gui.html">GUI 介面參考</a>
+        <div class="nav-group-title">教學系列</div>
+        <a href="tutorial.html">Script Editor 教學</a>
+        <a href="extension.html">Extension 教學</a>
+        <a href="standalone.html">Standalone Python 教學</a>
+        <div class="nav-group-title">專題章節</div>
+        <a href="robots.html">機器人：匯入・設定・模擬</a>
+        <a href="sensors.html">感測器</a>
+        <a href="physics.html">物理模擬</a>
+        <a href="ros2.html">ROS 2 整合</a>
+        <a href="sdg.html">合成資料生成</a>
+        <a href="isaaclab.html" class="current">Isaac Lab／數位孿生</a>
+        <a href="devtools.html">開發工具與擴充開發</a>
+        <div class="nav-group-title">參考</div>
+        <a href="reference.html">資產、USD 與參考資訊</a>
+    </nav>
+    <hr class="sidebar-divider">
+    <div class="sidebar-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#isaac-lab%E5%BC%B7%E5%8C%96%E5%AD%B8%E7%BF%92%E6%A8%A1%E4%BB%BF%E5%AD%B8%E7%BF%92">Isaac Lab（強化學習／模仿學習）</a>
+      <a class="toc-h2" href="#%E6%95%B8%E4%BD%8D%E5%AD%BF%E7%94%9Fdigital-twin">數位孿生（Digital Twin）</a>
+      <a class="toc-h3" href="#%E5%80%89%E5%84%B2%E7%89%A9%E6%B5%81">倉儲物流</a>
+      <a class="toc-h3" href="#%E5%85%B6%E4%BB%96%E6%95%B8%E4%BD%8D%E5%AD%BF%E7%94%9F%E8%83%BD%E5%8A%9B">其他數位孿生能力</a>
+      <a class="toc-h3" href="#isaac-cortex%E6%B1%BA%E7%AD%96%E6%A1%86%E6%9E%B6">Isaac Cortex（決策框架）</a>
+      <a class="toc-h2" href="#%E7%94%9F%E6%85%8B%E7%B3%BB%E5%85%A8%E6%99%AF">生態系全景</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="isaac-lab-與數位孿生isaac-lab-amp-digital-twin">Isaac Lab 與數位孿生（Isaac Lab &amp; Digital Twin）<a class="anchor" href="#isaac-lab-與數位孿生isaac-lab-amp-digital-twin" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/isaac_lab_tutorials/index.html">Isaac Lab</a> 與 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/digital_twin/index.html">Digital Twin</a> 章節的中文導覽——兩條「模擬之後」的路線：把機器人送去<strong>學習</strong>，或把場域搬進<strong>數位孿生</strong>。</p>
+</blockquote>
+<hr>
+<h2 id="isaac-lab強化學習模仿學習">Isaac Lab（強化學習／模仿學習）<a class="anchor" href="#isaac-lab強化學習模仿學習" aria-hidden="true">#</a></h2>
+<p><strong>Isaac Lab</strong> 是建立在 Isaac Sim 之上的機器人學習框架，以 GPU 平行環境訓練 RL／IL 策略。分工：Isaac Sim 負責準備資產與場景、驗證與部署；Isaac Lab 負責訓練（其自身文檔在 <a href="https://isaac-sim.github.io/IsaacLab/">isaac-sim.github.io/IsaacLab</a>）。</p>
+<p>Isaac Sim 文檔內與 Isaac Lab 相關的關鍵教學：</p>
+<table>
+<thead>
+<tr>
+<th>主題</th>
+<th>說明</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>策略部署回 Isaac Sim</td>
+<td>把 Isaac Lab 訓練好的策略放回 Isaac Sim 執行驗證</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/isaac_lab_tutorials/tutorial_policy_deployment.html">教學</a></td>
+</tr>
+<tr>
+<td>透過 ROS 2 執行 RL 策略</td>
+<td>Isaac Sim 發布觀測、接收動作的 SIL 評估</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_rl_controller.html">教學</a></td>
+</tr>
+<tr>
+<td>Cloner（環境複製）</td>
+<td>大規模平行環境的基礎：把一個環境複製 N 份</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/isaac_lab_tutorials/tutorial_cloner.html">教學</a></td>
+</tr>
+<tr>
+<td>Instanceable Assets</td>
+<td>可實例化資產：平行環境的記憶體優化關鍵</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/isaac_lab_tutorials/tutorial_instanceable_assets.html">教學</a></td>
+</tr>
+<tr>
+<td>腿式機器人 rigging</td>
+<td>為 locomotion policy 準備機器人資產</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup_tutorials/tutorial_rig_legged_robot.html">教學</a></td>
+</tr>
+<tr>
+<td>Isaac Lab 疑難排解</td>
+<td>安裝與訓練常見問題</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/isaac_lab_tutorials/troubleshooting.html">說明</a></td>
+</tr>
+</tbody></table>
+<p>典型閉環：<strong>Isaac Sim rig 機器人 → Isaac Lab 平行訓練 → （Lab-Arena 大規模評測）→ 策略部署回 Isaac Sim → ROS 2 SIL 驗證 → 上實機</strong>。</p>
+<h2 id="數位孿生digital-twin">數位孿生（Digital Twin）<a class="anchor" href="#數位孿生digital-twin" aria-hidden="true">#</a></h2>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/digital_twin/index.html">章節總覽</a>——以倉儲物流為主要場景的數位孿生工具集：</p>
+<h3 id="倉儲物流">倉儲物流<a class="anchor" href="#倉儲物流" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>用途</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Warehouse Creator</td>
+<td>參數化快速生成倉庫場景</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/digital_twin/warehouse_logistics/ext_omni_warehouse_creator.html">說明</a></td>
+</tr>
+<tr>
+<td>輸送帶工具</td>
+<td>建立與設定輸送帶</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/digital_twin/warehouse_logistics/ext_isaacsim_asset_gen_conveyor.html">說明</a></td>
+</tr>
+<tr>
+<td>靜態倉儲資產</td>
+<td>貨架、棧板等現成資產</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/digital_twin/warehouse_logistics/tutorial_static_assets.html">教學</a></td>
+</tr>
+<tr>
+<td>NVIDIA cuOpt</td>
+<td>GPU 加速的路徑／物流最佳化整合</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/digital_twin/warehouse_logistics/logistics_tutorial_cuopt.html">教學</a></td>
+</tr>
+</tbody></table>
+<h3 id="其他數位孿生能力">其他數位孿生能力<a class="anchor" href="#其他數位孿生能力" aria-hidden="true">#</a></h3>
+<ul>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/digital_twin/ext_isaacsim_asset_generator_occupancy_map.html">占據地圖（Occupancy Map）生成</a>——從場景產生 2D 導航地圖。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/digital_twin/rtsp_camera_streaming.html">RTSP 即時相機串流</a>——把模擬相機當成真實監控攝影機串流出去。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/digital_twin/troubleshooting.html">疑難排解</a>。</li>
+</ul>
+<h3 id="isaac-cortex決策框架">Isaac Cortex（決策框架）<a class="anchor" href="#isaac-cortex決策框架" aria-hidden="true">#</a></h3>
+<p>以「決策網路（Decider Networks）」描述機器人任務邏輯的框架：</p>
+<ol>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/cortex_tutorials/tutorial_cortex_1_overview.html">總覽</a> → 2. <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/cortex_tutorials/tutorial_cortex_2_decider_networks.html">Decider Networks</a> → 3. <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/cortex_tutorials/tutorial_cortex_3_example_peck_games.html">行為範例：Peck Games</a> → 4. <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/cortex_tutorials/tutorial_cortex_4_franka_block_stacking.html">Franka 疊積木</a> → 5. <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/cortex_tutorials/tutorial_cortex_5_ur10_bin_stacking.html">UR10 箱體堆疊</a> → 6. <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/cortex_tutorials/tutorial_cortex_7_cortex_extension.html">建立 Cortex 擴充</a>。</li>
+</ol>
+<h2 id="生態系全景">生態系全景<a class="anchor" href="#生態系全景" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>元件</th>
+<th>角色</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Isaac Sim</td>
+<td>模擬、rig、SIL 驗證</td>
+</tr>
+<tr>
+<td>Isaac Lab</td>
+<td>RL／IL 訓練</td>
+</tr>
+<tr>
+<td><a href="https://developer.nvidia.com/isaac/lab-arena">Lab-Arena</a></td>
+<td>策略大規模評測</td>
+</tr>
+<tr>
+<td><a href="https://developer.nvidia.com/omniverse/nurec">NuRec</a></td>
+<td>真實環境 Gaussian-splat 重建 → USD</td>
+</tr>
+<tr>
+<td><a href="https://docs.nvidia.com/cosmos/latest/transfer2.5/index.html">Cosmos Transfer</a></td>
+<td>渲染影像照片級增強</td>
+</tr>
+<tr>
+<td>Isaac ROS</td>
+<td>GPU 加速 ROS 2 套件</td>
+</tr>
+</tbody></table>
+<hr>
+<p><em>本頁為官方文檔中文導覽，內容以官方為準。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>（6.0.1）。內容如與官方不符，請以官方為準。</footer>
+  </main>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

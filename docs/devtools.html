@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>開發工具、OmniGraph 與擴充開發（Development） — Isaac Sim 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Isaac Sim</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與設定</a>
+        <a href="gui.html">GUI 介面參考</a>
+        <div class="nav-group-title">教學系列</div>
+        <a href="tutorial.html">Script Editor 教學</a>
+        <a href="extension.html">Extension 教學</a>
+        <a href="standalone.html">Standalone Python 教學</a>
+        <div class="nav-group-title">專題章節</div>
+        <a href="robots.html">機器人：匯入・設定・模擬</a>
+        <a href="sensors.html">感測器</a>
+        <a href="physics.html">物理模擬</a>
+        <a href="ros2.html">ROS 2 整合</a>
+        <a href="sdg.html">合成資料生成</a>
+        <a href="isaaclab.html">Isaac Lab／數位孿生</a>
+        <a href="devtools.html" class="current">開發工具與擴充開發</a>
+        <div class="nav-group-title">參考</div>
+        <a href="reference.html">資產、USD 與參考資訊</a>
+    </nav>
+    <hr class="sidebar-divider">
+    <div class="sidebar-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#%E9%96%8B%E7%99%BC%E5%B7%A5%E5%85%B7development-tools">開發工具（Development Tools）</a>
+      <a class="toc-h2" href="#omnigraph%E8%A6%96%E8%A6%BA%E5%8C%96%E7%B7%A8%E7%A8%8B">OmniGraph（視覺化編程）</a>
+      <a class="toc-h2" href="#%E6%93%B4%E5%85%85extension%E9%96%8B%E7%99%BC">擴充（Extension）開發</a>
+      <a class="toc-h2" href="#%E9%99%A4%E9%8C%AF%E8%88%87%E6%95%88%E8%83%BD%E5%88%86%E6%9E%90debugging-amp-profiling">除錯與效能分析（Debugging &amp; Profiling）</a>
+      <a class="toc-h2" href="#%E7%80%8F%E8%A6%BD%E5%99%A8browsers">瀏覽器（Browsers）</a>
+      <a class="toc-h2" href="#%E9%96%8B%E7%99%BC%E6%B5%81%E7%A8%8B%E5%BB%BA%E8%AD%B0">開發流程建議</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="開發工具omnigraph-與擴充開發development">開發工具、OmniGraph 與擴充開發（Development）<a class="anchor" href="#開發工具omnigraph-與擴充開發development" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/development_tools/index.html">Development Tools</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omnigraph/index.html">OmniGraph</a> 與 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/utilities/browsers.html">Utilities</a>（模板、除錯、效能分析）章節的中文導覽。</p>
+</blockquote>
+<hr>
+<h2 id="開發工具development-tools">開發工具（Development Tools）<a class="anchor" href="#開發工具development-tools" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>用途</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Script Editor</strong></td>
+<td>Kit 內建 Python 互動環境（本站有<a href="tutorial.html">完整教學</a>）</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/development_tools/omniverse_script_editor.html">說明</a></td>
+</tr>
+<tr>
+<td>VS Code</td>
+<td>主力 IDE：編輯、智慧提示、與 Isaac Sim 連動</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/development_tools/vscode.html">說明</a></td>
+</tr>
+<tr>
+<td>Python Server</td>
+<td>遠端程式碼執行：外部行程把 Python 送進運行中的 Isaac Sim</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/development_tools/python_server.html">說明</a></td>
+</tr>
+<tr>
+<td>Jupyter Notebook</td>
+<td>筆記本式互動開發</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/development_tools/jupyter_notebook.html">說明</a></td>
+</tr>
+<tr>
+<td>Isaac Sim MCP Server</td>
+<td>讓 AI 助手（Claude 等）透過 MCP 協定操作 Isaac Sim</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/development_tools/isaac_sim_mcp.html">說明</a></td>
+</tr>
+<tr>
+<td>Carb Settings</td>
+<td>讀寫底層 Carbonite 設定</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/development_tools/carb_settings.html">說明</a></td>
+</tr>
+</tbody></table>
+<h2 id="omnigraph視覺化編程">OmniGraph（視覺化編程）<a class="anchor" href="#omnigraph視覺化編程" aria-hidden="true">#</a></h2>
+<p>節點圖框架，GUI 端機器人控制器與 ROS 2 Bridge 的底層。學習路徑：</p>
+<ol>
+<li><a href="https://docs.omniverse.nvidia.com/extensions/latest/ext_omnigraph/getting-started/core_concepts.html">OmniGraph 核心概念</a>與<a href="https://docs.omniverse.nvidia.com/extensions/latest/ext_omnigraph/interface.html">介面</a>（Omniverse 文檔）。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omnigraph/omnigraph_tutorial.html">Isaac Sim OmniGraph 教學</a>——建立差速機器人控制圖。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omnigraph/omnigraph_scripting.html">以 Python 腳本操作 OmniGraph</a>——程式化建圖與設值。</li>
+<li>自訂節點：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omnigraph/omnigraph_custom_python_nodes.html">Python 節點</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omnigraph/omnigraph_custom_cpp_nodes.html">C++ 節點</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omnigraph/omnigraph_custom_ipc_nodes.html">IPC 節點</a>。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omnigraph/omnigraph_shortcuts.html">常用捷徑</a>——Tools &gt; Robotics &gt; OmniGraph Controllers 系列快速產生器。</li>
+</ol>
+<h2 id="擴充extension開發">擴充（Extension）開發<a class="anchor" href="#擴充extension開發" aria-hidden="true">#</a></h2>
+<p>（實作教學見本站《<a href="extension.html">Extension 教學</a>》）</p>
+<table>
+<thead>
+<tr>
+<th>資源</th>
+<th>說明</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>CLI Extension Templates</td>
+<td><strong>6.0 官方推薦</strong>：命令列產生擴充模板</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/utilities/cli_extension_templates.html">說明</a></td>
+</tr>
+<tr>
+<td>Extension Template Generator</td>
+<td>UI 版模板產生器（6.0 起棄用，概念仍適用）</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/utilities/extension_template_generator.html">說明</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/utilities/extension_templates_tutorial.html">模板解說</a></td>
+</tr>
+<tr>
+<td>VS Code 進階模板產生器</td>
+<td>從 VS Code 產生擴充骨架</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/utilities/vscode_extension_template_generator.html">說明</a></td>
+</tr>
+<tr>
+<td>新增／更新擴充指南</td>
+<td>管理第三方與自製擴充</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/utilities/updating_extensions.html">說明</a></td>
+</tr>
+<tr>
+<td>Application Template</td>
+<td>打造自訂 Kit 應用（把 Isaac Sim 做成你的產品）</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/app_template/index.html">說明</a></td>
+</tr>
+<tr>
+<td>SimReady 搜尋擴充教學</td>
+<td>實作一個 Content Browser 搜尋擴充的完整範例</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/utilities/tutorial_search_extension.html">說明</a></td>
+</tr>
+</tbody></table>
+<h2 id="除錯與效能分析debugging-amp-profiling">除錯與效能分析（Debugging &amp; Profiling）<a class="anchor" href="#除錯與效能分析debugging-amp-profiling" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>用途</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>VS Code 除錯</td>
+<td>attach 到運行中的 Isaac Sim 下中斷點</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/utilities/debugging/tutorial_advanced_python_debugging.html">教學</a></td>
+</tr>
+<tr>
+<td>Debug Drawing API</td>
+<td>在 Viewport 畫點線（最高效的視覺化，不進渲染／物理）</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/utilities/debugging/ext_isaacsim_util_debug_draw.html">說明</a></td>
+</tr>
+<tr>
+<td>Commands Tool</td>
+<td>檢視 GUI 操作對應的 Python 命令——<strong>GUI 動作轉程式碼的利器</strong></td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/utilities/debugging/ext_omni_kit_commands.html">說明</a></td>
+</tr>
+<tr>
+<td>Tracy 效能分析</td>
+<td>frame 層級的效能剖析</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/utilities/debugging/profiling_performance.html">說明</a></td>
+</tr>
+</tbody></table>
+<h2 id="瀏覽器browsers">瀏覽器（Browsers）<a class="anchor" href="#瀏覽器browsers" aria-hidden="true">#</a></h2>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/utilities/browsers.html">總覽</a>：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/utilities/content_browser.html">Content Browser</a>（檔案與資產）、<a href="https://docs.omniverse.nvidia.com/extensions/latest/ext_core/ext_browser-extensions/material-browser.html">Material Browser</a>、<a href="https://docs.omniverse.nvidia.com/extensions/latest/ext_core/ext_browser-extensions/asset-browser.html">NVIDIA Asset Browser</a>、<a href="https://docs.omniverse.nvidia.com/extensions/latest/ext_core/ext_browser-extensions/simready-explorer.html">SimReady Explorer</a>（帶物理屬性的即用資產）。</p>
+<h2 id="開發流程建議">開發流程建議<a class="anchor" href="#開發流程建議" aria-hidden="true">#</a></h2>
+<ol>
+<li><strong>探索期</strong>：Script Editor＋Commands Tool（看 GUI 操作對應什麼 API）。</li>
+<li><strong>迭代期</strong>：Extension＋熱重載，或 VS Code＋Python Server。</li>
+<li><strong>量產期</strong>：Standalone 腳本（無頭、可 CI），需要時用 Tracy 剖析效能。</li>
+</ol>
+<hr>
+<p><em>本頁為官方文檔中文導覽，內容以官方為準。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>（6.0.1）。內容如與官方不符，請以官方為準。</footer>
+  </main>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

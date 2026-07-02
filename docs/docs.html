@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NVIDIA Isaac Sim 中文文檔（整理版） — Isaac Sim 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Isaac Sim</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="index.html">首頁</a>
+    <a href="docs.html" class="active">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html" class="current">總覽文檔</a>
+        <a href="installation.html">安裝與設定</a>
+        <a href="gui.html">GUI 介面參考</a>
+        <div class="nav-group-title">教學系列</div>
+        <a href="tutorial.html">Script Editor 教學</a>
+        <a href="extension.html">Extension 教學</a>
+        <a href="standalone.html">Standalone Python 教學</a>
+        <div class="nav-group-title">專題章節</div>
+        <a href="robots.html">機器人：匯入・設定・模擬</a>
+        <a href="sensors.html">感測器</a>
+        <a href="physics.html">物理模擬</a>
+        <a href="ros2.html">ROS 2 整合</a>
+        <a href="sdg.html">合成資料生成</a>
+        <a href="isaaclab.html">Isaac Lab／數位孿生</a>
+        <a href="devtools.html">開發工具與擴充開發</a>
+        <div class="nav-group-title">參考</div>
+        <a href="reference.html">資產、USD 與參考資訊</a>
+    </nav>
+    <hr class="sidebar-divider">
+    <div class="sidebar-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#%E7%9B%AE%E9%8C%84">目錄</a>
+      <a class="toc-h2" href="#1-%E4%BB%80%E9%BA%BC%E6%98%AF-isaac-sim">1. 什麼是 Isaac Sim</a>
+      <a class="toc-h3" href="#%E6%8A%80%E8%A1%93%E5%A0%86%E7%96%8A">技術堆疊</a>
+      <a class="toc-h3" href="#%E5%85%B8%E5%9E%8B%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8Bsimulation-development-loop">典型工作流程（Simulation Development Loop）</a>
+      <a class="toc-h3" href="#%E5%9C%A8-nvidia-%E6%A9%9F%E5%99%A8%E4%BA%BA%E7%94%9F%E6%85%8B%E7%B3%BB%E4%B8%AD%E7%9A%84%E5%AE%9A%E4%BD%8D">在 NVIDIA 機器人生態系中的定位</a>
+      <a class="toc-h2" href="#2-%E7%B3%BB%E7%B5%B1%E9%9C%80%E6%B1%82">2. 系統需求</a>
+      <a class="toc-h3" href="#x8664-%E5%B9%B3%E5%8F%B0">x86_64 平台</a>
+      <a class="toc-h3" href="#aarch64-%E5%B9%B3%E5%8F%B0">aarch64 平台</a>
+      <a class="toc-h2" href="#3-%E5%AE%89%E8%A3%9D">3. 安裝</a>
+      <a class="toc-h3" href="#31-%E5%BF%AB%E9%80%9F%E5%AE%89%E8%A3%9Dquick-install-%E6%8E%A8%E8%96%A6%E6%96%B0%E6%89%8B">3.1 快速安裝（Quick Install）— 推薦新手</a>
+      <a class="toc-h3" href="#32-%E5%85%B6%E4%BB%96%E5%AE%89%E8%A3%9D%E6%96%B9%E5%BC%8F">3.2 其他安裝方式</a>
+      <a class="toc-h2" href="#4-%E5%BF%AB%E9%80%9F%E5%85%A5%E9%96%80">4. 快速入門</a>
+      <a class="toc-h3" href="#41-%E5%9F%BA%E7%A4%8E%E4%BD%BF%E7%94%A8%E6%95%99%E5%AD%B8basic-usage-tutorial">4.1 基礎使用教學（Basic Usage Tutorial）</a>
+      <a class="toc-h3" href="#42-%E5%9F%BA%E7%A4%8E%E6%A9%9F%E5%99%A8%E4%BA%BA%E6%95%99%E5%AD%B8basic-robot-tutorial">4.2 基礎機器人教學（Basic Robot Tutorial）</a>
+      <a class="toc-h3" href="#43-%E7%AF%84%E4%BE%8B%E7%80%8F%E8%A6%BD%E5%99%A8">4.3 範例瀏覽器</a>
+      <a class="toc-h2" href="#5-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5">5. 核心概念</a>
+      <a class="toc-h3" href="#51-%E4%B8%89%E7%A8%AE%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8Bworkflows">5.1 三種工作流程（Workflows）</a>
+      <a class="toc-h3" href="#52-applicationsimulationworldscenestage">5.2 Application／Simulation／World／Scene／Stage</a>
+      <a class="toc-h3" href="#53-core-api-%E8%88%87-core-experimental-api">5.3 Core API 與 Core Experimental API</a>
+      <a class="toc-h3" href="#54-openusd-%E5%9F%BA%E7%A4%8E">5.4 OpenUSD 基礎</a>
+      <a class="toc-h2" href="#6-python-%E8%85%B3%E6%9C%AC%E9%96%8B%E7%99%BC">6. Python 腳本開發</a>
+      <a class="toc-h3" href="#61-%E5%85%A9%E7%A8%AE-python-%E5%9F%B7%E8%A1%8C%E5%BD%A2%E6%85%8B">6.1 兩種 Python 執行形態</a>
+      <a class="toc-h3" href="#62-%E9%96%8B%E7%99%BC%E5%B7%A5%E5%85%B7">6.2 開發工具</a>
+      <a class="toc-h3" href="#63-standalone-%E6%87%89%E7%94%A8%E9%AA%A8%E6%9E%B6">6.3 Standalone 應用骨架</a>
+      <a class="toc-h3" href="#64-%E5%B8%B8%E7%94%A8%E7%A8%8B%E5%BC%8F%E7%89%87%E6%AE%B5%E5%AE%98%E6%96%B9-snippets-%E7%B2%BE%E9%81%B8">6.4 常用程式片段（官方 Snippets 精選）</a>
+      <a class="toc-h3" href="#65-api-%E6%96%87%E4%BB%B6">6.5 API 文件</a>
+      <a class="toc-h2" href="#7-%E6%A9%9F%E5%99%A8%E4%BA%BA%E8%88%87%E6%84%9F%E6%B8%AC%E5%99%A8%E6%A8%A1%E6%93%AC">7. 機器人與感測器模擬</a>
+      <a class="toc-h3" href="#71-%E5%8C%AF%E5%85%A5%E8%88%87%E5%8C%AF%E5%87%BA">7.1 匯入與匯出</a>
+      <a class="toc-h3" href="#72-%E6%A9%9F%E5%99%A8%E4%BA%BA%E8%A8%AD%E5%AE%9Arobot-setup">7.2 機器人設定（Robot Setup）</a>
+      <a class="toc-h3" href="#73-%E6%A9%9F%E5%99%A8%E4%BA%BA%E6%A8%A1%E6%93%AC%E8%88%87%E9%97%9C%E7%AF%80%E6%8E%A7%E5%88%B6">7.3 機器人模擬與關節控制</a>
+      <a class="toc-h3" href="#74-%E6%84%9F%E6%B8%AC%E5%99%A8">7.4 感測器</a>
+      <a class="toc-h3" href="#75-%E7%89%A9%E7%90%86%E5%BC%95%E6%93%8E">7.5 物理引擎</a>
+      <a class="toc-h3" href="#76-%E8%B3%87%E7%94%A2%E5%BA%AB">7.6 資產庫</a>
+      <a class="toc-h2" href="#8-%E7%94%9F%E6%85%8B%E7%B3%BB%E8%88%87%E9%80%B2%E9%9A%8E%E4%B8%BB%E9%A1%8C">8. 生態系與進階主題</a>
+      <a class="toc-h3" href="#81-ros-2-%E6%95%B4%E5%90%88">8.1 ROS 2 整合</a>
+      <a class="toc-h3" href="#82-%E5%90%88%E6%88%90%E8%B3%87%E6%96%99%E7%94%9F%E6%88%90sdg">8.2 合成資料生成（SDG）</a>
+      <a class="toc-h3" href="#83-isaac-lab%E5%BC%B7%E5%8C%96%E5%AD%B8%E7%BF%92">8.3 Isaac Lab（強化學習）</a>
+      <a class="toc-h3" href="#84-%E6%95%B8%E4%BD%8D%E5%AD%BF%E7%94%9Fdigital-twin">8.4 數位孿生（Digital Twin）</a>
+      <a class="toc-h3" href="#85-omnigraph%E8%A6%96%E8%A6%BA%E5%8C%96%E7%B7%A8%E7%A8%8B">8.5 OmniGraph（視覺化編程）</a>
+      <a class="toc-h3" href="#86-%E8%87%AA%E8%A8%82%E6%93%B4%E5%85%85extension%E9%96%8B%E7%99%BC">8.6 自訂擴充（Extension）開發</a>
+      <a class="toc-h2" href="#9-%E5%AF%A6%E7%94%A8%E8%B3%87%E6%BA%90">9. 實用資源</a>
+      <a class="toc-h2" href="#10-%E5%AE%98%E6%96%B9%E6%96%87%E6%AA%94%E7%AB%A0%E7%AF%80%E5%B0%8D%E7%85%A7%E8%A1%A8">10. 官方文檔章節對照表</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="nvidia-isaac-sim-中文文檔整理版">NVIDIA Isaac Sim 中文文檔（整理版）<a class="anchor" href="#nvidia-isaac-sim-中文文檔整理版" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>本文檔整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html">Isaac Sim 官方文檔</a>（版本 <strong>6.0.1</strong>，官方最後更新：2026-06-22）。
+內容為中文摘要與重點整理，各章節均附上官方原文連結以便深入查閱。
+搭配教學請見同資料夾的《<a href="tutorial.html">Script Editor 實戰教學</a>》。</p>
+</blockquote>
+<hr>
+<h2 id="目錄">目錄<a class="anchor" href="#目錄" aria-hidden="true">#</a></h2>
+<ol>
+<li><a href="#1-%E4%BB%80%E9%BA%BC%E6%98%AF-isaac-sim">什麼是 Isaac Sim</a></li>
+<li><a href="#2-%E7%B3%BB%E7%B5%B1%E9%9C%80%E6%B1%82">系統需求</a></li>
+<li><a href="#3-%E5%AE%89%E8%A3%9D">安裝</a></li>
+<li><a href="#4-%E5%BF%AB%E9%80%9F%E5%85%A5%E9%96%80">快速入門</a></li>
+<li><a href="#5-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5">核心概念</a></li>
+<li><a href="#6-python-%E8%85%B3%E6%9C%AC%E9%96%8B%E7%99%BC">Python 腳本開發</a></li>
+<li><a href="#7-%E6%A9%9F%E5%99%A8%E4%BA%BA%E8%88%87%E6%84%9F%E6%B8%AC%E5%99%A8%E6%A8%A1%E6%93%AC">機器人與感測器模擬</a></li>
+<li><a href="#8-%E7%94%9F%E6%85%8B%E7%B3%BB%E8%88%87%E9%80%B2%E9%9A%8E%E4%B8%BB%E9%A1%8C">生態系與進階主題</a></li>
+<li><a href="#9-%E5%AF%A6%E7%94%A8%E8%B3%87%E6%BA%90">實用資源</a></li>
+<li><a href="#10-%E5%AE%98%E6%96%B9%E6%96%87%E6%AA%94%E7%AB%A0%E7%AF%80%E5%B0%8D%E7%85%A7%E8%A1%A8">官方文檔章節對照表</a></li>
+</ol>
+<hr>
+<h2 id="1-什麼是-isaac-sim">1. 什麼是 Isaac Sim<a class="anchor" href="#1-什麼是-isaac-sim" aria-hidden="true">#</a></h2>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html">原文連結</a></p>
+<p><strong>NVIDIA Isaac Sim</strong> 是一款建立在 Omniverse Kit 之上的開源機器人模擬器（Apache 2.0 授權），核心能力包括：</p>
+<ul>
+<li>從 <strong>URDF、MJCF、Onshape CAD 或 USD</strong> 匯入機器人與場景。</li>
+<li>使用 <strong>PhysX</strong> 或 <strong>Newton</strong> 物理引擎進行模擬。</li>
+<li>加入 <strong>RTX 感測器</strong>（光達、雷達等）與<strong>物理式感測器</strong>（IMU、接觸感測器等）。</li>
+<li>產生<strong>合成資料（Synthetic Data）</strong> 用於訓練感知模型。</li>
+<li>為 <strong>Isaac Lab</strong> 準備機器人資產以進行強化學習訓練。</li>
+<li>透過 <strong>ROS 2</strong> 進行軟體在環（Software-in-the-Loop, SIL）驗證。</li>
+</ul>
+<h3 id="技術堆疊">技術堆疊<a class="anchor" href="#技術堆疊" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>元件</th>
+<th>角色</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>OpenUSD</strong></td>
+<td>統一的場景描述格式，從資產匯入到部署共用一套表示法</td>
+</tr>
+<tr>
+<td><strong>RTX</strong></td>
+<td>即時光線追蹤渲染器</td>
+</tr>
+<tr>
+<td><strong>PhysX / Newton</strong></td>
+<td>可切換的物理引擎後端</td>
+</tr>
+<tr>
+<td><strong>OmniGraph</strong></td>
+<td>視覺化編程（節點圖）框架</td>
+</tr>
+<tr>
+<td><strong>Replicator</strong></td>
+<td>合成資料生成（SDG）框架</td>
+</tr>
+</tbody></table>
+<h3 id="典型工作流程simulation-development-loop">典型工作流程（Simulation Development Loop）<a class="anchor" href="#典型工作流程simulation-development-loop" aria-hidden="true">#</a></h3>
+<ol>
+<li><strong>匯入（Import）</strong>：場景、機器人、感測器、CAD/USD/NuRec 資產。</li>
+<li><strong>配置（Configure）</strong>：材質、感測器、語意標註、隨機化、物理調校、通訊圖。</li>
+<li><strong>模擬（Simulate）</strong>：物理步進、感測器輸出、標註擷取、控制迴圈。</li>
+<li><strong>連接／部署（Connect / Deploy）</strong>：輸出資料集到訓練管線，或連接外部機器人堆疊做上機前驗證。</li>
+</ol>
+<h3 id="在-nvidia-機器人生態系中的定位">在 NVIDIA 機器人生態系中的定位<a class="anchor" href="#在-nvidia-機器人生態系中的定位" aria-hidden="true">#</a></h3>
+<ul>
+<li><strong>Isaac Sim</strong>：建立場景、rig 機器人、執行 SIL 測試。</li>
+<li><strong>Isaac Lab</strong>：以平行環境訓練 RL／模仿學習策略。</li>
+<li><strong>Lab-Arena</strong>：大規模評測策略。</li>
+<li><strong>NuRec</strong>：以 Gaussian Splatting 重建真實環境並以 USD 載入。</li>
+<li><strong>Cosmos Transfer</strong>：將渲染影像轉換為多樣化的擬真影像（照片級增強）。</li>
+</ul>
+<hr>
+<h2 id="2-系統需求">2. 系統需求<a class="anchor" href="#2-系統需求" aria-hidden="true">#</a></h2>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/requirements.html">原文連結</a></p>
+<h3 id="x8664-平台">x86_64 平台<a class="anchor" href="#x8664-平台" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>最低配置</th>
+<th>建議配置</th>
+<th>理想配置</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>作業系統</td>
+<td>Ubuntu 22.04/24.04、Windows 11</td>
+<td>同左</td>
+<td>同左</td>
+</tr>
+<tr>
+<td>CPU</td>
+<td>Intel i7（7 代）／AMD Ryzen 5</td>
+<td>i7（9 代）／Ryzen 7</td>
+<td>i9 X 系列／Ryzen 9、Threadripper</td>
+</tr>
+<tr>
+<td>核心數</td>
+<td>4</td>
+<td>8</td>
+<td>16</td>
+</tr>
+<tr>
+<td>記憶體</td>
+<td>32 GB</td>
+<td>64 GB</td>
+<td>64 GB</td>
+</tr>
+<tr>
+<td>儲存空間</td>
+<td>50 GB SSD</td>
+<td>500 GB SSD</td>
+<td>1 TB NVMe SSD</td>
+</tr>
+<tr>
+<td>GPU</td>
+<td>GeForce RTX 4080</td>
+<td>GeForce RTX 5080</td>
+<td>RTX PRO 6000 Blackwell</td>
+</tr>
+<tr>
+<td>VRAM</td>
+<td>16 GB</td>
+<td>16 GB</td>
+<td>48 GB</td>
+</tr>
+</tbody></table>
+<p><strong>重要注意事項：</strong></p>
+<ul>
+<li><strong>Windows 10 不支援</strong>（微軟已於 2025-10-14 終止支援）。</li>
+<li><strong>不支援無 RT Core 的 GPU</strong>（例如 A100、H100）。</li>
+<li>容器（Docker）版<strong>僅支援 Linux</strong>。</li>
+<li>需要網路連線以存取線上資產庫（預設資產來源需允許對 <code>omniverse-content-production.s3-us-west-2.amazonaws.com</code> 的 HTTPS 連出）。</li>
+<li>進階用途（多感測器、Isaac Lab 訓練）需要更多 RAM／VRAM。</li>
+<li>安裝後可執行 <strong>Isaac Sim Compatibility Checker</strong> 輕量工具檢查硬體相容性。</li>
+</ul>
+<h3 id="aarch64-平台">aarch64 平台<a class="anchor" href="#aarch64-平台" aria-hidden="true">#</a></h3>
+<p>目前僅支援 <strong>NVIDIA DGX Spark</strong>（DGX OS 7）；已知限制：cuRobo 與 cuMotion 不支援。</p>
+<hr>
+<h2 id="3-安裝">3. 安裝<a class="anchor" href="#3-安裝" aria-hidden="true">#</a></h2>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/index.html">安裝總覽</a></p>
+<h3 id="31-快速安裝quick-install-推薦新手">3.1 快速安裝（Quick Install）— 推薦新手<a class="anchor" href="#31-快速安裝quick-install-推薦新手" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/quick-install.html">原文連結</a></p>
+<ol>
+<li><p>從 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/download.html">下載頁面</a> 下載對應平台的 standalone 壓縮包。</p>
+</li>
+<li><p>解壓並執行：</p>
+<p><strong>Windows：</strong></p>
+<pre><code class="language-bat">mkdir C:\isaacsim
+cd %USERPROFILE%/Downloads
+tar -xvzf &quot;isaac-sim-standalone-6.0.1-windows-x86_64.zip&quot; -C C:\isaacsim
+cd C:\isaacsim
+post_install.bat
+isaac-sim.bat
+</code></pre>
+<p><strong>Linux (x86_64)：</strong></p>
+<pre><code class="language-bash">mkdir ~/isaacsim
+cd ~/Downloads
+unzip &quot;isaac-sim-standalone-6.0.1-linux-x86_64.zip&quot; -d ~/isaacsim
+cd ~/isaacsim
+./post_install.sh
+./isaac-sim.sh
+</code></pre>
+</li>
+<li><p>首次啟動需等待數分鐘（著色器快取暖機），請觀察終端機直到出現最終載入訊息。</p>
+</li>
+<li><p>驗收：選單 <strong>Create &gt; Environment &gt; Simple Room</strong>，再 <strong>Create &gt; Robots &gt; Franka Emika Panda Arm</strong>，按左側 <strong>Play</strong> 播放模擬。</p>
+</li>
+</ol>
+<blockquote>
+<p>注意：保留至少 <strong>50 GB</strong> 可用磁碟空間；下載包＋解壓安裝過程可能暫時佔用約 40 GB。</p>
+</blockquote>
+<h3 id="32-其他安裝方式">3.2 其他安裝方式<a class="anchor" href="#32-其他安裝方式" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>方式</th>
+<th>適用情境</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Workstation 安裝</td>
+<td>完整桌面應用與本機相依套件</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_workstation.html">連結</a></td>
+</tr>
+<tr>
+<td>容器（Docker）安裝</td>
+<td>可重現的環境、CI，僅限 Linux</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_container.html">連結</a></td>
+</tr>
+<tr>
+<td>Python 環境安裝（pip/conda）</td>
+<td>Python 優先的開發流程</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_python.html">連結</a>、<a href="https://pypi.org/project/isaacsim/">PyPI</a></td>
+</tr>
+<tr>
+<td>雲端部署</td>
+<td>AWS / Azure / GCP / Brev 等</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_cloud.html">連結</a></td>
+</tr>
+<tr>
+<td>遠端／無頭模式</td>
+<td>執行 <code>isaac-sim.streaming.sh(.bat)</code> 並以 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/manual_livestream_clients.html">WebRTC 串流用戶端</a> 連線</td>
+<td>—</td>
+</tr>
+<tr>
+<td>ROS 2 安裝</td>
+<td>搭配 ROS 2 使用</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_ros.html">連結</a></td>
+</tr>
+</tbody></table>
+<p>安裝疑難排解請見 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_faq.html">Setup Tips</a> 與 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/overview/troubleshooting.html">Troubleshooting</a>。</p>
+<hr>
+<h2 id="4-快速入門">4. 快速入門<a class="anchor" href="#4-快速入門" aria-hidden="true">#</a></h2>
+<h3 id="41-基礎使用教學basic-usage-tutorial">4.1 基礎使用教學（Basic Usage Tutorial）<a class="anchor" href="#41-基礎使用教學basic-usage-tutorial" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/introduction/quickstart_isaacsim.html">原文連結</a></p>
+<p>此教學以<strong>同一個目標</strong>（從空白 stage 到會動的方塊）示範三種工作流程，方便對照學習：</p>
+<p><strong>GUI 流程重點：</strong></p>
+<ol>
+<li><strong>File &gt; New</strong> 建立新場景。</li>
+<li><strong>Create &gt; Physics &gt; Ground Plane</strong> 加入地板。</li>
+<li><strong>Create &gt; Lights &gt; Distant Light</strong> 加入光源（場景中沒有物體反射光線時仍會是暗的）。</li>
+<li><strong>Create &gt; Shape &gt; Cube</strong> 加入「視覺方塊」（無質量、無碰撞，Play 後不會有任何反應）。</li>
+<li>操作 Gizmo：<strong>W</strong> 移動、<strong>E</strong> 旋轉、<strong>R</strong> 縮放、<strong>Esc</strong> 取消選取；可切換局部／世界座標。精確數值可在 <strong>Property</strong> 面板輸入。</li>
+<li>加物理：在 Stage 樹選取 <code>/World/Cube</code> → <strong>Property 面板 &gt; Add &gt; Physics &gt; Rigid Body with Colliders Preset</strong> → 按 <strong>Play</strong> 觀察方塊受重力落下並與地板碰撞。</li>
+</ol>
+<p><strong>Extension（Script Editor）流程</strong>：以 <strong>Window &gt; Script Editor</strong> 執行 Python 片段完成同樣事情——詳見《<a href="tutorial.html">Script Editor 實戰教學</a>》。</p>
+<p><strong>Standalone Python 流程</strong>：執行內建腳本
+<code>standalone_examples/tutorials/getting_started/getting_started.py</code>：</p>
+<pre><code class="language-bash"># Linux
+./python.sh standalone_examples/tutorials/getting_started/getting_started.py
+# Windows
+python.bat standalone_examples\tutorials\getting_started\getting_started.py
+</code></pre>
+<h3 id="42-基礎機器人教學basic-robot-tutorial">4.2 基礎機器人教學（Basic Robot Tutorial）<a class="anchor" href="#42-基礎機器人教學basic-robot-tutorial" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/introduction/quickstart_isaacsim_robot.html">原文連結</a></p>
+<p><strong>GUI 流程重點：</strong></p>
+<ol>
+<li><strong>Create &gt; Robots &gt; Franka Emika Panda Arm</strong> 將機器人加入場景。</li>
+<li><strong>Tools &gt; Physics &gt; Physics Inspector</strong> 檢視關節上下限、預設姿態、剛性（stiffness）與阻尼（damping）。</li>
+<li><strong>Tools &gt; Robotics &gt; OmniGraph Controllers &gt; Joint Position</strong> 產生關節位置控制圖（OmniGraph）。</li>
+<li>選取 <strong>JointCommandArray</strong> 節點，按 <strong>Play</strong> 後在 Property 面板拖曳／輸入關節值即可讓手臂動作。</li>
+<li>可用 <strong>Window &gt; Graph Editors &gt; Action Graph</strong> 視覺化檢視生成的控制圖。</li>
+</ol>
+<p><strong>Python 對應</strong>（Extension 或 Standalone 皆同一套 API）：</p>
+<pre><code class="language-python">import isaacsim.core.experimental.utils.stage as stage_utils
+from isaacsim.core.experimental.prims import Articulation, XformPrim
+from isaacsim.storage.native import get_assets_root_path
+
+assets_root_path = get_assets_root_path()
+asset_path = assets_root_path + &quot;/Isaac/Robots/FrankaRobotics/FrankaPanda/franka.usd&quot;
+stage_utils.add_reference_to_stage(usd_path=asset_path, path=&quot;/World/Arm&quot;)
+
+arm_handle = Articulation(&quot;/World/Arm&quot;)
+# （模擬 Play 中）送出關節位置命令：Franka 共 9 DOF（7 臂關節 + 2 指關節）
+arm_handle.set_dof_positions([-1.5, 0.0, 0.0, -1.5, 0.0, 1.5, 0.5, 0.04, 0.04])
+</code></pre>
+<h3 id="43-範例瀏覽器">4.3 範例瀏覽器<a class="anchor" href="#43-範例瀏覽器" aria-hidden="true">#</a></h3>
+<ul>
+<li><strong>互動式（Extension）範例</strong>：<strong>Window &gt; Examples &gt; Robotics Examples</strong>（<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/introduction/menu_examples.html">參考表</a>）。</li>
+<li><strong>Standalone 範例</strong>：安裝根目錄的 <code>standalone_examples/</code> 資料夾（<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/introduction/standalone_examples_list.html">參考清單</a>）。</li>
+</ul>
+<hr>
+<h2 id="5-核心概念">5. 核心概念<a class="anchor" href="#5-核心概念" aria-hidden="true">#</a></h2>
+<h3 id="51-三種工作流程workflows">5.1 三種工作流程（Workflows）<a class="anchor" href="#51-三種工作流程workflows" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/introduction/workflows.html">原文連結</a></p>
+<table>
+<thead>
+<tr>
+<th>工作流程</th>
+<th>主要特性</th>
+<th>建議用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>GUI</strong></td>
+<td>視覺化、直覺、專門的場景建構工具</td>
+<td>建構世界、組裝機器人、掛載感測器、OmniGraph 視覺編程、初始化 ROS bridge</td>
+</tr>
+<tr>
+<td><strong>Extension</strong></td>
+<td>非同步執行、<strong>熱重載（hot reload）</strong>、自適應物理步進</td>
+<td>測試 Python 片段（Script Editor）、互動式 GUI 工具、即時性應用</td>
+</tr>
+<tr>
+<td><strong>Standalone Python</strong></td>
+<td>可<strong>手動控制物理／渲染步進</strong>、支援無頭（headless）模式</td>
+<td>大規模 RL 訓練、系統性場景生成與修改</td>
+</tr>
+</tbody></table>
+<p><strong>關鍵差異——時間步進：</strong></p>
+<ul>
+<li><strong>Extension（含 Script Editor）</strong>：Python 與渲染／物理<strong>非同步</strong>並行。Viewport 開啟即開始渲染；按 <strong>Play</strong> 才開始物理步進。要在每個物理步做事必須註冊 callback。</li>
+<li><strong>Standalone</strong>：在腳本中<strong>顯式呼叫</strong> <code>SimulationManager.step()</code>／<code>RenderingManager.render()</code>，可保證「命令完成後才步進」，適合訓練與需要精準時序（如 ROS 發布頻率）的場合。</li>
+</ul>
+<p>三種流程<strong>可以混用</strong>：GUI 建好的東西存成 USD 後，可在 standalone 腳本載入並程式化修改。</p>
+<p><strong>熱重載（Hot Reloading）</strong>：Python Extension 程式碼修改存檔後，變更立即反映在執行中的 Isaac Sim，不需重啟——快速迭代的利器。</p>
+<h3 id="52-applicationsimulationworldscenestage">5.2 Application／Simulation／World／Scene／Stage<a class="anchor" href="#52-applicationsimulationworldscenestage" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/python_scripting/core_api_overview.html">原文連結</a></p>
+<p>USD 中的一切都是帶屬性的 <strong>prim（primitive）</strong>。</p>
+<table>
+<thead>
+<tr>
+<th>概念</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Simulation</strong></td>
+<td>透過程式化改變 prim 屬性使其隨時間演進</td>
+</tr>
+<tr>
+<td><strong>Application</strong></td>
+<td>管理模擬的宏觀面向（渲染方式、使用者互動、GUI）</td>
+</tr>
+<tr>
+<td><strong>Stage</strong></td>
+<td>USD 概念：定義 prim 的邏輯與關係脈絡（prim 不能脫離 stage 存在）</td>
+</tr>
+<tr>
+<td><strong>Scene</strong></td>
+<td>當前呈現的道具與角色的組合</td>
+</tr>
+<tr>
+<td><strong>World</strong></td>
+<td>為模擬提供脈絡：管理哪些 prim 與時間流相關、管理 scene</td>
+</tr>
+</tbody></table>
+<p>官方比喻：去劇院看戲——<strong>劇院</strong>是 Application、<strong>戲本身</strong>是 Simulation、<strong>舞台</strong>是 Stage、幕啟後看到的<strong>一幕</strong>是 Scene、後台工作人員與機關則是 <strong>World</strong>。</p>
+<h3 id="53-core-api-與-core-experimental-api">5.3 Core API 與 Core Experimental API<a class="anchor" href="#53-core-api-與-core-experimental-api" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/python_scripting/core_api_overview.html">原文連結</a></p>
+<blockquote>
+<p><strong>重要</strong>：Isaac Sim 5.0 起引入 <strong>Core Experimental API</strong>（<code>isaacsim.core.experimental.*</code>），為 Core API 的重寫版，未來將成為所有 Isaac Sim 原始碼的基礎 API；<strong>現行 Core API 將被棄用並移除</strong>。官方強烈建議儘早採用 Experimental API（本文檔所有範例均使用之）。</p>
+</blockquote>
+<p>Core API 是<strong>針對機器人應用封裝</strong>的 USD／物理引擎 API 包裝層。同樣「加一個帶物理的方塊」：</p>
+<p>原生 USD API（冗長但控制精細）需要 20 多行設定 PhysicsScene、UsdGeom.Cube、RigidBodyAPI、CollisionAPI；Core API 只需：</p>
+<pre><code class="language-python">import numpy as np
+from isaacsim.core.api.objects import DynamicCuboid
+
+DynamicCuboid(
+    prim_path=&quot;/new_cube_2&quot;,
+    name=&quot;cube_1&quot;,
+    position=np.array([0, 0, 1.0]),
+    scale=np.array([0.6, 0.5, 0.2]),
+    size=1.0,
+    color=np.array([255, 0, 0]),
+)
+</code></pre>
+<p><strong>Experimental API 的核心模組：</strong></p>
+<table>
+<thead>
+<tr>
+<th>模組</th>
+<th>內容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>isaacsim.core.experimental.objects</code></td>
+<td><code>Cube</code>、<code>Cone</code>、<code>Mesh</code>、<code>GroundPlane</code>、<code>DistantLight</code> 等場景物件</td>
+</tr>
+<tr>
+<td><code>isaacsim.core.experimental.prims</code></td>
+<td><code>XformPrim</code>（位姿）、<code>GeomPrim</code>（碰撞）、<code>RigidPrim</code>（剛體）、<code>Articulation</code>（關節機構）等包裝類</td>
+</tr>
+<tr>
+<td><code>isaacsim.core.experimental.materials</code></td>
+<td><code>PreviewSurfaceMaterial</code>、<code>OmniPbrMaterial</code>、<code>OmniGlassMaterial</code>、<code>RigidBodyMaterial</code></td>
+</tr>
+<tr>
+<td><code>isaacsim.core.experimental.utils</code></td>
+<td><code>stage</code>（stage 操作）、<code>app</code>（play/stop/update）、<code>transform</code>（歐拉角↔四元數）、<code>bounds</code>、<code>semantics</code></td>
+</tr>
+<tr>
+<td><code>isaacsim.core.simulation_manager</code></td>
+<td><code>SimulationManager</code>（步進、callback、物理引擎設定）、<code>PhysxScene</code>、<code>IsaacEvents</code></td>
+</tr>
+<tr>
+<td><code>isaacsim.storage.native</code></td>
+<td><code>get_assets_root_path()</code> 取得官方資產庫根路徑</td>
+</tr>
+</tbody></table>
+<p><strong>設計模式</strong>：先建幾何（<code>Cube</code>），再用包裝類「疊加」能力——<code>GeomPrim(paths, apply_collision_apis=True)</code> 加碰撞、<code>RigidPrim(paths)</code> 加剛體。包裝類支援<strong>正規表達式路徑</strong>（如 <code>&quot;/World/Franka_.*&quot;</code>）做向量化批次操作。</p>
+<h3 id="54-openusd-基礎">5.4 OpenUSD 基礎<a class="anchor" href="#54-openusd-基礎" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omniverse_usd/open_usd.html">OpenUSD Fundamentals</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omniverse_usd/intro_to_usd.html">Working with USD</a></p>
+<ul>
+<li>USD（Universal Scene Description）是 Pixar 開發的場景描述格式與運行時，Isaac Sim 的一切場景資料都以 USD 表示。</li>
+<li>常用原生入口：<code>omni.usd.get_context().get_stage()</code> 取得目前 stage；<code>stage.Traverse()</code> 走訪所有 prim；<code>pxr</code> 套件（<code>Usd</code>、<code>UsdGeom</code>、<code>UsdPhysics</code>、<code>Gf</code> 等）提供完整低階 API。</li>
+<li>機器人／感測器結構的 USD 規範見 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omniverse_usd/robot_schema.html">Robot Schema</a> 與 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omniverse_usd/sensor_schema.html">Sensor Schema</a>。</li>
+</ul>
+<hr>
+<h2 id="6-python-腳本開發">6. Python 腳本開發<a class="anchor" href="#6-python-腳本開發" aria-hidden="true">#</a></h2>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/python_scripting/index.html">總覽</a></p>
+<h3 id="61-兩種-python-執行形態">6.1 兩種 Python 執行形態<a class="anchor" href="#61-兩種-python-執行形態" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/python_scripting/python_scripting_concepts.html">原文連結</a></p>
+<ul>
+<li><strong>互動式（Interactive）</strong>：在 Script Editor／Python 主控台中執行，用於探索 API 與測試片段。</li>
+<li><strong>獨立式（Standalone）</strong>：從命令列執行，用於自動化任務與跑模擬。</li>
+</ul>
+<p>兩者共用同一套 API，皆可用來開發自訂擴充（客製控制器、感測器等）。</p>
+<h3 id="62-開發工具">6.2 開發工具<a class="anchor" href="#62-開發工具" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/development_tools/index.html">原文連結</a></p>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>用途</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Script Editor</strong></td>
+<td>Kit 內建 Python 編輯執行環境，直接與 stage 互動</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/development_tools/omniverse_script_editor.html">連結</a></td>
+</tr>
+<tr>
+<td>VS Code</td>
+<td>開發與<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/utilities/debugging/tutorial_advanced_python_debugging.html">除錯</a></td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/development_tools/vscode.html">連結</a></td>
+</tr>
+<tr>
+<td>Jupyter Notebook</td>
+<td>互動式筆記本開發</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/development_tools/jupyter_notebook.html">連結</a></td>
+</tr>
+<tr>
+<td>Python Server</td>
+<td>遠端程式碼執行</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/development_tools/python_server.html">連結</a></td>
+</tr>
+<tr>
+<td>Isaac Sim MCP Server</td>
+<td>讓 AI 助手（如 Claude）操作 Isaac Sim</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/development_tools/isaac_sim_mcp.html">連結</a></td>
+</tr>
+<tr>
+<td>Carb Settings</td>
+<td>修改底層設定</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/development_tools/carb_settings.html">連結</a></td>
+</tr>
+</tbody></table>
+<h3 id="63-standalone-應用骨架">6.3 Standalone 應用骨架<a class="anchor" href="#63-standalone-應用骨架" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/python_scripting/manual_standalone_python.html">Python Environment</a></p>
+<pre><code class="language-python">from isaacsim import SimulationApp
+
+# 必須最先建立 SimulationApp，之後才能 import 其他 isaacsim 模組
+simulation_app = SimulationApp({&quot;headless&quot;: False})  # headless=True 則不開 GUI
+
+import isaacsim.core.experimental.utils.stage as stage_utils
+from isaacsim.core.experimental.objects import GroundPlane
+from isaacsim.core.experimental.prims import Articulation
+from isaacsim.core.rendering_manager import RenderingManager
+from isaacsim.core.simulation_manager import SimulationManager
+from isaacsim.storage.native import get_assets_root_path
+
+stage_utils.create_new_stage()
+GroundPlane(&quot;/World/GroundPlane&quot;, positions=[0, 0, 0])
+
+asset_path = get_assets_root_path() + &quot;/Isaac/Robots/FrankaRobotics/FrankaPanda/franka.usd&quot;
+stage_utils.add_reference_to_stage(usd_path=asset_path, path=&quot;/World/Arm&quot;)
+arm = Articulation(&quot;/World/Arm&quot;)
+
+# 顯式步進迴圈——standalone 工作流程的核心
+arm.set_dof_positions([-1.5, 0.0, 0.0, -1.5, 0.0, 1.5, 0.5, 0.04, 0.04])
+for _ in range(100):
+    SimulationManager.step()
+    RenderingManager.render()
+    simulation_app.update()
+    print(&quot;Joint positions:&quot;, arm.get_dof_positions())
+</code></pre>
+<h3 id="64-常用程式片段官方-snippets-精選">6.4 常用程式片段（官方 Snippets 精選）<a class="anchor" href="#64-常用程式片段官方-snippets-精選" aria-hidden="true">#</a></h3>
+<p>完整片段見 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/python_scripting/environment_setup.html">Scene Setup Snippets</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/python_scripting/util_snippets.html">Util Snippets</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/python_scripting/robots_simulation.html">Robot Simulation Snippets</a>。</p>
+<p><strong>建立物理場景與設定重力：</strong></p>
+<pre><code class="language-python">from isaacsim.core.simulation_manager import PhysxScene
+
+physics_scene = PhysxScene(&quot;/World/physicsScene&quot;)
+physics_scene.set_gravity([0.0, 0.0, -9.81])
+</code></pre>
+<p><strong>建立剛體方塊＋地板：</strong></p>
+<pre><code class="language-python">import isaacsim.core.experimental.utils.stage as stage_utils
+import numpy as np
+from isaacsim.core.experimental.objects import Cube, GroundPlane
+from isaacsim.core.experimental.prims import GeomPrim, RigidPrim
+
+stage_utils.define_prim(&quot;/World/physicsScene&quot;, &quot;PhysicsScene&quot;)
+GroundPlane(&quot;/World/groundPlane&quot;, sizes=10, colors=np.array([0.5, 0.5, 0.5]), templates=None)
+cube = Cube(&quot;/World/cube&quot;, positions=np.array([-0.5, -0.2, 1.0]),
+            scales=np.array([0.5, 0.5, 0.5]), colors=np.array([0.2, 0.3, 0.0]))
+RigidPrim(cube.paths, masses=[1.0])
+GeomPrim(cube.paths, apply_collision_apis=True)
+</code></pre>
+<p><strong>設定世界位姿（歐拉角轉四元數）：</strong></p>
+<pre><code class="language-python">import isaacsim.core.experimental.utils.transform as transform_utils
+from isaacsim.core.experimental.prims import XformPrim
+
+orientation = transform_utils.euler_angles_to_quaternion([0.0, 290.0, 0.0], degrees=True)
+XformPrim(&quot;/World/Cube&quot;).set_world_poses(positions=[[0.10, 1.0, 1.5]], orientations=orientation)
+</code></pre>
+<p><strong>射線偵測（Raycast）：</strong></p>
+<pre><code class="language-python">import carb
+from omni.physx import get_physx_scene_query_interface
+
+origin = carb.Float3(0.0, 0.0, 0.0)
+ray_dir = carb.Float3(1.0, 0.0, 0.0)
+hit = get_physx_scene_query_interface().raycast_closest(origin, ray_dir, 100.0)
+if hit[&quot;hit&quot;]:
+    print(hit[&quot;rigidBody&quot;], hit[&quot;distance&quot;])
+</code></pre>
+<p><strong>非 USD 資產（OBJ/STL/FBX）轉 USD</strong>：使用 <code>omni.kit.asset_converter</code> 建立轉換任務（<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/python_scripting/environment_setup.html#convert-asset-to-usd">完整片段</a>）。</p>
+<p><strong>儲存目前 stage 成 USD：</strong></p>
+<pre><code class="language-python">import omni
+omni.usd.get_context().save_as_stage(&quot;C:/tmp/my_stage.usd&quot;, None)
+</code></pre>
+<p><strong>大量幾何渲染選擇</strong>：<code>UsdGeom.Points</code>（需與渲染器互動時最有效率）、<code>UsdGeom.PointInstancer</code>（需與物理互動時）、<code>DebugDraw</code>（純視覺化、效能最佳）。</p>
+<h3 id="65-api-文件">6.5 API 文件<a class="anchor" href="#65-api-文件" aria-hidden="true">#</a></h3>
+<ul>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/reference_python_api.html">Python API 總覽</a></li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/core_api_tutorials/index.html">Core API 教學系列</a>：Hello World → Hello Robot → 加入機械手臂 → 多機器人 → 多任務場景 → 加入道具。</li>
+</ul>
+<hr>
+<h2 id="7-機器人與感測器模擬">7. 機器人與感測器模擬<a class="anchor" href="#7-機器人與感測器模擬" aria-hidden="true">#</a></h2>
+<h3 id="71-匯入與匯出">7.1 匯入與匯出<a class="anchor" href="#71-匯入與匯出" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/importer_exporter/importers_exporters.html">原文連結</a></p>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/importer_exporter/ext_isaacsim_asset_importer_urdf.html">URDF Importer</a></td>
+<td>匯入 ROS 標準的 URDF 機器人描述</td>
+</tr>
+<tr>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/importer_exporter/ext_omni_exporter_urdf.html">USD → URDF Exporter</a></td>
+<td>反向匯出 URDF</td>
+</tr>
+<tr>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/importer_exporter/ext_isaacsim_asset_importer_mjcf.html">MJCF Importer</a></td>
+<td>匯入 MuJoCo 格式</td>
+</tr>
+<tr>
+<td><a href="https://docs.omniverse.nvidia.com/extensions/latest/ext_onshape.html">Onshape Importer</a>／<a href="https://docs.omniverse.nvidia.com/extensions/latest/ext_cad-converter.html">CAD Converter</a></td>
+<td>匯入 CAD 模型</td>
+</tr>
+</tbody></table>
+<h3 id="72-機器人設定robot-setup">7.2 機器人設定（Robot Setup）<a class="anchor" href="#72-機器人設定robot-setup" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup/index.html">原文連結</a></p>
+<p>工具：<strong>Robot Inspector</strong>（檢查）、<strong>Robot Poser</strong>（擺姿勢）、<strong>Robot Assembler</strong>（組裝）、<strong>Gain Tuner</strong>（增益調校）、<strong>Joint / Physics Inspector</strong>（關節與物理檢視）、<strong>Self-Collision Detector</strong>（自碰撞偵測）、<strong>Asset Validation</strong>（資產驗證）。</p>
+<p>官方提供 13 篇 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup_tutorials/index.html">Robot Setup 教學系列</a>：從 stage 設定、組裝簡單機器人、articulation、加相機感測器、rig 移動機器人、設定機械手臂，到閉鏈結構、關節增益調校、資產最佳化、腿式機器人 rigging。</p>
+<h3 id="73-機器人模擬與關節控制">7.3 機器人模擬與關節控制<a class="anchor" href="#73-機器人模擬與關節控制" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_simulation/articulation_controller.html">Articulation Controller</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/python_scripting/robots_simulation.html">Robot Simulation Snippets</a></p>
+<p><code>Articulation</code> 類是關節機構控制核心（<strong>需在模擬 Play 中操作</strong>）：</p>
+<pre><code class="language-python">from isaacsim.core.experimental.prims import Articulation
+
+articulation = Articulation(&quot;/Franka&quot;)
+
+# 查詢
+print(articulation.num_dofs, articulation.dof_names)          # 自由度數量與名稱
+print(articulation.get_dof_positions())                        # 關節位置
+print(articulation.get_dof_velocities(), articulation.get_dof_efforts())
+
+# 位置控制（預設模式）
+articulation.set_dof_position_targets([...])
+
+# 單一關節（以名稱取得索引）
+articulation.set_dof_position_targets(0.04,
+    dof_indices=articulation.get_dof_indices(&quot;panda_finger_joint1&quot;))
+
+# 速度／力矩控制
+articulation.switch_dof_control_mode(&quot;velocity&quot;)
+articulation.set_dof_velocity_targets([...])
+articulation.switch_dof_control_mode(&quot;effort&quot;)
+articulation.set_dof_efforts([...])
+</code></pre>
+<p>以正規表達式一次包裝多台機器人做批次控制：<code>Articulation(&quot;/World/Franka_.*&quot;)</code>。</p>
+<p>其他：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_simulation/mobile_robot_controllers.html">移動機器人控制器</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_simulation/ext_isaacsim_robot_surface_gripper.html">Surface Gripper（吸附式夾爪）</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_simulation/grasp_editor.html">Grasp Editor</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_simulation/ext_isaacsim_robot_policy_example.html">RL 策略範例</a>；實驗性運動規劃（<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/cumotion/index.html">cuMotion</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/pink/index.html">PINK IK</a>）。</p>
+<h3 id="74-感測器">7.4 感測器<a class="anchor" href="#74-感測器" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/index.html">原文連結</a></p>
+<table>
+<thead>
+<tr>
+<th>類別</th>
+<th>內容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>相機感測器</strong></td>
+<td>RGB 相機、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_camera_depth.html">深度相機</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_camera_structured_light.html">結構光相機</a></td>
+</tr>
+<tr>
+<td><strong>RTX 感測器</strong>（光追模擬）</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_rtx_lidar.html">RTX Lidar</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_rtx_radar.html">RTX Radar</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_rtx_acoustic.html">RTX 聲學感測器</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_rtx_custom.html">自訂感測器 Profile</a></td>
+</tr>
+<tr>
+<td><strong>物理式感測器</strong></td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physics_imu.html">IMU</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physics_contact.html">接觸感測器</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physics_articulation_force.html">關節力／狀態感測器</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physics_effort.html">Effort 感測器</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physics_raycast.html">物理射線感測器</a></td>
+</tr>
+<tr>
+<td><strong>PhysX SDK 感測器</strong></td>
+<td>泛用感測器、PhysX 光達、光束感測器、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physx_proximity.html">近接感測器</a></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>注意：Isaac Sim 6.0 對感測器 API 有大幅改動（舊 Camera／RTX／物理感測器 API → Experimental API），升級請看 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/migration_guides/isaac_sim_6_0/index.html">6.0 遷移指南</a>。</p>
+</blockquote>
+<h3 id="75-物理引擎">7.5 物理引擎<a class="anchor" href="#75-物理引擎" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/physics/index.html">原文連結</a></p>
+<ul>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/physics/simulation_fundamentals.html">物理模擬基礎</a>：剛體、碰撞、關節、材質等概念。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/physics/newton_physics.html">Newton 物理後端</a>：與 PhysX 並列的新一代 GPU 物理引擎，可切換。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/newton_actuators_tutorials/index.html">Newton Actuators 教學</a>：以 Python／USD／OmniGraph 設定致動器。</li>
+<li>除錯工具：Physics Inspector、Simulation Data Visualizer、Physics Debug Window。</li>
+</ul>
+<h3 id="76-資產庫">7.6 資產庫<a class="anchor" href="#76-資產庫" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/assets/usd_assets_overview.html">原文連結</a></p>
+<p>官方雲端資產庫（程式內以 <code>get_assets_root_path()</code> 取得根路徑）提供：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/assets/usd_assets_robots.html">機器人資產</a>（Franka、UR10、Nova Carter、各式人形／四足等）、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/assets/usd_assets_sensors.html">感測器資產</a>（RealSense、各廠牌光達等）、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/assets/usd_assets_props.html">道具</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/assets/usd_assets_environments.html">環境</a>（倉庫、辦公室、醫院等）。離線環境可用 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_faq.html">本地資產包</a>。</p>
+<hr>
+<h2 id="8-生態系與進階主題">8. 生態系與進階主題<a class="anchor" href="#8-生態系與進階主題" aria-hidden="true">#</a></h2>
+<h3 id="81-ros-2-整合">8.1 ROS 2 整合<a class="anchor" href="#81-ros-2-整合" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/ros2_landing_page.html">原文連結</a></p>
+<p>透過 ROS 2 Bridge 將模擬與 ROS 2 生態接軌，官方教學涵蓋 30+ 主題：</p>
+<ul>
+<li><strong>入門</strong>：TurtleBot URDF 匯入與駕駛、Clock、相機影像發布、RTX 光達／雷達、TF 樹與里程計、發布頻率控制、QoS。</li>
+<li><strong>進階</strong>：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_navigation.html">Nav2 導航</a>、多機器人導航、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_moveit.html">MoveIt 2</a>、自訂訊息與 OmniGraph 節點、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_simulation_control.html">以 ROS 2 服務控制模擬</a>（載入世界、生成實體、步進）、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_rl_controller.html">透過 ROS 2 執行 RL 策略</a>。</li>
+<li>亦支援 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/nvidia_isaac_ros/isaac_ros_tutorials.html">NVIDIA Isaac ROS</a>（GPU 加速的 ROS 套件）。</li>
+</ul>
+<h3 id="82-合成資料生成sdg">8.2 合成資料生成（SDG）<a class="anchor" href="#82-合成資料生成sdg" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/synthetic_data_generation/index.html">原文連結</a></p>
+<ul>
+<li><strong><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/replicator_tutorials/index.html">Replicator</a></strong>：感知資料生成框架——場景／物件式資料集、隨機化（Domain Randomization）、資料增強、自訂 Writer 與隨機化節點、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/replicator_tutorials/tutorial_replicator_recorder.html">Synthetic Data Recorder</a>（GUI 錄製）。</li>
+<li><strong><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/action_and_event_data_generation/index.html">動作與事件資料生成</a></strong>：人物模擬（Replicator Agent）、行為樹生成、VLM 場景描述、事件觸發。</li>
+<li>專門工作流：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/synthetic_data_generation/tutorial_replicator_grasping_sdg.html">抓取 SDG</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/synthetic_data_generation/tutorial_replicator_mobility_gen.html">MobilityGen（移動資料）</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/synthetic_data_generation/tutorial_replicator_teleop_sdg.html">遙操作 SDG</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/replicator_tutorials/tutorial_replicator_cosmos.html">Cosmos SDG</a>。</li>
+</ul>
+<h3 id="83-isaac-lab強化學習">8.3 Isaac Lab（強化學習）<a class="anchor" href="#83-isaac-lab強化學習" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/isaac_lab_tutorials/index.html">原文連結</a></p>
+<ul>
+<li>在 Isaac Sim 準備機器人資產 → Isaac Lab 平行環境訓練 → <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/isaac_lab_tutorials/tutorial_policy_deployment.html">策略部署回 Isaac Sim</a>。</li>
+<li>關鍵教學：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/isaac_lab_tutorials/tutorial_cloner.html">Cloner（環境複製）</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/isaac_lab_tutorials/tutorial_instanceable_assets.html">Instanceable Assets（可實例化資產）</a>。</li>
+<li>Isaac Lab 本身的文檔在 <a href="https://isaac-sim.github.io/IsaacLab/">isaac-sim.github.io/IsaacLab</a>。</li>
+</ul>
+<h3 id="84-數位孿生digital-twin">8.4 數位孿生（Digital Twin）<a class="anchor" href="#84-數位孿生digital-twin" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/digital_twin/index.html">原文連結</a></p>
+<p>倉儲物流場景工具：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/digital_twin/warehouse_logistics/ext_omni_warehouse_creator.html">Warehouse Creator</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/digital_twin/warehouse_logistics/ext_isaacsim_asset_gen_conveyor.html">輸送帶工具</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/digital_twin/warehouse_logistics/logistics_tutorial_cuopt.html">NVIDIA cuOpt 路徑最佳化</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/digital_twin/ext_isaacsim_asset_generator_occupancy_map.html">占據地圖生成</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/digital_twin/rtsp_camera_streaming.html">RTSP 即時相機串流</a>、Isaac Cortex（決策網路）。</p>
+<h3 id="85-omnigraph視覺化編程">8.5 OmniGraph（視覺化編程）<a class="anchor" href="#85-omnigraph視覺化編程" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omnigraph/index.html">原文連結</a></p>
+<p>節點式視覺編程框架，是 GUI 端機器人控制器與 ROS bridge 的底層。可用 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omnigraph/omnigraph_custom_python_nodes.html">Python 撰寫自訂節點</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omnigraph/omnigraph_custom_cpp_nodes.html">C++ 節點</a>，或<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omnigraph/omnigraph_scripting.html">以 Python 腳本操作 OmniGraph</a>。</p>
+<h3 id="86-自訂擴充extension開發">8.6 自訂擴充（Extension）開發<a class="anchor" href="#86-自訂擴充extension開發" aria-hidden="true">#</a></h3>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/utilities/templates_index.html">Templates</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/utilities/extension_template_generator.html">Extension Template Generator</a></p>
+<p>Extension 是 Kit 應用的組成單元，Isaac Sim 的多數工具本身就是 Extension。可用模板產生器快速建立自己的擴充（含 UI），支援熱重載。另有 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/app_template/index.html">Application Template</a> 用於打造自訂 Kit 應用。</p>
+<hr>
+<h2 id="9-實用資源">9. 實用資源<a class="anchor" href="#9-實用資源" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>資源</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>常見問題 FAQ</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/overview/faq_index.html">https://docs.isaacsim.omniverse.nvidia.com/latest/overview/faq_index.html</a></td>
+</tr>
+<tr>
+<td>疑難排解</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/overview/troubleshooting.html">https://docs.isaacsim.omniverse.nvidia.com/latest/overview/troubleshooting.html</a></td>
+</tr>
+<tr>
+<td>版本說明（Release Notes）</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/overview/release_notes.html">https://docs.isaacsim.omniverse.nvidia.com/latest/overview/release_notes.html</a></td>
+</tr>
+<tr>
+<td>遷移指南（4.5→6.0 等）</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/migration_guides/index.html">https://docs.isaacsim.omniverse.nvidia.com/latest/migration_guides/index.html</a></td>
+</tr>
+<tr>
+<td>詞彙表 Glossary</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/reference_material/reference_glossary.html">https://docs.isaacsim.omniverse.nvidia.com/latest/reference_material/reference_glossary.html</a></td>
+</tr>
+<tr>
+<td>慣例（座標、單位）</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/reference_material/reference_conventions.html">https://docs.isaacsim.omniverse.nvidia.com/latest/reference_material/reference_conventions.html</a></td>
+</tr>
+<tr>
+<td>效能優化手冊</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/reference_material/sim_performance_optimization_handbook.html">https://docs.isaacsim.omniverse.nvidia.com/latest/reference_material/sim_performance_optimization_handbook.html</a></td>
+</tr>
+<tr>
+<td>鍵盤快捷鍵</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/gui/reference_keyboard_shortcuts.html">https://docs.isaacsim.omniverse.nvidia.com/latest/gui/reference_keyboard_shortcuts.html</a></td>
+</tr>
+<tr>
+<td>UI 介面參考</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/gui/reference_user_interface.html">https://docs.isaacsim.omniverse.nvidia.com/latest/gui/reference_user_interface.html</a></td>
+</tr>
+<tr>
+<td>GitHub（開源原始碼）</td>
+<td><a href="https://github.com/isaac-sim">https://github.com/isaac-sim</a></td>
+</tr>
+<tr>
+<td>開發者論壇</td>
+<td><a href="https://forums.developer.nvidia.com/c/omniverse/simulation/69">https://forums.developer.nvidia.com/c/omniverse/simulation/69</a></td>
+</tr>
+<tr>
+<td>Discord 社群</td>
+<td><a href="https://discord.gg/4ZsTFksGh8">https://discord.gg/4ZsTFksGh8</a></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="10-官方文檔章節對照表">10. 官方文檔章節對照表<a class="anchor" href="#10-官方文檔章節對照表" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>官方章節</th>
+<th>中文譯名</th>
+<th>內容摘要</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>What Is Isaac Sim?</td>
+<td>什麼是 Isaac Sim</td>
+<td>產品總覽、生態系定位</td>
+</tr>
+<tr>
+<td>Installation</td>
+<td>安裝</td>
+<td>Quick Install／工作站／容器／雲端／pip</td>
+</tr>
+<tr>
+<td>Quick Tutorials</td>
+<td>快速教學</td>
+<td>基礎使用、基礎機器人（GUI/Extension/Standalone 三版本）</td>
+</tr>
+<tr>
+<td>Concepts</td>
+<td>核心概念</td>
+<td>參考架構、工作流程、UI、快捷鍵、資產結構</td>
+</tr>
+<tr>
+<td>Isaac Lab / ROS 2 / SDG / Digital Twin</td>
+<td>基礎應用</td>
+<td>四大應用方向的教學入口</td>
+</tr>
+<tr>
+<td>Development Tools</td>
+<td>開發工具</td>
+<td>VS Code、Jupyter、Script Editor、MCP</td>
+</tr>
+<tr>
+<td>Python Scripting and Tutorials</td>
+<td>Python 腳本與教學</td>
+<td>概念、Core API、程式片段、Core API 教學系列</td>
+</tr>
+<tr>
+<td>GUI Reference</td>
+<td>GUI 參考</td>
+<td>選單、偏好設定、選取模式</td>
+</tr>
+<tr>
+<td>OmniGraph</td>
+<td>視覺化編程</td>
+<td>節點圖、自訂節點</td>
+</tr>
+<tr>
+<td>Importers and Exporters</td>
+<td>匯入匯出</td>
+<td>URDF／MJCF／CAD</td>
+</tr>
+<tr>
+<td>Robot Setup</td>
+<td>機器人設定</td>
+<td>檢查器、組裝、13 篇教學</td>
+</tr>
+<tr>
+<td>Robot Simulation</td>
+<td>機器人模擬</td>
+<td>Articulation、控制器、夾爪</td>
+</tr>
+<tr>
+<td>Sensors</td>
+<td>感測器</td>
+<td>相機、RTX、物理式、PhysX</td>
+</tr>
+<tr>
+<td>Physics</td>
+<td>物理</td>
+<td>基礎、Newton、除錯</td>
+</tr>
+<tr>
+<td>Utilities</td>
+<td>工具</td>
+<td>瀏覽器、模板、除錯與效能分析</td>
+</tr>
+<tr>
+<td>API Documentation</td>
+<td>API 文件</td>
+<td>Python API 參考</td>
+</tr>
+<tr>
+<td>Reference Information</td>
+<td>參考資訊</td>
+<td>詞彙、慣例、效能、USD</td>
+</tr>
+</tbody></table>
+<hr>
+<p><em>本文檔由 Claude 整理，資訊以官方文檔為準；如發現與最新版不符，請以連結內原文為主。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>（6.0.1）。內容如與官方不符，請以官方為準。</footer>
+  </main>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

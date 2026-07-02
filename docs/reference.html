@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>資產、USD 與參考資訊（Assets &amp; Reference） — Isaac Sim 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Isaac Sim</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與設定</a>
+        <a href="gui.html">GUI 介面參考</a>
+        <div class="nav-group-title">教學系列</div>
+        <a href="tutorial.html">Script Editor 教學</a>
+        <a href="extension.html">Extension 教學</a>
+        <a href="standalone.html">Standalone Python 教學</a>
+        <div class="nav-group-title">專題章節</div>
+        <a href="robots.html">機器人：匯入・設定・模擬</a>
+        <a href="sensors.html">感測器</a>
+        <a href="physics.html">物理模擬</a>
+        <a href="ros2.html">ROS 2 整合</a>
+        <a href="sdg.html">合成資料生成</a>
+        <a href="isaaclab.html">Isaac Lab／數位孿生</a>
+        <a href="devtools.html">開發工具與擴充開發</a>
+        <div class="nav-group-title">參考</div>
+        <a href="reference.html" class="current">資產、USD 與參考資訊</a>
+    </nav>
+    <hr class="sidebar-divider">
+    <div class="sidebar-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#%E5%AE%98%E6%96%B9%E8%B3%87%E7%94%A2%E5%BA%ABassets">官方資產庫（Assets）</a>
+      <a class="toc-h2" href="#omniverse-%E8%88%87-usd">Omniverse 與 USD</a>
+      <a class="toc-h2" href="#%E5%8F%83%E8%80%83%E8%B3%87%E8%A8%8Areference">參考資訊（Reference）</a>
+      <a class="toc-h2" href="#%E7%89%88%E6%9C%AC%E8%88%87%E9%81%B7%E7%A7%BB">版本與遷移</a>
+      <a class="toc-h2" href="#%E6%B1%82%E5%8A%A9%E7%AE%A1%E9%81%93help-amp-faq">求助管道（Help &amp; FAQ）</a>
+      <a class="toc-h2" href="#%E6%8E%88%E6%AC%8A">授權</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="資產usd-與參考資訊assets-amp-reference">資產、USD 與參考資訊（Assets &amp; Reference）<a class="anchor" href="#資產usd-與參考資訊assets-amp-reference" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/assets/usd_assets_overview.html">Isaac Sim Assets</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omniverse_usd/index.html">Omniverse and USD</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/reference_material/reference_glossary.html">Reference Information</a> 與 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/overview/help.html">Help &amp; FAQ</a> 章節的中文導覽。</p>
+</blockquote>
+<hr>
+<h2 id="官方資產庫assets">官方資產庫（Assets）<a class="anchor" href="#官方資產庫assets" aria-hidden="true">#</a></h2>
+<p>官方雲端資產庫提供大量即用 USD 資產，程式內以 <code>get_assets_root_path()</code> 取得根路徑；GUI 內從 <strong>Create</strong> 選單或 Asset Browser 取用。離線環境請安裝<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_faq.html">本地資產包</a>。</p>
+<table>
+<thead>
+<tr>
+<th>類別</th>
+<th>內容</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>機器人資產</td>
+<td>Franka、UR 系列、Nova Carter、四足、人形等數十款</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/assets/usd_assets_robots.html">清單</a></td>
+</tr>
+<tr>
+<td>感測器資產</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/assets/usd_assets_camera_depth_sensors.html">相機／深度相機</a>（RealSense 等）、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/assets/usd_assets_nonvisual_sensors.html">非視覺感測器</a>（各廠牌光達）</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/assets/usd_assets_sensors.html">總覽</a></td>
+</tr>
+<tr>
+<td>道具資產</td>
+<td>箱子、棧板、工具等 SimReady 物件</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/assets/usd_assets_props.html">清單</a></td>
+</tr>
+<tr>
+<td>環境資產</td>
+<td>倉庫、辦公室、醫院、Simple Room 等</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/assets/usd_assets_environments.html">清單</a></td>
+</tr>
+<tr>
+<td>精選資產</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/assets/nova_carter_landing_page.html">Nova Carter</a> 等專頁</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/assets/usd_assets_featured.html">清單</a></td>
+</tr>
+<tr>
+<td>第三方資產</td>
+<td>社群與夥伴提供的 USD 資產</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/assets/usd_assets_third_party.html">清單</a></td>
+</tr>
+<tr>
+<td>NuRec 神經渲染</td>
+<td>Gaussian-splat 重建場景的載入與<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/assets/nurec_utils.html">渲染工具</a></td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/assets/usd_assets_nurec.html">說明</a></td>
+</tr>
+</tbody></table>
+<h2 id="omniverse-與-usd">Omniverse 與 USD<a class="anchor" href="#omniverse-與-usd" aria-hidden="true">#</a></h2>
+<p>USD（OpenUSD）是 Isaac Sim 的場景基石，深入開發前建議理解：</p>
+<table>
+<thead>
+<tr>
+<th>主題</th>
+<th>內容</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>OpenUSD 基礎</td>
+<td>prim、屬性、組合（composition）、layer 等核心概念</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omniverse_usd/open_usd.html">說明</a></td>
+</tr>
+<tr>
+<td>操作 USD</td>
+<td>以 Python（<code>pxr</code>）讀寫 stage 的實務</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omniverse_usd/intro_to_usd.html">說明</a></td>
+</tr>
+<tr>
+<td>USD 工具</td>
+<td>usdview 等命令列工具</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omniverse_usd/usd_tools.html">說明</a></td>
+</tr>
+<tr>
+<td>Robot Schema</td>
+<td>機器人在 USD 中的標準結構規範</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omniverse_usd/robot_schema.html">說明</a></td>
+</tr>
+<tr>
+<td>Sensor Schema</td>
+<td>感測器的 USD 規範</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omniverse_usd/sensor_schema.html">說明</a></td>
+</tr>
+<tr>
+<td>Commands</td>
+<td>Omniverse 命令系統（搭配 Commands Tool 使用）</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omniverse_usd/omniverse_tools.html">說明</a></td>
+</tr>
+<tr>
+<td>C++ USD 外掛</td>
+<td>對 standalone 安裝建置 C++ USD 外掛</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/omniverse_usd/building_cpp_usd_plugins.html">說明</a></td>
+</tr>
+</tbody></table>
+<h2 id="參考資訊reference">參考資訊（Reference）<a class="anchor" href="#參考資訊reference" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>主題</th>
+<th>內容</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>詞彙表</td>
+<td>Stage、Prim、Articulation 等術語定義</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/reference_material/reference_glossary.html">Glossary</a></td>
+</tr>
+<tr>
+<td>慣例</td>
+<td>座標系（Z-up）、單位（公尺、公斤）、四元數順序等</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/reference_material/reference_conventions.html">Conventions</a></td>
+</tr>
+<tr>
+<td>渲染模式</td>
+<td>RTX Real-Time／Path Tracing 等模式差異</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/reference_material/rendering_modes.html">Rendering Modes</a></td>
+</tr>
+<tr>
+<td>效能優化手冊</td>
+<td>場景、物理、渲染、感測器的效能調校</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/reference_material/sim_performance_optimization_handbook.html">Handbook</a></td>
+</tr>
+<tr>
+<td>官方基準測試</td>
+<td>各硬體的效能基準</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/reference_material/benchmarks.html">Benchmarks</a></td>
+</tr>
+<tr>
+<td>社群專案精選</td>
+<td>社群作品展示</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/reference_material/community_highlights.html">Community Highlights</a></td>
+</tr>
+<tr>
+<td>參考架構</td>
+<td>任務分群與系統架構建議</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/introduction/reference_architecture.html">Reference Architecture</a></td>
+</tr>
+<tr>
+<td>API 文件</td>
+<td>全部 Python API 參考（自動生成，數百頁）</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/reference_python_api.html">API Documentation</a></td>
+</tr>
+</tbody></table>
+<h2 id="版本與遷移">版本與遷移<a class="anchor" href="#版本與遷移" aria-hidden="true">#</a></h2>
+<ul>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/overview/release_notes.html">Release Notes</a>——各版本新功能與修正。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/overview/known_issues.html">Known Issues</a>——目前已知問題。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/migration_guides/index.html">遷移指南</a>——<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/migration_guides/isaac_sim_6_0/index.html">6.0 遷移</a>（感測器 API、ROS 2 OmniGraph 節點等大改）與 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/migration_guides/isaac_sim_4_5/extensions_renaming.html">4.5 擴充改名對照</a>。</li>
+</ul>
+<h2 id="求助管道help-amp-faq">求助管道（Help &amp; FAQ）<a class="anchor" href="#求助管道help-amp-faq" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>資源</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>FAQ</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/overview/faq_index.html">https://docs.isaacsim.omniverse.nvidia.com/latest/overview/faq_index.html</a></td>
+</tr>
+<tr>
+<td>總疑難排解</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/overview/troubleshooting.html">https://docs.isaacsim.omniverse.nvidia.com/latest/overview/troubleshooting.html</a></td>
+</tr>
+<tr>
+<td>開發者資源</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/overview/isaac_sim_forums.html">https://docs.isaacsim.omniverse.nvidia.com/latest/overview/isaac_sim_forums.html</a></td>
+</tr>
+<tr>
+<td>開發者論壇</td>
+<td><a href="https://forums.developer.nvidia.com/c/omniverse/simulation/69">https://forums.developer.nvidia.com/c/omniverse/simulation/69</a></td>
+</tr>
+<tr>
+<td>Discord</td>
+<td><a href="https://discord.gg/4ZsTFksGh8">https://discord.gg/4ZsTFksGh8</a></td>
+</tr>
+<tr>
+<td>GitHub（開源原始碼）</td>
+<td><a href="https://github.com/isaac-sim">https://github.com/isaac-sim</a></td>
+</tr>
+<tr>
+<td>文檔回饋</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/common/feedback.html">https://docs.isaacsim.omniverse.nvidia.com/latest/common/feedback.html</a></td>
+</tr>
+</tbody></table>
+<h2 id="授權">授權<a class="anchor" href="#授權" aria-hidden="true">#</a></h2>
+<p>Isaac Sim 模擬器主體以 <strong>Apache 2.0</strong> 開源。完整授權文件（Isaac Sim License、Omniverse License、第三方授權、License FAQ 等）見 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/common/legal.html">Licenses</a>；資料蒐集政策見 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/common/data-collection.html">Data Collection &amp; Usage</a>。</p>
+<hr>
+<p><em>本頁為官方文檔中文導覽，內容以官方為準。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>（6.0.1）。內容如與官方不符，請以官方為準。</footer>
+  </main>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

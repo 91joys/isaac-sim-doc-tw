@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ROS 2 整合（ROS 2） — Isaac Sim 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Isaac Sim</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與設定</a>
+        <a href="gui.html">GUI 介面參考</a>
+        <div class="nav-group-title">教學系列</div>
+        <a href="tutorial.html">Script Editor 教學</a>
+        <a href="extension.html">Extension 教學</a>
+        <a href="standalone.html">Standalone Python 教學</a>
+        <div class="nav-group-title">專題章節</div>
+        <a href="robots.html">機器人：匯入・設定・模擬</a>
+        <a href="sensors.html">感測器</a>
+        <a href="physics.html">物理模擬</a>
+        <a href="ros2.html" class="current">ROS 2 整合</a>
+        <a href="sdg.html">合成資料生成</a>
+        <a href="isaaclab.html">Isaac Lab／數位孿生</a>
+        <a href="devtools.html">開發工具與擴充開發</a>
+        <div class="nav-group-title">參考</div>
+        <a href="reference.html">資產、USD 與參考資訊</a>
+    </nav>
+    <hr class="sidebar-divider">
+    <div class="sidebar-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5">核心概念</a>
+      <a class="toc-h2" href="#%E5%BB%BA%E8%AD%B0%E5%AD%B8%E7%BF%92%E8%B7%AF%E5%BE%91">建議學習路徑</a>
+      <a class="toc-h2" href="#%E8%87%AA%E8%A8%82%E8%88%87%E6%93%B4%E5%85%85">自訂與擴充</a>
+      <a class="toc-h2" href="#nvidia-isaac-ros">NVIDIA Isaac ROS</a>
+      <a class="toc-h2" href="#%E7%96%91%E9%9B%A3%E6%8E%92%E8%A7%A3">疑難排解</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="ros-2-整合ros-2">ROS 2 整合（ROS 2）<a class="anchor" href="#ros-2-整合ros-2" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/ros2_landing_page.html">ROS 2</a> 章節的中文導覽。Isaac Sim 透過 <strong>ROS 2 Bridge</strong> 讓模擬世界成為 ROS 2 生態的一個節點：發布感測器資料、訂閱控制命令、以服務控制模擬本身。</p>
+</blockquote>
+<hr>
+<h2 id="核心概念">核心概念<a class="anchor" href="#核心概念" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>ROS 2 Bridge</strong> 以 <strong>OmniGraph 節點</strong>實作：相機發布器、TF 發布器、Twist 訂閱器等都是圖上的節點，用 GUI 或 Python 建圖即可接上 ROS 2。</li>
+<li>支援 <strong>Linux 與 Windows</strong>；先完成 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_ros.html">ROS 2 安裝（預設）</a>或<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_ros_other_platforms.html">其他平台版本</a>。</li>
+<li>Standalone 工作流程也能用 bridge（<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_python.html">ROS 2 Bridge in Standalone Workflow</a>），可精準控制發布時序。</li>
+<li>架構建議見 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/ros2_reference_architecture.html">ROS 2 Reference Architecture</a>。</li>
+</ul>
+<h2 id="建議學習路徑">建議學習路徑<a class="anchor" href="#建議學習路徑" aria-hidden="true">#</a></h2>
+<ol>
+<li><strong>TurtleBot 系列</strong>（入門主線）：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_turtlebot.html">URDF 匯入 TurtleBot</a> → <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_drive_turtlebot.html">用 ROS 2 訊息駕駛</a> → <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_clock.html">Clock 時鐘同步</a> → <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_tf.html">TF 樹與里程計</a>。</li>
+<li><strong>感測器發布</strong>：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_camera.html">相機</a>（含<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_camera_publishing.html">發布細節</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_camera_noise.html">加噪聲</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_compressed_image.html">壓縮影像</a>）、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_rtx_lidar.html">RTX 光達</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_rtx_radar.html">RTX 雷達</a>。</li>
+<li><strong>品質與時序</strong>：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_publish_rate.html">發布頻率設定</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_qos.html">QoS</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_rtf.html">RTF 即時係數發布</a>。</li>
+<li><strong>導航與操作</strong>：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_navigation.html">Nav2 導航</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_multi_navigation.html">多機器人導航</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_navigation_heightmap.html">高度圖導航</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_moveit.html">MoveIt 2</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_manipulation.html">關節控制（Extension Python）</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_ackermann_controller.html">Ackermann 控制器</a>。</li>
+<li><strong>進階整合</strong>：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_simulation_control.html">以 ROS 2 服務控制模擬</a>（載入世界、生成實體、步進）、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_rl_controller.html">透過 ROS 2 執行 RL 策略</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_putting_it_all_together.html">綜合應用 Putting It All Together</a>。</li>
+</ol>
+<h2 id="自訂與擴充">自訂與擴充<a class="anchor" href="#自訂與擴充" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>主題</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>泛用 Publisher／Subscriber</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_generic_publisher_subscriber.html">教學</a></td>
+</tr>
+<tr>
+<td>泛用 Server／Client</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_generic_server_client.html">教學</a></td>
+</tr>
+<tr>
+<td>以服務操作 Prim 屬性</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_prim_service.html">教學</a></td>
+</tr>
+<tr>
+<td>Python 自訂訊息</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_custom_message_python.html">教學</a></td>
+</tr>
+<tr>
+<td>自訂 OmniGraph 節點（Python／C++）</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_custom_omnigraph_node_python.html">Python</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_omnigraph_cpp_node.html">C++</a></td>
+</tr>
+<tr>
+<td>ROS 2 Launch 整合</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_launch.html">教學</a></td>
+</tr>
+<tr>
+<td>命名空間自動生成／NameOverride</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_auto_namespace.html">自動命名空間</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/tutorial_ros2_name_override.html">NameOverride</a></td>
+</tr>
+</tbody></table>
+<h2 id="nvidia-isaac-ros">NVIDIA Isaac ROS<a class="anchor" href="#nvidia-isaac-ros" aria-hidden="true">#</a></h2>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/nvidia_isaac_ros/isaac_ros_tutorials.html">Isaac ROS 教學</a>：NVIDIA 提供的 GPU 加速 ROS 2 套件（VSLAM、感知、操作），可與 Isaac Sim 做軟體在環驗證。</p>
+<h2 id="疑難排解">疑難排解<a class="anchor" href="#疑難排解" aria-hidden="true">#</a></h2>
+<ul>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/ros2_faq.html">ROS 2 FAQ</a></li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/ros2_tutorials/troubleshooting.html">ROS 2 Troubleshooting</a>——bridge 載不進來、topic 看不到、時鐘不同步等常見問題。</li>
+</ul>
+<hr>
+<p><em>本頁為官方文檔中文導覽，內容以官方為準。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>（6.0.1）。內容如與官方不符，請以官方為準。</footer>
+  </main>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

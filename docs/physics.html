@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>物理模擬（Physics） — Isaac Sim 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Isaac Sim</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與設定</a>
+        <a href="gui.html">GUI 介面參考</a>
+        <div class="nav-group-title">教學系列</div>
+        <a href="tutorial.html">Script Editor 教學</a>
+        <a href="extension.html">Extension 教學</a>
+        <a href="standalone.html">Standalone Python 教學</a>
+        <div class="nav-group-title">專題章節</div>
+        <a href="robots.html">機器人：匯入・設定・模擬</a>
+        <a href="sensors.html">感測器</a>
+        <a href="physics.html" class="current">物理模擬</a>
+        <a href="ros2.html">ROS 2 整合</a>
+        <a href="sdg.html">合成資料生成</a>
+        <a href="isaaclab.html">Isaac Lab／數位孿生</a>
+        <a href="devtools.html">開發工具與擴充開發</a>
+        <div class="nav-group-title">參考</div>
+        <a href="reference.html">資產、USD 與參考資訊</a>
+    </nav>
+    <hr class="sidebar-divider">
+    <div class="sidebar-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5">核心概念</a>
+      <a class="toc-h2" href="#%E4%B8%BB%E8%A6%81%E9%A0%81%E9%9D%A2">主要頁面</a>
+      <a class="toc-h2" href="#%E6%AA%A2%E8%A6%96%E8%88%87%E9%99%A4%E9%8C%AF%E5%B7%A5%E5%85%B7">檢視與除錯工具</a>
+      <a class="toc-h2" href="#%E5%B8%B8%E7%94%A8-python-%E6%93%8D%E4%BD%9C%E9%80%9F%E8%A6%BD">常用 Python 操作速覽</a>
+      <a class="toc-h2" href="#%E6%8E%A5%E8%A7%B8%E5%8A%9B%E8%88%87%E5%A0%B4%E6%99%AF%E6%9F%A5%E8%A9%A2">接觸力與場景查詢</a>
+      <a class="toc-h2" href="#%E8%AA%BF%E6%A0%A1%E5%BB%BA%E8%AD%B0">調校建議</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="物理模擬physics">物理模擬（Physics）<a class="anchor" href="#物理模擬physics" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/physics/index.html">Physics</a> 章節的中文導覽。Isaac Sim 6.0 支援 <strong>PhysX</strong> 與 <strong>Newton</strong> 兩套可切換的物理後端，並提供一系列檢視與除錯工具。</p>
+</blockquote>
+<hr>
+<h2 id="核心概念">核心概念<a class="anchor" href="#核心概念" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>Physics Scene</strong>：物理模擬的容器 prim，定義重力、求解器、GPU 動力學等全域設定（Python 建立方式見《完整文檔》6.4 節的 <code>PhysxScene</code>）。</li>
+<li><strong>剛體與碰撞分離</strong>：Rigid Body（質量、受力）與 Collider（碰撞形狀）是獨立的 API，可自由組合——會擋不會掉、會掉不會擋、或兩者兼具。</li>
+<li><strong>Articulation</strong>：以關節連接的多剛體結構（機器人），由專用求解器處理，穩定性遠優於逐一約束。</li>
+<li><strong>物理只在時間軸播放時步進</strong>——這條規則貫穿所有工作流程。</li>
+</ul>
+<h2 id="主要頁面">主要頁面<a class="anchor" href="#主要頁面" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>主題</th>
+<th>內容</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>物理模擬基礎</td>
+<td>剛體、碰撞、關節、材質、場景設定的基礎概念</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/physics/simulation_fundamentals.html">Simulation Fundamentals</a></td>
+</tr>
+<tr>
+<td>資料流與引擎整合</td>
+<td>物理資料如何在 USD、引擎、Fabric 之間流動</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/physics/new_physics_engine.html">Physics Data Flow</a></td>
+</tr>
+<tr>
+<td>Newton 物理後端</td>
+<td>新一代 GPU 物理引擎（NVIDIA 與 Google DeepMind、Disney Research 合作的開源專案），與 PhysX 可切換</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/physics/newton_physics.html">Newton Physics</a></td>
+</tr>
+<tr>
+<td>PhysX 限制</td>
+<td>Omniverse Physics 與 PhysX SDK 的已知限制</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/physics/physics_resources.html">Limitations</a></td>
+</tr>
+<tr>
+<td>模擬管理</td>
+<td>模擬生命週期與管理介面</td>
+<td><a href="https://docs.omniverse.nvidia.com/kit/docs/omni_physics/latest/extensions/ux/source/omni.physx.ui/docs/dev_guide/sim_management.html">Simulation Management</a></td>
+</tr>
+</tbody></table>
+<h2 id="檢視與除錯工具">檢視與除錯工具<a class="anchor" href="#檢視與除錯工具" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>用途</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Physics Inspector</td>
+<td>即時檢視／調整關節極限、驅動參數，改動可寫回資產</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/physics/joint_inspector.html">說明</a></td>
+</tr>
+<tr>
+<td>Simulation Data Visualizer</td>
+<td>視覺化模擬資料（力、速度、接觸）</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/physics/ext_isaacsim_inspect_physics.html">說明</a></td>
+</tr>
+<tr>
+<td>Physics Debug Window</td>
+<td>底層物理除錯視窗</td>
+<td><a href="https://docs.omniverse.nvidia.com/kit/docs/omni_physics/latest/extensions/ux/source/omni.physx.ui/docs/dev_guide/physics_debug_wnd.html">說明</a></td>
+</tr>
+<tr>
+<td>Static Collision 擴充</td>
+<td>大型靜態場景的碰撞處理</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/physics/physics_static_collision.html">說明</a></td>
+</tr>
+<tr>
+<td>碰撞網格顯示</td>
+<td>Viewport「眼睛」圖示 &gt; Show By Type &gt; Physics Mesh &gt; All（粉紅線框）</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<h2 id="常用-python-操作速覽">常用 Python 操作速覽<a class="anchor" href="#常用-python-操作速覽" aria-hidden="true">#</a></h2>
+<p>（完整片段見《完整文檔》第 6 章與官方 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/python_scripting/environment_setup.html">Scene Setup Snippets</a>）</p>
+<pre><code class="language-python"># 物理場景與重力
+from isaacsim.core.simulation_manager import PhysxScene, SimulationManager
+scene = PhysxScene(&quot;/World/physicsScene&quot;)
+scene.set_gravity([0.0, 0.0, -9.81])
+scene.set_solver_type(&quot;TGS&quot;)            # 求解器
+SimulationManager.set_device(&quot;cpu&quot;)     # CPU / GPU 物理
+
+# 碰撞近似
+from isaacsim.core.experimental.prims import GeomPrim
+geom = GeomPrim(&quot;/World/Cube&quot;, apply_collision_apis=True)
+geom.set_collision_approximations([&quot;convexHull&quot;])   # 或 convexDecomposition / none
+
+# 物理材質（摩擦係數）
+from isaacsim.core.experimental.materials import RigidBodyMaterial
+mat = RigidBodyMaterial(&quot;/World/PhysicsMaterials&quot;, static_frictions=[0.5], dynamic_frictions=[0.5])
+geom.apply_physics_materials(mat)
+
+# 查詢目前使用的物理引擎
+SimulationManager.get_active_physics_engine()   # &quot;physx&quot; 或 newton
+</code></pre>
+<h2 id="接觸力與場景查詢">接觸力與場景查詢<a class="anchor" href="#接觸力與場景查詢" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>接觸力</strong>：以 <code>RigidPrim</code> 的 contact filter 參數（<code>contact_filter_paths</code>、<code>max_contact_count</code>）建立後，可用 <code>get_net_contact_forces()</code>、<code>get_contact_force_matrix()</code>、<code>get_friction_data()</code>、<code>get_contact_force_data()</code> 取得淨力、力矩陣、摩擦與逐接觸點資料（<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/python_scripting/environment_setup.html#create-rigidprim-with-contact-filters">官方完整範例</a>）。</li>
+<li><strong>場景查詢</strong>：<code>get_physx_scene_query_interface()</code> 的 <code>raycast_closest</code>（射線）與 <code>overlap_box / overlap_sphere</code>（重疊）——用法見《Script Editor 教學》第 9 課。</li>
+</ul>
+<h2 id="調校建議">調校建議<a class="anchor" href="#調校建議" aria-hidden="true">#</a></h2>
+<ul>
+<li>機器人抖動／飛走：先查關節驅動的 stiffness/damping（<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup/ext_isaacsim_robot_setup_gain_tuner.html">Gain Tuner</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup_tutorials/joint_tuning.html">關節調校教學</a>）。</li>
+<li>穿透問題：開 CCD（<code>set_enabled_ccd(True)</code>）、提高求解迭代、改用更緊的碰撞近似。</li>
+<li>效能：見 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/reference_material/sim_performance_optimization_handbook.html">Isaac Sim 效能優化手冊</a>。</li>
+</ul>
+<hr>
+<p><em>本頁為官方文檔中文導覽，內容以官方為準。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>（6.0.1）。內容如與官方不符，請以官方為準。</footer>
+  </main>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

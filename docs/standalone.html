@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Isaac Sim Standalone Python 實戰教學 — Isaac Sim 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Isaac Sim</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與設定</a>
+        <a href="gui.html">GUI 介面參考</a>
+        <div class="nav-group-title">教學系列</div>
+        <a href="tutorial.html">Script Editor 教學</a>
+        <a href="extension.html">Extension 教學</a>
+        <a href="standalone.html" class="current">Standalone Python 教學</a>
+        <div class="nav-group-title">專題章節</div>
+        <a href="robots.html">機器人：匯入・設定・模擬</a>
+        <a href="sensors.html">感測器</a>
+        <a href="physics.html">物理模擬</a>
+        <a href="ros2.html">ROS 2 整合</a>
+        <a href="sdg.html">合成資料生成</a>
+        <a href="isaaclab.html">Isaac Lab／數位孿生</a>
+        <a href="devtools.html">開發工具與擴充開發</a>
+        <div class="nav-group-title">參考</div>
+        <a href="reference.html">資產、USD 與參考資訊</a>
+    </nav>
+    <hr class="sidebar-divider">
+    <div class="sidebar-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#%E7%AC%AC-1-%E8%AA%B2pythonshpythonbat-%E6%98%AF%E4%BB%80%E9%BA%BC">第 1 課：python.sh／python.bat 是什麼</a>
+      <a class="toc-h2" href="#%E7%AC%AC-2-%E8%AA%B2%E6%9C%80%E5%B0%8F%E6%87%89%E7%94%A8simulationapp-%E7%9A%84%E9%90%B5%E5%89%87">第 2 課：最小應用——SimulationApp 的鐵則</a>
+      <a class="toc-h2" href="#%E7%AC%AC-3-%E8%AA%B2%E8%B7%91%E5%AE%98%E6%96%B9%E5%85%A5%E9%96%80%E7%AF%84%E4%BE%8B">第 3 課：跑官方入門範例</a>
+      <a class="toc-h2" href="#%E7%AC%AC-4-%E8%AA%B2%E5%AE%8C%E6%95%B4%E7%AF%84%E6%9C%AC%E4%BD%88%E6%99%AF%E8%88%87%E9%A1%AF%E5%BC%8F%E6%AD%A5%E9%80%B2%E8%BF%B4%E5%9C%88">第 4 課：完整範本——佈景與顯式步進迴圈</a>
+      <a class="toc-h2" href="#%E7%AC%AC-5-%E8%AA%B2%E6%9B%B4%E7%B4%B0%E7%9A%84%E6%AD%A5%E9%80%B2%E6%8E%A7%E5%88%B6simulationmanager-%E8%88%87-renderingmanager">第 5 課：更細的步進控制——SimulationManager 與 RenderingManager</a>
+      <a class="toc-h2" href="#%E7%AC%AC-6-%E8%AA%B2%E7%84%A1%E9%A0%AD%E6%A8%A1%E5%BC%8F%E4%B8%B2%E6%B5%81%E8%88%87%E9%A1%8D%E5%A4%96-extension">第 6 課：無頭模式、串流與額外 Extension</a>
+      <a class="toc-h2" href="#%E7%AC%AC-7-%E8%AA%B2%E7%B6%9C%E5%90%88%E7%B7%B4%E7%BF%92%E7%84%A1%E9%A0%AD%E6%89%B9%E6%AC%A1%E5%AF%A6%E9%A9%97">第 7 課：綜合練習——無頭批次實驗</a>
+      <a class="toc-h2" href="#%E5%B8%B8%E8%A6%8B%E9%8C%AF%E8%AA%A4%E8%88%87%E9%99%A4%E9%8C%AF%E6%8C%87%E5%8D%97">常見錯誤與除錯指南</a>
+      <a class="toc-h2" href="#%E9%99%84%E9%8C%84simulationapp-%E5%B8%B8%E7%94%A8%E8%A8%AD%E5%AE%9A">附錄：SimulationApp 常用設定</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="isaac-sim-standalone-python-實戰教學">Isaac Sim Standalone Python 實戰教學<a class="anchor" href="#isaac-sim-standalone-python-實戰教學" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>專為 <strong>Standalone Python 工作流程</strong>設計的教學，適用 <strong>Isaac Sim 6.0.x</strong>，程式碼採用 <strong>Core Experimental API</strong>。
+Standalone 的核心賣點：<strong>你</strong>決定物理與渲染何時步進、可完全無頭（headless）執行——大規模 RL 訓練、批次資料生成、CI 自動化都靠它。</p>
+</blockquote>
+<p><strong>學習目標</strong>：理解 <code>python.sh / python.bat</code> 與 <code>SimulationApp</code> 的運作方式，能寫出「啟動 → 佈景 → 顯式步進迴圈 → 收尾」的完整獨立應用，會用無頭模式與串流，並完成一個批次模擬的綜合練習。</p>
+<p><strong>參考官方頁面</strong>：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/python_scripting/manual_standalone_python.html">Python Environment</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/introduction/workflows.html">Workflows</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/core_api_tutorials/tutorial_core_hello_world.html">Hello World：轉換成 Standalone</a></p>
+<hr>
+<h2 id="第-1-課pythonshpythonbat-是什麼">第 1 課：python.sh／python.bat 是什麼<a class="anchor" href="#第-1-課pythonshpythonbat-是什麼" aria-hidden="true">#</a></h2>
+<p>Standalone 腳本<strong>不是</strong>用你系統的 Python 跑，而是用 Isaac Sim 安裝根目錄提供的啟動器：</p>
+<pre><code class="language-bash"># Linux（安裝根目錄下）
+./python.sh my_script.py
+# Windows
+python.bat my_script.py
+</code></pre>
+<p>啟動器做三件事（<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/python_scripting/manual_standalone_python.html#details-how-python-sh-works">原理詳解</a>）：</p>
+<ol>
+<li>設定 <code>EXP_PATH</code> 指向 <code>apps/</code> 資料夾，讓 runtime 找得到 <code>.kit</code> 體驗設定檔。</li>
+<li>執行 <code>setup_python_env.sh</code> 設定環境變數：<code>ISAAC_PATH</code>（主安裝路徑）、<code>PYTHONPATH</code>（各 Extension 的 Python 介面）、<code>LD_LIBRARY_PATH</code>（二進位符號）、<code>CARB_APP_PATH</code>（Kit 核心執行檔）。</li>
+<li>用 Omniverse <strong>內附的 Python 直譯器</strong>（<code>kit/python/bin/python3</code>）執行你的腳本。</li>
+</ol>
+<blockquote>
+<p>若你是用 pip/conda 安裝（<code>pip install isaacsim</code>），直接用該虛擬環境的 <code>python</code> 執行即可，見 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_python.html">Python 環境安裝</a>。</p>
+</blockquote>
+<hr>
+<h2 id="第-2-課最小應用simulationapp-的鐵則">第 2 課：最小應用——SimulationApp 的鐵則<a class="anchor" href="#第-2-課最小應用simulationapp-的鐵則" aria-hidden="true">#</a></h2>
+<pre><code class="language-python">from isaacsim import SimulationApp
+
+# 啟動應用（這行之前不能 import 任何 Omniverse 模組！）
+simulation_app = SimulationApp({&quot;headless&quot;: True})
+
+### 所有 omniverse / isaacsim 相關 import 都放在這之後 ###
+
+simulation_app.update()   # 渲染一個 frame
+simulation_app.close()    # 清理並關閉應用
+</code></pre>
+<p><strong>鐵則一：<code>SimulationApp</code> 必須最先建立。</strong> 所有 API 都由 Extension／runtime 外掛系統提供，應用沒啟動前它們根本不存在——先 <code>import omni.xxx</code> 再建 SimulationApp 必定失敗。</p>
+<p><strong>鐵則二：無頭模式下</strong>設 <code>&quot;headless&quot;: True</code>，且任何會開視窗的呼叫（如 matplotlib 顯示）都要拿掉。</p>
+<p>生命週期三件套：<strong>建立</strong>（載入應用）→ <strong><code>update()</code></strong>（步進一次 app：物理＋渲染）→ <strong><code>close()</code></strong>（收尾退出）。</p>
+<hr>
+<h2 id="第-3-課跑官方入門範例">第 3 課：跑官方入門範例<a class="anchor" href="#第-3-課跑官方入門範例" aria-hidden="true">#</a></h2>
+<p>安裝根目錄的 <code>standalone_examples/</code> 是寶庫。先跑入門兩支：</p>
+<pre><code class="language-bash"># Linux
+./python.sh standalone_examples/tutorials/getting_started/getting_started.py
+./python.sh standalone_examples/tutorials/getting_started/getting_started_robot.py
+# Windows
+python.bat standalone_examples\tutorials\getting_started\getting_started.py
+python.bat standalone_examples\tutorials\getting_started\getting_started_robot.py
+</code></pre>
+<p>第一支建立地板、光源、方塊並模擬；第二支加入 Franka 手臂與 Nova Carter 車，示範關節控制。其他實用範例（<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/introduction/standalone_examples_list.html">完整清單</a>）：</p>
+<table>
+<thead>
+<tr>
+<th>範例</th>
+<th>指令（Linux；Windows 用 python.bat）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>載入 USD 場景並模擬</td>
+<td><code>./python.sh standalone_examples/api/isaacsim.simulation_app/load_stage.py --usd_path /Isaac/Environments/Simple_Room/simple_room.usd</code></td>
+</tr>
+<tr>
+<td>URDF 匯入＋物理設定＋模擬</td>
+<td><code>./python.sh standalone_examples/api/isaacsim.asset.importer.urdf/urdf_import.py</code></td>
+</tr>
+<tr>
+<td>執行時改視窗解析度</td>
+<td><code>./python.sh standalone_examples/api/isaacsim.simulation_app/change_resolution.py</code></td>
+</tr>
+<tr>
+<td>批次轉換 OBJ/STL/FBX → USD</td>
+<td><code>./python.sh standalone_examples/api/omni.kit.asset_converter/asset_usd_converter.py --folders &lt;資料夾...&gt;</code></td>
+</tr>
+<tr>
+<td>無頭＋WebRTC 串流</td>
+<td><code>./python.sh standalone_examples/api/isaacsim.simulation_app/livestream.py</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="第-4-課完整範本佈景與顯式步進迴圈">第 4 課：完整範本——佈景與顯式步進迴圈<a class="anchor" href="#第-4-課完整範本佈景與顯式步進迴圈" aria-hidden="true">#</a></h2>
+<p>把 Extension 版 Hello World 轉成 standalone（官方 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/core_api_tutorials/tutorial_core_hello_world.html#converting-the-example-to-a-standalone-application">轉換教學</a>）。存成 <code>my_application.py</code>：</p>
+<pre><code class="language-python"># 任何 standalone 應用的固定開頭兩行
+from isaacsim import SimulationApp
+
+simulation_app = SimulationApp({&quot;headless&quot;: False})  # 也可無頭執行
+
+# 應用啟動後才 import 其他模組
+import isaacsim.core.experimental.utils.stage as stage_utils
+import numpy as np
+import omni.timeline
+from isaacsim.core.experimental.materials import PreviewSurfaceMaterial
+from isaacsim.core.experimental.objects import Cube
+from isaacsim.core.experimental.prims import GeomPrim, RigidPrim
+from isaacsim.core.simulation_manager import SimulationManager
+from isaacsim.storage.native import get_assets_root_path
+
+# 佈景：地板 + 藍色剛體方塊
+stage_utils.add_reference_to_stage(
+    usd_path=get_assets_root_path() + &quot;/Isaac/Environments/Grid/default_environment.usd&quot;,
+    path=&quot;/World/ground&quot;,
+)
+visual_material = PreviewSurfaceMaterial(&quot;/World/Materials/blue&quot;)
+visual_material.set_input_values(&quot;diffuseColor&quot;, [0.0, 0.0, 1.0])
+cube_shape = Cube(
+    paths=&quot;/World/fancy_cube&quot;,
+    positions=np.array([[0.0, 0.0, 1.0]]),
+    sizes=[1.0],
+    scales=np.array([[0.5, 0.5, 0.5]]),
+    reset_xform_op_properties=True,
+)
+GeomPrim(paths=cube_shape.paths, apply_collision_apis=True)
+cube = RigidPrim(paths=cube_shape.paths)
+cube_shape.apply_visual_materials(visual_material)
+
+# 啟動時間軸（物理開始）
+omni.timeline.get_timeline_interface().play()
+simulation_app.update()
+
+# 模擬主迴圈：一切步進由你掌控
+for i in range(50):
+    if SimulationManager.is_simulating():
+        positions, orientations = cube.get_world_poses()
+        linear_velocities, angular_velocities = cube.get_velocities()
+        print(&quot;Cube position is : &quot; + str(positions.numpy()[0]))
+        print(&quot;Cube&#39;s linear velocity is : &quot; + str(linear_velocities.numpy()[0]))
+
+    simulation_app.update()   # 步進一次（物理 + 渲染）
+
+simulation_app.close()
+</code></pre>
+<p><strong>與 Extension 的根本差異</strong>：這裡的查詢／控制程式碼<strong>就放在迴圈裡</strong>，每步自然執行——不需要註冊回呼。「先完成一組命令、再步進」有了保證，這正是訓練與資料生成需要的性質。</p>
+<hr>
+<h2 id="第-5-課更細的步進控制simulationmanager-與-renderingmanager">第 5 課：更細的步進控制——SimulationManager 與 RenderingManager<a class="anchor" href="#第-5-課更細的步進控制simulationmanager-與-renderingmanager" aria-hidden="true">#</a></h2>
+<p><code>simulation_app.update()</code> 是「物理＋渲染」打包步進。需要分開控制時：</p>
+<pre><code class="language-python">from isaacsim.core.rendering_manager import RenderingManager
+from isaacsim.core.simulation_manager import SimulationManager
+
+arm.set_dof_positions([-1.5, 0.0, 0.0, -1.5, 0.0, 1.5, 0.5, 0.04, 0.04])
+
+for _ in range(100):
+    SimulationManager.step()      # 只步進物理
+    RenderingManager.render()     # 只渲染
+    simulation_app.update()
+    print(&quot;Joint positions:&quot;, arm.get_dof_positions())
+</code></pre>
+<p>應用場景：</p>
+<ul>
+<li><strong>訓練</strong>：每個 action 後步進物理 N 次、渲染 1 次（省渲染成本）。</li>
+<li><strong>感測器資料</strong>：控制「模擬狀態 ↔ 渲染影像」的對應關係。</li>
+<li><strong>ROS</strong>：精準控制訊息發布頻率。</li>
+</ul>
+<hr>
+<h2 id="第-6-課無頭模式串流與額外-extension">第 6 課：無頭模式、串流與額外 Extension<a class="anchor" href="#第-6-課無頭模式串流與額外-extension" aria-hidden="true">#</a></h2>
+<p><strong>無頭執行</strong>（伺服器／CI 標配）：</p>
+<pre><code class="language-python">simulation_app = SimulationApp({&quot;headless&quot;: True})
+</code></pre>
+<p>想遠端看畫面：跑 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/python_scripting/manual_standalone_python.html#livestream">livestream 範例</a>並用 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/manual_livestream_clients.html">WebRTC 串流用戶端</a>連線。</p>
+<p><strong>啟用額外 Extension</strong>（standalone 預設只載入基本組）：</p>
+<pre><code class="language-python">from isaacsim import SimulationApp
+simulation_app = SimulationApp({&quot;headless&quot;: False})
+
+from isaacsim.core.utils.extensions import enable_extension
+enable_extension(&quot;omni.kit.widget.stage&quot;)   # 例：啟用 Stage 面板
+enable_extension(&quot;omni.kit.widget.layers&quot;)
+simulation_app.update()
+</code></pre>
+<p>也可以在體驗檔（如 <code>apps/isaacsim.exp.base.python.kit</code>）的 <code>[dependencies]</code> 區段宣告。</p>
+<p><strong>零延遲渲染</strong>：預設渲染管線允許最多 3 個 frame 在途（換取 FPS）；需要「渲染影像 = 最新模擬狀態」時，改用零延遲體驗檔：</p>
+<pre><code class="language-python">import os
+from isaacsim import SimulationApp
+
+SimulationApp({&quot;headless&quot;: True}, experience=f&quot;{os.environ[&#39;EXP_PATH&#39;]}/isaacsim.exp.base.zero_delay.kit&quot;)
+</code></pre>
+<p>或用 <code>extra_args</code> 逐項設定（<code>--/app/hydraEngine/waitIdle=1</code> 等，見 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/python_scripting/util_snippets.html#rendering-frame-delay">Util Snippets</a>）。</p>
+<hr>
+<h2 id="第-7-課綜合練習無頭批次實驗">第 7 課：綜合練習——無頭批次實驗<a class="anchor" href="#第-7-課綜合練習無頭批次實驗" aria-hidden="true">#</a></h2>
+<p>把所學組成一個典型的「批次模擬」腳本：無頭跑 3 回合方塊自由落體，每回合不同起始高度，記錄落地位置後輸出 CSV。</p>
+<pre><code class="language-python">from isaacsim import SimulationApp
+
+simulation_app = SimulationApp({&quot;headless&quot;: True})
+
+import csv
+import isaacsim.core.experimental.utils.stage as stage_utils
+import numpy as np
+import omni.timeline
+from isaacsim.core.experimental.objects import Cube, GroundPlane
+from isaacsim.core.experimental.prims import GeomPrim, RigidPrim
+from isaacsim.core.simulation_manager import SimulationManager
+
+results = []
+timeline = omni.timeline.get_timeline_interface()
+
+for episode, drop_height in enumerate([0.5, 1.0, 2.0]):
+    # 每回合重建乾淨場景
+    stage_utils.create_new_stage()
+    stage_utils.define_prim(&quot;/World/physicsScene&quot;, &quot;PhysicsScene&quot;)
+    GroundPlane(&quot;/World/GroundPlane&quot;, positions=[0, 0, 0])
+    cube_shape = Cube(&quot;/World/box&quot;, positions=[0.1, 0.0, drop_height], sizes=0.2)
+    GeomPrim(cube_shape.paths, apply_collision_apis=True)
+    cube = RigidPrim(cube_shape.paths, masses=[1.0])
+
+    timeline.play()
+    simulation_app.update()
+
+    for _ in range(240):                # 模擬約 4 秒
+        simulation_app.update()
+
+    if SimulationManager.is_simulating():
+        pos = cube.get_world_poses()[0].numpy()[0]
+        results.append({&quot;episode&quot;: episode, &quot;drop_height&quot;: drop_height,
+                        &quot;x&quot;: pos[0], &quot;y&quot;: pos[1], &quot;z&quot;: pos[2]})
+        print(f&quot;回合 {episode}：從 {drop_height} m 落下，最終位置 {pos}&quot;)
+
+    timeline.stop()
+
+with open(&quot;drop_results.csv&quot;, &quot;w&quot;, newline=&quot;&quot;) as f:
+    writer = csv.DictWriter(f, fieldnames=[&quot;episode&quot;, &quot;drop_height&quot;, &quot;x&quot;, &quot;y&quot;, &quot;z&quot;])
+    writer.writeheader()
+    writer.writerows(results)
+
+simulation_app.close()
+print(&quot;結果已寫入 drop_results.csv&quot;)
+</code></pre>
+<p><strong>驗收</strong>：終端機印出三回合的最終位置（z 應接近 0.1，即方塊半高），工作目錄出現 <code>drop_results.csv</code>。</p>
+<p><strong>延伸挑戰</strong>：</p>
+<ol>
+<li>每回合隨機化方塊初始 XY 與質量（domain randomization 的雛形）。</li>
+<li>換成 Franka：每回合送一組隨機關節目標，記錄 100 步後的實際關節位置。</li>
+<li>加上 <code>argparse</code> 讓回合數、高度清單可由命令列指定——正式實驗腳本的樣子。</li>
+</ol>
+<hr>
+<h2 id="常見錯誤與除錯指南">常見錯誤與除錯指南<a class="anchor" href="#常見錯誤與除錯指南" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>症狀</th>
+<th>原因與解法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>一開始就 <code>ModuleNotFoundError</code>／crash</td>
+<td>在 <code>SimulationApp</code> 建立<strong>之前</strong> import 了 Omniverse 模組。把所有相關 import 移到其後</td>
+</tr>
+<tr>
+<td>用系統 Python 跑失敗</td>
+<td>要用安裝根目錄的 <code>./python.sh</code>／<code>python.bat</code>（或 pip 安裝的專屬虛擬環境）</td>
+</tr>
+<tr>
+<td>無頭模式下卡住／崩潰</td>
+<td>有開視窗的呼叫（matplotlib 等）。全部移除或改存檔</td>
+</tr>
+<tr>
+<td>查詢回傳無效資料</td>
+<td>時間軸沒播放。<code>timeline.play()</code> 後至少 <code>update()</code> 一次；查詢前用 <code>SimulationManager.is_simulating()</code> 防呆</td>
+</tr>
+<tr>
+<td>腳本結束但行程沒退出</td>
+<td>少了 <code>simulation_app.close()</code></td>
+</tr>
+<tr>
+<td>首次啟動特別慢</td>
+<td>著色器快取暖機屬正常現象；無頭伺服器同樣適用</td>
+</tr>
+<tr>
+<td>需要某個 GUI 工具的功能</td>
+<td>standalone 預設不載入所有 Extension，用 <code>enable_extension()</code> 啟用</td>
+</tr>
+<tr>
+<td>渲染影像落後模擬狀態</td>
+<td>預設 3 frame 在途。用 zero-delay 體驗檔（第 6 課）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="附錄simulationapp-常用設定">附錄：SimulationApp 常用設定<a class="anchor" href="#附錄simulationapp-常用設定" aria-hidden="true">#</a></h2>
+<pre><code class="language-python">SimulationApp({
+    &quot;headless&quot;: True,          # 無頭模式
+    &quot;width&quot;: 1280,             # 視窗／渲染解析度
+    &quot;height&quot;: 720,
+    &quot;extra_args&quot;: [            # 進階：直接傳 Kit 設定
+        &quot;--/app/hydraEngine/waitIdle=1&quot;,
+    ],
+}, experience=&quot;&lt;path&gt;/isaacsim.exp.base.zero_delay.kit&quot;)  # 指定體驗檔
+</code></pre>
+<p>完整參數見 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/py/source/extensions/isaacsim.simulation_app/docs/index.html">SimulationApp API 文件</a>。</p>
+<p><strong>下一步</strong>：對照另外兩條路線——《<a href="tutorial.html">Script Editor 實戰教學</a>》（互動探索）與《<a href="extension.html">Extension 教學</a>》（UI 工具開發）；或直接進入 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/isaac_lab_tutorials/index.html">Isaac Lab</a> 用平行環境做強化學習。</p>
+<hr>
+<p><em>本教學由 Claude 依據 Isaac Sim 6.0.1 官方文檔設計；官方程式片段經整理改編，請以官方文檔為準。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>（6.0.1）。內容如與官方不符，請以官方為準。</footer>
+  </main>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

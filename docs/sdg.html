@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>合成資料生成（Synthetic Data Generation, SDG） — Isaac Sim 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Isaac Sim</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與設定</a>
+        <a href="gui.html">GUI 介面參考</a>
+        <div class="nav-group-title">教學系列</div>
+        <a href="tutorial.html">Script Editor 教學</a>
+        <a href="extension.html">Extension 教學</a>
+        <a href="standalone.html">Standalone Python 教學</a>
+        <div class="nav-group-title">專題章節</div>
+        <a href="robots.html">機器人：匯入・設定・模擬</a>
+        <a href="sensors.html">感測器</a>
+        <a href="physics.html">物理模擬</a>
+        <a href="ros2.html">ROS 2 整合</a>
+        <a href="sdg.html" class="current">合成資料生成</a>
+        <a href="isaaclab.html">Isaac Lab／數位孿生</a>
+        <a href="devtools.html">開發工具與擴充開發</a>
+        <div class="nav-group-title">參考</div>
+        <a href="reference.html">資產、USD 與參考資訊</a>
+    </nav>
+    <hr class="sidebar-divider">
+    <div class="sidebar-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5">核心概念</a>
+      <a class="toc-h2" href="#replicator%E6%84%9F%E7%9F%A5%E8%B3%87%E6%96%99%E7%94%9F%E6%88%90">Replicator（感知資料生成）</a>
+      <a class="toc-h2" href="#%E5%8B%95%E4%BD%9C%E8%88%87%E4%BA%8B%E4%BB%B6%E8%B3%87%E6%96%99%E7%94%9F%E6%88%90">動作與事件資料生成</a>
+      <a class="toc-h2" href="#%E5%B0%88%E9%96%80%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B">專門工作流程</a>
+      <a class="toc-h2" href="#%E7%96%91%E9%9B%A3%E6%8E%92%E8%A7%A3">疑難排解</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="合成資料生成synthetic-data-generation-sdg">合成資料生成（Synthetic Data Generation, SDG）<a class="anchor" href="#合成資料生成synthetic-data-generation-sdg" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/synthetic_data_generation/index.html">Synthetic Data Generation</a> 章節的中文導覽。SDG 是 Isaac Sim 的招牌能力之一：在模擬中大量產生<strong>帶標註的訓練資料</strong>（RGB、深度、分割、邊界框、姿態…），餵給感知模型與機器人學習管線。</p>
+</blockquote>
+<hr>
+<h2 id="核心概念">核心概念<a class="anchor" href="#核心概念" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>Replicator</strong> 是 Omniverse 的 SDG 框架：以 Python API 描述「隨機化什麼、擷取什麼、寫到哪」，一次定義、批次執行。</li>
+<li><strong>Domain Randomization（域隨機化）</strong>：隨機化光照、材質、姿態、相機位置等，讓模型學到對真實世界變化魯棒的特徵。</li>
+<li><strong>語意標註（Semantics）</strong>：先給場景物件貼上 class 標籤，annotator 才知道要輸出什麼標註（程式化批次貼標籤的片段見《完整文檔》6.4 節）。</li>
+<li><strong>Writer</strong>：決定輸出格式（KITTI、COCO 等，也可自訂 Writer 寫任意格式）。</li>
+</ul>
+<h2 id="replicator感知資料生成">Replicator（感知資料生成）<a class="anchor" href="#replicator感知資料生成" aria-hidden="true">#</a></h2>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/replicator_tutorials/index.html">教學總覽</a>。建議路徑：</p>
+<ol>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/replicator_tutorials/tutorial_replicator_overview.html">Overview 總覽</a>——理解 Replicator 的組成。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/replicator_tutorials/tutorial_replicator_recorder.html">Synthetic Data Recorder</a>——<strong>GUI 錄製器</strong>，不寫程式也能出資料集，入門首選。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/replicator_tutorials/tutorial_replicator_getting_started.html">Getting Started Scripts</a>——第一批 SDG 腳本。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/replicator_tutorials/tutorial_replicator_sdg_workflows.html">SDG Workflows</a>——各種工作流程的選擇指南。</li>
+<li>兩大基本範式：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/replicator_tutorials/tutorial_replicator_scene_based_sdg.html">場景式資料生成</a>（固定場景中隨機化）與<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/replicator_tutorials/tutorial_replicator_object_based_sdg.html">物件式資料生成</a>（聚焦目標物件）。</li>
+</ol>
+<p>進階主題：</p>
+<table>
+<thead>
+<tr>
+<th>主題</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Infinigen 環境式資料生成</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/replicator_tutorials/tutorial_replicator_infinigen_sdg.html">教學</a></td>
+</tr>
+<tr>
+<td>實戰隨機化：AMR 導航</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/replicator_tutorials/tutorial_replicator_amr_navigation.html">教學</a></td>
+</tr>
+<tr>
+<td>實戰隨機化：UR10 棧板堆疊</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/replicator_tutorials/tutorial_replicator_ur10_palletizing.html">教學</a></td>
+</tr>
+<tr>
+<td>Cosmos 照片級增強 SDG</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/replicator_tutorials/tutorial_replicator_cosmos.html">教學</a></td>
+</tr>
+<tr>
+<td>資料增強（Augmentation）</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/replicator_tutorials/tutorial_replicator_augmentation.html">教學</a></td>
+</tr>
+<tr>
+<td>自訂隨機化節點（OmniGraph）</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/replicator_tutorials/tutorial_replicator_custom_og_randomizer.html">教學</a></td>
+</tr>
+<tr>
+<td>模組化行為腳本</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/replicator_tutorials/tutorial_replicator_modular_scripting.html">教學</a></td>
+</tr>
+<tr>
+<td>隨機化程式片段集</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/replicator_tutorials/tutorial_replicator_isaac_randomizers.html">Randomization Snippets</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/replicator_tutorials/tutorial_replicator_isaac_snippets.html">Useful Snippets</a></td>
+</tr>
+</tbody></table>
+<h2 id="動作與事件資料生成">動作與事件資料生成<a class="anchor" href="#動作與事件資料生成" aria-hidden="true">#</a></h2>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/action_and_event_data_generation/index.html">章節總覽</a>——超越單張影像，生成<strong>行為與事件</strong>層級的資料：</p>
+<ul>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/action_and_event_data_generation/tutorial_replicator_agent.html">Replicator Agent（人物模擬）</a>：以設定檔驅動的人物／機器人行為模擬與資料錄製（含<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/action_and_event_data_generation/ext_replicator-agent/ext_isaacsim_replicator_agent_configuration.html">設定檔指南</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/action_and_event_data_generation/ext_replicator-agent/ext_isaacsim_replicator_agent_sample_configs.html">範例設定</a>、RTSP 自訂 Writer 範例）。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/action_and_event_data_generation/tutorial_behavior_tree_gen.html">行為樹生成</a>：以行為樹描述複雜情境。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/action_and_event_data_generation/tutorial_replicator_object.html">物件模擬與資料生成（Replicator Object）</a>：宣告式設定檔驅動的物件隨機化（Mutable、Camera、Light、Harmonizer 等子系統），含 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/action_and_event_data_generation/ext_replicator-object/ext_chat_iro.html">Chat IRO 自然語言介面</a>。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/action_and_event_data_generation/tutorial_replicator_caption.html">VLM 場景描述</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/action_and_event_data_generation/tutorial_replicator_incident.html">實體空間事件生成</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/action_and_event_data_generation/example_event_reactive_actors.html">事件觸發的演員反應</a>。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/action_and_event_data_generation/tutorial_sensors_rtx_placement.html">RTX 感測器放置與校準</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/action_and_event_data_generation/tutorial_omni_metropolis_pipeline.html">Omni Metropolis 管線</a>。</li>
+</ul>
+<h2 id="專門工作流程">專門工作流程<a class="anchor" href="#專門工作流程" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>工作流程</th>
+<th>用途</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Grasping SDG</td>
+<td>抓取姿態資料集</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/synthetic_data_generation/tutorial_replicator_grasping_sdg.html">教學</a></td>
+</tr>
+<tr>
+<td>MobilityGen</td>
+<td>移動機器人（導航）資料</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/synthetic_data_generation/tutorial_replicator_mobility_gen.html">教學</a></td>
+</tr>
+<tr>
+<td>Teleoperation SDG</td>
+<td>遙操作示範資料（模仿學習）</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/synthetic_data_generation/tutorial_replicator_teleop_sdg.html">教學</a></td>
+</tr>
+</tbody></table>
+<h2 id="疑難排解">疑難排解<a class="anchor" href="#疑難排解" aria-hidden="true">#</a></h2>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/replicator_tutorials/troubleshooting.html">Replicator Troubleshooting</a>——輸出為空、標註缺失、渲染不同步等常見問題。</p>
+<hr>
+<p><em>本頁為官方文檔中文導覽，內容以官方為準。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>（6.0.1）。內容如與官方不符，請以官方為準。</footer>
+  </main>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

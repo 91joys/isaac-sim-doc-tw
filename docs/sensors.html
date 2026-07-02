@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>感測器（Sensors） — Isaac Sim 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Isaac Sim</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與設定</a>
+        <a href="gui.html">GUI 介面參考</a>
+        <div class="nav-group-title">教學系列</div>
+        <a href="tutorial.html">Script Editor 教學</a>
+        <a href="extension.html">Extension 教學</a>
+        <a href="standalone.html">Standalone Python 教學</a>
+        <div class="nav-group-title">專題章節</div>
+        <a href="robots.html">機器人：匯入・設定・模擬</a>
+        <a href="sensors.html" class="current">感測器</a>
+        <a href="physics.html">物理模擬</a>
+        <a href="ros2.html">ROS 2 整合</a>
+        <a href="sdg.html">合成資料生成</a>
+        <a href="isaaclab.html">Isaac Lab／數位孿生</a>
+        <a href="devtools.html">開發工具與擴充開發</a>
+        <div class="nav-group-title">參考</div>
+        <a href="reference.html">資產、USD 與參考資訊</a>
+    </nav>
+    <hr class="sidebar-divider">
+    <div class="sidebar-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#%E6%80%8E%E9%BA%BC%E9%81%B8%E6%84%9F%E6%B8%AC%E5%99%A8">怎麼選感測器</a>
+      <a class="toc-h2" href="#%E7%9B%B8%E6%A9%9F%E6%84%9F%E6%B8%AC%E5%99%A8camera">相機感測器（Camera）</a>
+      <a class="toc-h2" href="#rtx-%E6%84%9F%E6%B8%AC%E5%99%A8">RTX 感測器</a>
+      <a class="toc-h2" href="#%E7%89%A9%E7%90%86%E5%BC%8F%E6%84%9F%E6%B8%AC%E5%99%A8physics-based">物理式感測器（Physics-based）</a>
+      <a class="toc-h2" href="#physx-sdk-%E6%84%9F%E6%B8%AC%E5%99%A8">PhysX SDK 感測器</a>
+      <a class="toc-h2" href="#%E8%88%87-ros-2sdg-%E7%9A%84%E9%8A%9C%E6%8E%A5">與 ROS 2／SDG 的銜接</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="感測器sensors">感測器（Sensors）<a class="anchor" href="#感測器sensors" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/index.html">Sensors</a> 章節的中文導覽。Isaac Sim 的感測器分三大家族：<strong>相機</strong>、<strong>RTX 感測器</strong>（光線追蹤模擬）、<strong>物理式感測器</strong>（物理引擎資料），各有適用場景。</p>
+</blockquote>
+<hr>
+<h2 id="怎麼選感測器">怎麼選感測器<a class="anchor" href="#怎麼選感測器" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>需求</th>
+<th>家族</th>
+<th>原理</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RGB／深度影像、視覺感知</td>
+<td>相機感測器</td>
+<td>渲染管線</td>
+</tr>
+<tr>
+<td>光達／雷達點雲（高擬真、材質反射）</td>
+<td>RTX 感測器</td>
+<td>RTX 光線追蹤，支援非視覺材質屬性</td>
+</tr>
+<tr>
+<td>IMU、接觸力、關節力矩</td>
+<td>物理式感測器</td>
+<td>直接讀物理引擎狀態</td>
+</tr>
+<tr>
+<td>簡單射線量測（高效能、低擬真）</td>
+<td>物理射線／PhysX 感測器</td>
+<td>物理場景查詢</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>6.0 重要變更</strong>：相機、RTX 與物理感測器的 API 皆已改版為 Experimental API。從 4.x/5.x 升級請看<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/migration_guides/isaac_sim_6_0/index.html">遷移指南</a>（含相機、RTX、物理感測器、PhysX 光達等逐項對照）。</p>
+</blockquote>
+<h2 id="相機感測器camera">相機感測器（Camera）<a class="anchor" href="#相機感測器camera" aria-hidden="true">#</a></h2>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_camera.html">總覽</a>：</p>
+<ul>
+<li>RGB 相機：焦距、光圈、裁切等以 USD 相機屬性設定（程式取得相機參數的片段見《完整文檔》6.4 節）。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_camera_depth.html">深度感測器</a>——立體深度相機模擬。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_camera_structured_light.html">結構光相機</a>——投射圖案的主動式深度。</li>
+</ul>
+<p>現成相機資產（RealSense 等品牌型號）見 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/assets/usd_assets_camera_depth_sensors.html">Camera and Depth Sensor Assets</a>。</p>
+<h2 id="rtx-感測器">RTX 感測器<a class="anchor" href="#rtx-感測器" aria-hidden="true">#</a></h2>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_rtx.html">總覽</a>——用 RTX 光線追蹤模擬主動式感測器，可考慮材質反射率等非視覺屬性：</p>
+<table>
+<thead>
+<tr>
+<th>感測器</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RTX Lidar（光達）</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_rtx_lidar.html">說明</a></td>
+</tr>
+<tr>
+<td>RTX Radar（雷達）</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_rtx_radar.html">說明</a></td>
+</tr>
+<tr>
+<td>RTX Acoustic（聲學）</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_rtx_acoustic.html">說明</a></td>
+</tr>
+</tbody></table>
+<p>配套主題：</p>
+<ul>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_rtx_annotators.html">RTX Sensor Annotators</a>——取得點雲與標註輸出。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_rtx_materials.html">非視覺材質</a>——設定材質對光達／雷達的反射特性。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_multitick_rendering.html">Multi-Tick Rendering</a>——一個渲染 frame 內多次感測器取樣。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_rtx_custom.html">自訂 RTX 感測器 Profile</a>——描述市售型號的掃描模式與參數。</li>
+</ul>
+<p>現成光達等資產見 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/assets/usd_assets_nonvisual_sensors.html">Non-Visual Sensor Assets</a>。</p>
+<h2 id="物理式感測器physics-based">物理式感測器（Physics-based）<a class="anchor" href="#物理式感測器physics-based" aria-hidden="true">#</a></h2>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physics.html">總覽</a>——從物理引擎直接取資料，無需渲染：</p>
+<table>
+<thead>
+<tr>
+<th>感測器</th>
+<th>量測</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>IMU</td>
+<td>加速度、角速度、姿態</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physics_imu.html">說明</a></td>
+</tr>
+<tr>
+<td>Contact（接觸）</td>
+<td>接觸力、接觸事件</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physics_contact.html">說明</a></td>
+</tr>
+<tr>
+<td>Articulation joint（關節）</td>
+<td>關節內力／力矩</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physics_articulation_force.html">說明</a></td>
+</tr>
+<tr>
+<td>Effort</td>
+<td>關節驅動力</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physics_effort.html">說明</a></td>
+</tr>
+<tr>
+<td>Joint state</td>
+<td>關節位置／速度</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physics_joint_state.html">說明</a></td>
+</tr>
+<tr>
+<td>Physics raycast</td>
+<td>射線距離量測</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physics_raycast.html">說明</a></td>
+</tr>
+</tbody></table>
+<h2 id="physx-sdk-感測器">PhysX SDK 感測器<a class="anchor" href="#physx-sdk-感測器" aria-hidden="true">#</a></h2>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physx.html">總覽</a>——基於 PhysX 場景查詢的輕量感測器：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physx_generic.html">泛用感測器</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physx_lidar.html">PhysX 光達</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physx_lightbeam.html">光束感測器</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physx_proximity.html">近接感測器</a>。</p>
+<blockquote>
+<p>注意：6.0 起 PhysX 光達／泛用／光束感測器已被 <strong>Physics raycast 感測器</strong>取代（見遷移指南），新專案優先使用後者。</p>
+</blockquote>
+<h2 id="與-ros-2sdg-的銜接">與 ROS 2／SDG 的銜接<a class="anchor" href="#與-ros-2sdg-的銜接" aria-hidden="true">#</a></h2>
+<ul>
+<li>感測器資料發布到 ROS 2：見本站《ROS 2》章節頁（相機、RTX 光達、RTX 雷達教學）。</li>
+<li>感測器輸出作為訓練資料：見本站《合成資料生成》章節頁（Annotator＋Writer）。</li>
+<li>感測器放置與校準工具：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/action_and_event_data_generation/tutorial_sensors_rtx_placement.html">RTX Sensors Placement and Calibration</a>。</li>
+</ul>
+<hr>
+<p><em>本頁為官方文檔中文導覽，內容以官方為準。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>（6.0.1）。內容如與官方不符，請以官方為準。</footer>
+  </main>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

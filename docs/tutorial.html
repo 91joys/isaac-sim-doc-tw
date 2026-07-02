@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Isaac Sim Script Editor 實戰教學 — Isaac Sim 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Isaac Sim</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與設定</a>
+        <a href="gui.html">GUI 介面參考</a>
+        <div class="nav-group-title">教學系列</div>
+        <a href="tutorial.html" class="current">Script Editor 教學</a>
+        <a href="extension.html">Extension 教學</a>
+        <a href="standalone.html">Standalone Python 教學</a>
+        <div class="nav-group-title">專題章節</div>
+        <a href="robots.html">機器人：匯入・設定・模擬</a>
+        <a href="sensors.html">感測器</a>
+        <a href="physics.html">物理模擬</a>
+        <a href="ros2.html">ROS 2 整合</a>
+        <a href="sdg.html">合成資料生成</a>
+        <a href="isaaclab.html">Isaac Lab／數位孿生</a>
+        <a href="devtools.html">開發工具與擴充開發</a>
+        <div class="nav-group-title">參考</div>
+        <a href="reference.html">資產、USD 與參考資訊</a>
+    </nav>
+    <hr class="sidebar-divider">
+    <div class="sidebar-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#%E7%AC%AC-0-%E8%AA%B2%E8%AA%8D%E8%AD%98-script-editor">第 0 課：認識 Script Editor</a>
+      <a class="toc-h3" href="#%E9%96%8B%E5%95%9F%E6%96%B9%E5%BC%8F">開啟方式</a>
+      <a class="toc-h3" href="#%E4%BB%8B%E9%9D%A2%E8%88%87%E6%93%8D%E4%BD%9C%E9%87%8D%E9%BB%9E">介面與操作重點</a>
+      <a class="toc-h3" href="#%E5%85%A9%E5%80%8B%E5%BF%85%E9%A0%88%E5%85%88%E5%BB%BA%E7%AB%8B%E7%9A%84%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B">兩個必須先建立的心智模型</a>
+      <a class="toc-h2" href="#%E7%AC%AC-1-%E8%AA%B2hello-stage%E5%BB%BA%E7%AB%8B%E6%96%B0%E5%A0%B4%E6%99%AF%E8%88%87%E5%9C%B0%E6%9D%BF">第 1 課：Hello Stage——建立新場景與地板</a>
+      <a class="toc-h2" href="#%E7%AC%AC-2-%E8%AA%B2%E7%87%88%E5%85%89%E5%B9%BE%E4%BD%95%E8%88%87%E6%9D%90%E8%B3%AA">第 2 課：燈光、幾何與材質</a>
+      <a class="toc-h2" href="#%E7%AC%AC-3-%E8%AA%B2%E7%89%A9%E7%90%86%E8%AE%93%E6%96%B9%E5%A1%8A%E6%8E%89%E4%B8%8B%E4%BE%86">第 3 課：物理——讓方塊掉下來</a>
+      <a class="toc-h2" href="#%E7%AC%AC-4-%E8%AA%B2%E7%A7%BB%E5%8B%95%E6%97%8B%E8%BD%89%E7%B8%AE%E6%94%BE">第 4 課：移動、旋轉、縮放</a>
+      <a class="toc-h2" href="#%E7%AC%AC-5-%E8%AA%B2%E8%BC%89%E5%85%A5-franka-%E6%A9%9F%E6%A2%B0%E6%89%8B%E8%87%82">第 5 課：載入 Franka 機械手臂</a>
+      <a class="toc-h2" href="#%E7%AC%AC-6-%E8%AA%B2%E6%9F%A5%E8%A9%A2%E8%88%87%E6%8E%A7%E5%88%B6%E9%97%9C%E7%AF%80">第 6 課：查詢與控制關節</a>
+      <a class="toc-h2" href="#%E7%AC%AC-7-%E8%AA%B2%E7%89%A9%E7%90%86%E5%9B%9E%E5%91%BC%E6%AF%8F%E4%B8%80%E6%AD%A5%E9%83%BD%E5%81%9A%E4%BA%8B">第 7 課：物理回呼——每一步都做事</a>
+      <a class="toc-h2" href="#%E7%AC%AC-8-%E8%AA%B2%E9%9D%9E%E5%90%8C%E6%AD%A5%E4%BB%BB%E5%8B%99%E7%A8%8B%E5%BC%8F%E5%8C%96%E6%8E%A7%E5%88%B6%E6%99%82%E9%96%93%E8%BB%B8">第 8 課：非同步任務——程式化控制時間軸</a>
+      <a class="toc-h2" href="#%E7%AC%AC-9-%E8%AA%B2%E5%A0%B4%E6%99%AF%E6%9F%A5%E8%A9%A2%E5%B0%84%E7%B7%9A%E8%88%87%E9%87%8D%E7%96%8A%E6%B8%AC%E8%A9%A6">第 9 課：場景查詢——射線與重疊測試</a>
+      <a class="toc-h2" href="#%E7%AC%AC-10-%E8%AA%B2%E7%B6%9C%E5%90%88%E7%B7%B4%E7%BF%92%E5%85%A8%E8%87%AA%E5%8B%95%E5%B0%8F%E5%A0%B4%E6%99%AF">第 10 課：綜合練習——全自動小場景</a>
+      <a class="toc-h2" href="#%E5%B8%B8%E8%A6%8B%E9%8C%AF%E8%AA%A4%E8%88%87%E9%99%A4%E9%8C%AF%E6%8C%87%E5%8D%97">常見錯誤與除錯指南</a>
+      <a class="toc-h2" href="#%E9%99%84%E9%8C%84%E5%B8%B8%E7%94%A8-api-%E9%80%9F%E6%9F%A5%E8%A1%A8">附錄：常用 API 速查表</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="isaac-sim-script-editor-實戰教學">Isaac Sim Script Editor 實戰教學<a class="anchor" href="#isaac-sim-script-editor-實戰教學" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>一份專為 <strong>Script Editor</strong> 工作流程設計的循序教學，適用 <strong>Isaac Sim 6.0.x</strong>。
+所有程式碼均使用官方目前主推的 <strong>Core Experimental API</strong>（<code>isaacsim.core.experimental.*</code>）。
+背景知識請搭配《<a href="docs.html">Isaac Sim 中文文檔</a>》閱讀。</p>
+</blockquote>
+<p><strong>學習目標</strong>：完成本教學後，你將能夠不碰滑鼠選單，只用 Python 在 Script Editor 中——建立場景、賦予物理、操作位姿、載入並控制 Franka 機械手臂、註冊每步回呼，最後把成果存成 USD 檔。</p>
+<p><strong>預備條件</strong>：已完成 Isaac Sim 安裝（見中文文檔第 3 章），具備基礎 Python 知識。</p>
+<hr>
+<h2 id="第-0-課認識-script-editor">第 0 課：認識 Script Editor<a class="anchor" href="#第-0-課認識-script-editor" aria-hidden="true">#</a></h2>
+<p>Script Editor 是 Omniverse Kit 內建的 Python 編輯執行環境，可直接對目前的 USD stage 下指令——它是「Extension 工作流程」最容易上手的入口。</p>
+<h3 id="開啟方式">開啟方式<a class="anchor" href="#開啟方式" aria-hidden="true">#</a></h3>
+<p>選單列 <strong>Window &gt; Script Editor</strong>。建議把視窗拖曳停靠在 Viewport 下方，寫程式時同步看到場景變化。</p>
+<h3 id="介面與操作重點">介面與操作重點<a class="anchor" href="#介面與操作重點" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr>
+<th>功能</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>執行</strong></td>
+<td>按下方 <strong>Run</strong> 按鈕，或快捷鍵 <strong>Ctrl+Enter</strong></td>
+</tr>
+<tr>
+<td><strong>執行部分程式</strong></td>
+<td>反白選取一段程式再執行，只會跑選取的部分（除錯利器）</td>
+</tr>
+<tr>
+<td><strong>多分頁</strong></td>
+<td><strong>Tab &gt; Add Tab</strong> 開新分頁；<strong>所有分頁共享同一個 Python 環境</strong>——A 分頁 import 的模組、定義的變數，B 分頁可以直接用</td>
+</tr>
+<tr>
+<td><strong>內建範例</strong></td>
+<td><strong>Snippets</strong> 選單有一批示範 Kit API 核心概念的程式片段</td>
+</tr>
+<tr>
+<td><strong>開檔／存檔</strong></td>
+<td>Windows 上可 Open/Save/Save As 到磁碟（選單在 Linux 上顯示但無作用）</td>
+</tr>
+<tr>
+<td><strong>輸出位置</strong></td>
+<td><code>print()</code> 的結果顯示在編輯器下方的輸出區，同時也會出現在啟動 Isaac Sim 的<strong>終端機</strong>；跑很長的 callback 輸出時看終端機比較方便</td>
+</tr>
+</tbody></table>
+<h3 id="兩個必須先建立的心智模型">兩個必須先建立的心智模型<a class="anchor" href="#兩個必須先建立的心智模型" aria-hidden="true">#</a></h3>
+<ol>
+<li><strong>非同步執行</strong>：Script Editor 的程式與渲染、物理<strong>並行</strong>。你的腳本跑完就結束了，模擬世界繼續走自己的時間。想「每個物理步都做某件事」，要註冊 callback（第 7 課）。</li>
+<li><strong>物理要 Play 才會動</strong>：Viewport 一打開就在渲染，但<strong>物理引擎只在你按下 Play 之後才步進</strong>。所有讀寫關節狀態、施力、接觸查詢的 API，都必須在模擬播放中才有效。</li>
+</ol>
+<blockquote>
+<p>練習：開啟 Script Editor，輸入 <code>print(&quot;Hello Isaac Sim&quot;)</code> 按 Ctrl+Enter，確認輸出區看得到文字。</p>
+</blockquote>
+<hr>
+<h2 id="第-1-課hello-stage建立新場景與地板">第 1 課：Hello Stage——建立新場景與地板<a class="anchor" href="#第-1-課hello-stage建立新場景與地板" aria-hidden="true">#</a></h2>
+<p>在 Script Editor 貼上並執行：</p>
+<pre><code class="language-python">import isaacsim.core.experimental.utils.stage as stage_utils
+from isaacsim.core.experimental.objects import GroundPlane
+
+stage_utils.create_new_stage()                       # 等同 File &gt; New
+GroundPlane(&quot;/World/GroundPlane&quot;, positions=[0, 0, 0])  # 加一片地板
+</code></pre>
+<p><strong>解說：</strong></p>
+<ul>
+<li><code>stage_utils.create_new_stage()</code>：程式化開新 stage，舊場景會被丟棄（未存檔的內容會消失）。</li>
+<li>USD 中一切都是 <strong>prim</strong>，每個 prim 都有一條路徑（如 <code>/World/GroundPlane</code>）。看右側 <strong>Stage</strong> 面板，你剛剛建立的 prim 就在樹裡。</li>
+<li>GUI 與程式做的事完全等價——這正是 Isaac Sim「三種工作流程可互換」的體現。</li>
+</ul>
+<blockquote>
+<p>練習：執行後在 Stage 面板找到 GroundPlane，點選它並觀察 Property 面板的屬性。</p>
+</blockquote>
+<hr>
+<h2 id="第-2-課燈光幾何與材質">第 2 課：燈光、幾何與材質<a class="anchor" href="#第-2-課燈光幾何與材質" aria-hidden="true">#</a></h2>
+<p><strong>開一個新分頁</strong>（Tab &gt; Add Tab），執行：</p>
+<pre><code class="language-python">from isaacsim.core.experimental.objects import DistantLight
+
+distant_light = DistantLight(&quot;/DistantLight&quot;)
+distant_light.set_intensities(300)
+</code></pre>
+<p>沒有光源時，就算有物體場景也是暗的。接著加兩顆帶顏色的方塊：</p>
+<pre><code class="language-python">from isaacsim.core.experimental.materials import PreviewSurfaceMaterial
+from isaacsim.core.experimental.objects import Cube
+
+yellow_material = PreviewSurfaceMaterial(&quot;/Materials/yellow&quot;)
+yellow_material.set_input_values(&quot;diffuseColor&quot;, [1.0, 1.0, 0.0])
+
+cyan_material = PreviewSurfaceMaterial(&quot;/Materials/cyan&quot;)
+cyan_material.set_input_values(&quot;diffuseColor&quot;, [0.0, 1.0, 1.0])
+
+visual_cube = Cube(paths=&quot;/visual_cube&quot;, positions=[0, 0.5, 0.5], sizes=0.3)
+visual_cube.apply_visual_materials(yellow_material)
+
+test_cube = Cube(paths=&quot;/test_cube&quot;, positions=[0, -0.5, 0.5], sizes=0.3)
+test_cube.apply_visual_materials(cyan_material)
+</code></pre>
+<p><strong>解說：</strong></p>
+<ul>
+<li>這兩顆是「<strong>視覺方塊</strong>」：沒有質量、沒有碰撞。按 <strong>Play</strong> 試試——它們懸浮在半空中一動不動。</li>
+<li>材質也是 prim（放在 <code>/Materials/</code> 下），先建立材質再 <code>apply_visual_materials()</code> 綁定到物體。</li>
+<li>想要玻璃或 PBR 材質，可改用 <code>OmniGlassMaterial</code>、<code>OmniPbrMaterial</code>（後者支援貼圖）。</li>
+</ul>
+<blockquote>
+<p>練習：再加一顆紅色方塊 <code>/my_cube</code>，位置 <code>[0.5, 0, 0.5]</code>。提示：<code>diffuseColor</code> 設 <code>[1.0, 0.0, 0.0]</code>。</p>
+</blockquote>
+<hr>
+<h2 id="第-3-課物理讓方塊掉下來">第 3 課：物理——讓方塊掉下來<a class="anchor" href="#第-3-課物理讓方塊掉下來" aria-hidden="true">#</a></h2>
+<p>物理屬性（質量、慣性）與碰撞屬性是<strong>分開</strong>的，可以只加其中之一；多數情況兩者一起加。開新分頁執行：</p>
+<pre><code class="language-python">from isaacsim.core.experimental.prims import GeomPrim, RigidPrim
+
+RigidPrim(paths=&quot;/test_cube&quot;)                          # 加剛體（會受重力）
+GeomPrim(paths=&quot;/test_cube&quot;, apply_collision_apis=True)  # 加碰撞（會撞到東西）
+</code></pre>
+<p>按 <strong>Play</strong>：青色方塊落下、撞到地板停住；黃色方塊依然懸浮。</p>
+<p><strong>解說——Experimental API 的「包裝」哲學：</strong></p>
+<ul>
+<li><code>Cube(...)</code> 建立幾何；<code>RigidPrim(paths)</code> 把剛體能力「疊」上去；<code>GeomPrim(paths, apply_collision_apis=True)</code> 疊上碰撞。</li>
+<li>對既有物體（不管是誰建立的、GUI 拖進來的也一樣）都可以事後疊加，路徑對了就行。</li>
+<li>想調碰撞近似法：<code>geom_prim.set_collision_approximations([&quot;convexHull&quot;])</code>（更緊密可用 <code>&quot;convexDecomposition&quot;</code>）。</li>
+<li>想驗證碰撞網格：Viewport 左上「眼睛」圖示 &gt; <strong>Show By Type &gt; Physics Mesh &gt; All</strong>，碰撞網格會以粉紅色線框顯示。</li>
+<li>設質量：<code>RigidPrim(paths).set_masses([10.0])</code> 或以密度 <code>set_densities([1000.0])</code>。</li>
+</ul>
+<blockquote>
+<p>練習：把第 2 課練習建立的 <code>/my_cube</code> 也變成會掉落的剛體。</p>
+</blockquote>
+<hr>
+<h2 id="第-4-課移動旋轉縮放">第 4 課：移動、旋轉、縮放<a class="anchor" href="#第-4-課移動旋轉縮放" aria-hidden="true">#</a></h2>
+<p>按 <strong>Stop</strong> 停止模擬，然後執行：</p>
+<pre><code class="language-python">from isaacsim.core.experimental.prims import XformPrim
+
+cube_prim = XformPrim(paths=&quot;/test_cube&quot;)
+cube_prim.set_world_poses([1.5, 1.2, 1.0], [0.7, 0.7, 0, 1])  # 位置、四元數(wxyz)
+cube_prim.set_local_scales([1, 1.5, 0.2])
+</code></pre>
+<p>不習慣四元數？用工具函式從歐拉角轉換：</p>
+<pre><code class="language-python">import isaacsim.core.experimental.utils.transform as transform_utils
+from isaacsim.core.experimental.prims import XformPrim
+
+orientation = transform_utils.euler_angles_to_quaternion([0.0, 45.0, 0.0], degrees=True)
+XformPrim(&quot;/test_cube&quot;).set_world_poses(positions=[[0.0, 0.0, 1.5]], orientations=orientation)
+</code></pre>
+<p>讀取位姿（例如把 B 對齊到 A）：</p>
+<pre><code class="language-python">positions, orientations = XformPrim(&quot;/test_cube&quot;).get_world_poses()
+XformPrim(&quot;/visual_cube&quot;).set_world_poses(positions=positions, orientations=orientations)
+</code></pre>
+<p><strong>解說：</strong></p>
+<ul>
+<li><code>XformPrim</code> 是所有「有位姿的東西」的共同包裝，機器人底座也用它擺位置。</li>
+<li>對照 GUI：這等同選取物體後按 W/E/R 拖曳 Gizmo，或在 Property 面板輸入數值。</li>
+<li>四元數順序是 <strong>wxyz</strong>。<code>transform_utils</code> 還有 <code>quaternion_to_rotation_matrix()</code> 等轉換工具。</li>
+</ul>
+<blockquote>
+<p>練習：讓黃色方塊每次執行時往 +X 移動 0.1。提示：先 <code>get_world_poses()</code> 讀出來、修改、再 <code>set_world_poses()</code> 寫回去。</p>
+</blockquote>
+<hr>
+<h2 id="第-5-課載入-franka-機械手臂">第 5 課：載入 Franka 機械手臂<a class="anchor" href="#第-5-課載入-franka-機械手臂" aria-hidden="true">#</a></h2>
+<p>開新分頁，從官方雲端資產庫載入 Franka：</p>
+<pre><code class="language-python">import isaacsim.core.experimental.utils.stage as stage_utils
+from isaacsim.core.experimental.prims import Articulation, XformPrim
+from isaacsim.storage.native import get_assets_root_path
+
+assets_root_path = get_assets_root_path()
+asset_path = assets_root_path + &quot;/Isaac/Robots/FrankaRobotics/FrankaPanda/franka.usd&quot;
+stage_utils.add_reference_to_stage(usd_path=asset_path, path=&quot;/World/Arm&quot;)
+
+arm_transform = XformPrim(&quot;/World/Arm&quot;)
+arm_transform.set_world_poses(positions=[0.0, 1.0, 0.0])
+
+arm_handle = Articulation(&quot;/World/Arm&quot;)
+</code></pre>
+<p><strong>解說：</strong></p>
+<ul>
+<li><code>get_assets_root_path()</code> 回傳官方資產伺服器根路徑（需網路連線；離線環境要設定本地資產包）。</li>
+<li><code>add_reference_to_stage()</code> 是 USD 的 <strong>Reference</strong> 機制：不是複製整個機器人，而是「引用」外部 USD 檔到指定路徑——場景檔因此輕巧且能跟著原始資產更新。</li>
+<li><code>Articulation</code> 是<strong>關節機構</strong>（機器人）的核心包裝類：查狀態、送命令都靠它。</li>
+<li>變數 <code>arm_handle</code> 會留在共享環境裡，<strong>後續課程的分頁直接使用</strong>。</li>
+</ul>
+<blockquote>
+<p>練習：把 <code>/Isaac/Robots/FrankaRobotics/FrankaPanda/franka.usd</code> 換成其他機器人載入試試（可先在 GUI 的 Create &gt; Robots 選單觀察有哪些）。</p>
+</blockquote>
+<hr>
+<h2 id="第-6-課查詢與控制關節">第 6 課：查詢與控制關節<a class="anchor" href="#第-6-課查詢與控制關節" aria-hidden="true">#</a></h2>
+<p><strong>先按 Play</strong>（物理必須在跑），再於新分頁執行：</p>
+<pre><code class="language-python"># 查詢：需要 arm_handle（第 5 課建立）
+print(&quot;Number of joints:&quot;, arm_handle.num_dofs)
+print(&quot;Joint names:&quot;, arm_handle.dof_names)
+print(&quot;Joint positions:&quot;, arm_handle.get_dof_positions())
+</code></pre>
+<p>送出關節位置命令，讓手臂擺出姿勢：</p>
+<pre><code class="language-python"># Franka 共 9 DOF：7 個手臂關節 + 2 個夾爪指關節
+arm_handle.set_dof_positions([-1.5, 0.0, 0.0, -1.5, 0.0, 1.5, 0.5, 0.04, 0.04])
+
+# 回到預設姿勢：
+# arm_handle.set_dof_positions([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.04, 0.04])
+</code></pre>
+<p>更多控制模式（以 GUI 建立、位於 <code>/Franka</code> 的機器人為例）：</p>
+<pre><code class="language-python">import numpy as np
+from isaacsim.core.experimental.prims import Articulation
+
+articulation = Articulation(&quot;/World/Arm&quot;)
+
+# 位置目標（隨機姿勢）
+articulation.set_dof_position_targets(np.random.rand(9) * 2 - 1)
+
+# 只控制單一關節：開合夾爪（finger_joint2 與 1 連動）
+articulation.set_dof_position_targets(
+    0.04, dof_indices=articulation.get_dof_indices(&quot;panda_finger_joint1&quot;))
+
+# 切換到速度控制
+articulation.switch_dof_control_mode(&quot;velocity&quot;)
+articulation.set_dof_velocity_targets(
+    0.25, dof_indices=articulation.get_dof_indices(&quot;panda_joint4&quot;))
+
+# 切換到力矩控制
+articulation.switch_dof_control_mode(&quot;effort&quot;)
+articulation.set_dof_efforts(100 * (np.random.rand(9) * 2 - 1))
+</code></pre>
+<p><strong>解說與注意：</strong></p>
+<ul>
+<li><strong>所有讀寫關節的 API 都要在 Play 中執行</strong>，否則會失敗或拿到無效資料。</li>
+<li>按一次 Run 只執行一次——模擬繼續跑，但你的命令不會重複。連續控制要靠下一課的 callback。</li>
+<li>隨機目標可能不符合機器人的運動學限制，僅供練習觀察。</li>
+<li>路徑支援正規表達式：<code>Articulation(&quot;/World/Franka_.*&quot;)</code> 可一次包裝多台同型機器人做批次控制（見官方 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/python_scripting/robots_simulation.html">Robot Simulation Snippets</a>）。</li>
+</ul>
+<blockquote>
+<p>練習：寫一段程式印出每個關節的名稱與目前位置，一行一個，格式如 <code>panda_joint1: 0.012</code>。</p>
+</blockquote>
+<hr>
+<h2 id="第-7-課物理回呼每一步都做事">第 7 課：物理回呼——每一步都做事<a class="anchor" href="#第-7-課物理回呼每一步都做事" aria-hidden="true">#</a></h2>
+<p>想「每個物理步都印出關節位置」？註冊 <strong>POST_PHYSICS_STEP</strong> 回呼：</p>
+<pre><code class="language-python">from isaacsim.core.simulation_manager import IsaacEvents, SimulationManager
+
+def print_joint_positions_callback(dt, context):
+    positions = arm_handle.get_dof_positions()
+    print(&quot;Joint positions:&quot;, positions)
+
+# 保留 callback_id，之後才能移除
+callback_id = SimulationManager.register_callback(
+    print_joint_positions_callback, IsaacEvents.POST_PHYSICS_STEP)
+</code></pre>
+<p>按 <strong>Play</strong>，觀察終端機（不是輸出區）以每個物理步的頻率洗版。夠了就取消註冊：</p>
+<pre><code class="language-python">from isaacsim.core.simulation_manager import SimulationManager
+
+SimulationManager.deregister_callback(callback_id)
+</code></pre>
+<p><strong>解說：</strong></p>
+<ul>
+<li>這就是 Extension 工作流程處理「連續邏輯」的標準模式：主環境非同步，週期性工作交給 callback。</li>
+<li>callback 簽名是 <code>(dt, context)</code>，<code>dt</code> 為該步的時間間隔。</li>
+<li>同樣手法可以做<strong>連續控制</strong>：在 callback 裡呼叫 <code>set_dof_position_targets()</code>，實作簡單的軌跡跟隨。</li>
+<li>對照組：<strong>Standalone 腳本</strong>則是自己寫 <code>for</code> 迴圈呼叫 <code>SimulationManager.step()</code>，把控制程式碼放進迴圈——同一套 API、不同的時間主導權。</li>
+</ul>
+<blockquote>
+<p>練習：註冊一個 callback，讓 <code>panda_joint1</code> 的位置目標隨時間以正弦波擺動。提示：用一個全域變數累加 <code>dt</code>，<code>target = 0.5 * math.sin(t)</code>。</p>
+</blockquote>
+<hr>
+<h2 id="第-8-課非同步任務程式化控制時間軸">第 8 課：非同步任務——程式化控制時間軸<a class="anchor" href="#第-8-課非同步任務程式化控制時間軸" aria-hidden="true">#</a></h2>
+<p>Script Editor 中無法「阻塞等待」模擬走幾步（會卡死 UI），正確做法是 <code>asyncio</code>：</p>
+<pre><code class="language-python">import asyncio
+import omni
+
+# 播放，等一個 frame，然後暫停
+async def pause_sim(task):
+    done, pending = await asyncio.wait({task})
+    if task in done:
+        print(&quot;Waited until next frame, pausing&quot;)
+        omni.timeline.get_timeline_interface().pause()
+
+omni.timeline.get_timeline_interface().play()
+task = asyncio.ensure_future(omni.kit.app.get_app().next_update_async())
+asyncio.ensure_future(pause_sim(task))
+</code></pre>
+<p>Experimental API 也提供更精簡的 <code>app_utils</code>；下面示範「建場景 → 播放 → 等 10 步 → 讀接觸力 → 停止」一氣呵成：</p>
+<pre><code class="language-python">import asyncio
+import isaacsim.core.experimental.utils.app as app_utils
+import isaacsim.core.experimental.utils.stage as stage_utils
+from isaacsim.core.experimental.objects import Cube, GroundPlane
+from isaacsim.core.experimental.prims import GeomPrim, RigidPrim
+
+async def demo():
+    stage_utils.define_prim(&quot;/World/physicsScene&quot;, &quot;PhysicsScene&quot;)
+    GroundPlane(&quot;/World/groundPlane&quot;)
+    cube = Cube(&quot;/World/drop_cube&quot;, positions=[0.0, 0.0, 2.0], sizes=0.3)
+    GeomPrim(cube.paths, apply_collision_apis=True)
+    rigid = RigidPrim(cube.paths, masses=[1.0])
+
+    app_utils.play()
+    await app_utils.update_app_async(steps=10)   # 等 10 個更新
+    print(&quot;落下中位置：&quot;, rigid.get_world_poses()[0].numpy())
+    app_utils.stop()
+
+asyncio.ensure_future(demo())
+</code></pre>
+<p><strong>解說：</strong></p>
+<ul>
+<li><code>omni.timeline.get_timeline_interface()</code> 的 <code>play()/pause()/stop()</code> 等同按 Viewport 左側的按鈕。</li>
+<li><code>await app_utils.update_app_async(steps=N)</code> 讓協程「讓出控制權」等 N 個更新——UI 不會卡住。</li>
+<li>張量後端（tensor-backed）的物理 API（讀位姿、速度、接觸力等）<strong>必須在 timeline 播放後才有效</strong>，這也是為什麼官方片段常包在 <code>async def</code> + <code>app_utils.play()</code> 裡。</li>
+</ul>
+<blockquote>
+<p>練習：改寫 demo，讓方塊落地後（等 60 步）印出最終高度，驗證它停在地板上。</p>
+</blockquote>
+<hr>
+<h2 id="第-9-課場景查詢射線與重疊測試">第 9 課：場景查詢——射線與重疊測試<a class="anchor" href="#第-9-課場景查詢射線與重疊測試" aria-hidden="true">#</a></h2>
+<p>物理引擎不只會演，還能「問」。前提：場景有 physics scene、物體有碰撞網格、<strong>Play 中</strong>。</p>
+<p><strong>Raycast（射線）</strong>——找出射線最先打到的物體並塗黃：</p>
+<pre><code class="language-python">import carb
+import omni
+from omni.physx import get_physx_scene_query_interface
+from pxr import Gf, UsdGeom, Vt
+
+def check_raycast():
+    origin = carb.Float3(0.0, 0.0, 0.5)
+    ray_dir = carb.Float3(1.0, 0.0, 0.0)
+    distance = 100.0
+    hit = get_physx_scene_query_interface().raycast_closest(origin, ray_dir, distance)
+    if hit[&quot;hit&quot;]:
+        usd_geom = UsdGeom.Mesh.Get(omni.usd.get_context().get_stage(), hit[&quot;rigidBody&quot;])
+        usd_geom.GetDisplayColorAttr().Set(Vt.Vec3fArray([Gf.Vec3f(1.0, 1.0, 0.0)]))
+        return usd_geom.GetPath().pathString, hit[&quot;distance&quot;]
+    return None, 10000.0
+
+print(check_raycast())
+</code></pre>
+<p><strong>Overlap（重疊）</strong>——偵測與指定立方體區域重疊的物體並塗紅：</p>
+<pre><code class="language-python">import carb
+import omni
+from omni.physx import get_physx_scene_query_interface
+from pxr import Gf, UsdGeom, Vt
+
+def report_hit(hit):
+    usd_geom = UsdGeom.Mesh.Get(omni.usd.get_context().get_stage(), hit.rigid_body)
+    usd_geom.GetDisplayColorAttr().Set(Vt.Vec3fArray([Gf.Vec3f(180/255, 16/255, 0.0)]))
+    return True  # 回傳 True 繼續回報下一個
+
+def check_overlap():
+    extent = carb.Float3(0.5, 0.5, 0.5)
+    origin = carb.Float3(0.0, 0.0, 0.0)
+    rotation = carb.Float4(0.0, 0.0, 1.0, 0.0)
+    num_hits = get_physx_scene_query_interface().overlap_box(
+        extent, origin, rotation, report_hit, False)
+    return num_hits &gt; 0
+
+print(check_overlap())
+</code></pre>
+<p><strong>解說：</strong></p>
+<ul>
+<li>這是實作簡易感測器（近接偵測、視線判斷）與抓取邏輯（判斷夾爪附近有什麼）的基石。</li>
+<li>射線起點／方向可以換成即時的相機或機器人末端位姿。</li>
+<li>更完整的接觸力資訊（摩擦力、法向力、接觸點）可透過 <code>RigidPrim</code> 的 contact filter API 取得，見官方 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/python_scripting/environment_setup.html#create-rigidprim-with-contact-filters">Scene Setup Snippets</a>。</li>
+</ul>
+<blockquote>
+<p>練習：從 <code>/World/Arm</code> 手臂基座位置往 -Y 方向發射線，偵測前方有沒有東西。</p>
+</blockquote>
+<hr>
+<h2 id="第-10-課綜合練習全自動小場景">第 10 課：綜合練習——全自動小場景<a class="anchor" href="#第-10-課綜合練習全自動小場景" aria-hidden="true">#</a></h2>
+<p>把所學整合成一個腳本：建場景 → 擺機器人 → 播放 → 揮手 → 存檔。<strong>開新 stage 後</strong>在單一分頁貼上執行：</p>
+<pre><code class="language-python">import asyncio
+import isaacsim.core.experimental.utils.app as app_utils
+import isaacsim.core.experimental.utils.stage as stage_utils
+from isaacsim.core.experimental.materials import PreviewSurfaceMaterial
+from isaacsim.core.experimental.objects import Cube, DistantLight, GroundPlane
+from isaacsim.core.experimental.prims import Articulation, GeomPrim, RigidPrim
+from isaacsim.storage.native import get_assets_root_path
+
+async def build_and_run():
+    # 1. 場景基礎
+    stage_utils.create_new_stage()
+    stage_utils.define_prim(&quot;/World/physicsScene&quot;, &quot;PhysicsScene&quot;)
+    GroundPlane(&quot;/World/GroundPlane&quot;, positions=[0, 0, 0])
+    DistantLight(&quot;/World/Light&quot;).set_intensities(500)
+
+    # 2. 一顆會掉落的紅色方塊
+    red = PreviewSurfaceMaterial(&quot;/Materials/red&quot;)
+    red.set_input_values(&quot;diffuseColor&quot;, [1.0, 0.0, 0.0])
+    cube = Cube(&quot;/World/box&quot;, positions=[0.4, 0.0, 1.0], sizes=0.05)
+    cube.apply_visual_materials(red)
+    GeomPrim(cube.paths, apply_collision_apis=True)
+    RigidPrim(cube.paths, masses=[0.1])
+
+    # 3. 載入 Franka
+    asset = get_assets_root_path() + &quot;/Isaac/Robots/FrankaRobotics/FrankaPanda/franka.usd&quot;
+    stage_utils.add_reference_to_stage(usd_path=asset, path=&quot;/World/Arm&quot;)
+    arm = Articulation(&quot;/World/Arm&quot;)
+
+    # 4. 播放並讓手臂輪流擺兩個姿勢
+    app_utils.play()
+    await app_utils.update_app_async(steps=10)
+    for pose in (
+        [-1.5, 0.0, 0.0, -1.5, 0.0, 1.5, 0.5, 0.04, 0.04],
+        [0.0, -0.5, 0.0, -2.0, 0.0, 2.0, 0.8, 0.0, 0.0],
+    ):
+        arm.set_dof_position_targets(pose)
+        await app_utils.update_app_async(steps=120)
+        print(&quot;目前關節位置：&quot;, arm.get_dof_positions().numpy())
+    app_utils.stop()
+
+    # 5. 存檔
+    import omni, tempfile
+    from pathlib import Path
+    out = Path(tempfile.gettempdir()) / &quot;my_first_scene.usd&quot;
+    omni.usd.get_context().save_as_stage(str(out), None)
+    print(f&quot;場景已存至 {out}&quot;)
+
+asyncio.ensure_future(build_and_run())
+</code></pre>
+<p><strong>驗收清單</strong>：地板與光源出現 → 紅色小方塊落到地面 → 手臂連續擺出兩個姿勢 → 終端機印出關節位置 → 印出 USD 存檔路徑。</p>
+<p><strong>延伸挑戰：</strong></p>
+<ol>
+<li>在手臂前方放一排方塊，用第 9 課的 raycast 從末端執行器偵測它們。</li>
+<li>用第 7 課的 callback 讓手臂持續做正弦擺動，方塊落在手臂上觀察互動。</li>
+<li>把存出來的 USD 用 <strong>File &gt; Open</strong> 重新載入，驗證場景完整保存。</li>
+</ol>
+<hr>
+<h2 id="常見錯誤與除錯指南">常見錯誤與除錯指南<a class="anchor" href="#常見錯誤與除錯指南" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>症狀</th>
+<th>原因與解法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>讀關節狀態回傳錯誤／無效值</td>
+<td><strong>模擬沒在 Play</strong>。先按 Play 再執行；或用 <code>app_utils.play()</code></td>
+</tr>
+<tr>
+<td><code>NameError: arm_handle is not defined</code></td>
+<td>依賴前面分頁建立的變數，但 stage 已重開或還沒執行該分頁。分頁共享環境，但變數不會自動重建</td>
+</tr>
+<tr>
+<td>重複執行報 prim 已存在</td>
+<td>同一路徑重複建立。先 File &gt; New（或 <code>create_new_stage()</code>），或換路徑</td>
+</tr>
+<tr>
+<td>程式跑了但場景沒變化</td>
+<td>檢查是不是只選取了部分程式（反白執行只跑選取段）</td>
+</tr>
+<tr>
+<td>callback 的 print 看不到</td>
+<td>輸出在<strong>終端機</strong>，不是 Script Editor 輸出區</td>
+</tr>
+<tr>
+<td>callback 停不下來</td>
+<td>用註冊時回傳的 <code>callback_id</code> 呼叫 <code>SimulationManager.deregister_callback()</code>；沒存到 id 就重啟模擬</td>
+</tr>
+<tr>
+<td><code>get_assets_root_path()</code> 失敗或載入機器人卡住</td>
+<td>資產庫需要網路；受限網路請設定<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_faq.html">本地資產包</a></td>
+</tr>
+<tr>
+<td>舊教學程式碼 import 失敗（<code>omni.isaac.core</code> 等）</td>
+<td>4.5 → 6.0 擴充功能改名、Core API 改版。對照<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/migration_guides/index.html">遷移指南</a>改用 <code>isaacsim.core.experimental.*</code></td>
+</tr>
+<tr>
+<td>UI 卡死</td>
+<td>腳本裡有阻塞呼叫（如 <code>time.sleep</code> 長迴圈）。改用 <code>asyncio</code> + <code>update_app_async()</code>（第 8 課）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="附錄常用-api-速查表">附錄：常用 API 速查表<a class="anchor" href="#附錄常用-api-速查表" aria-hidden="true">#</a></h2>
+<pre><code class="language-python"># ── Stage ──────────────────────────────────────────────
+import isaacsim.core.experimental.utils.stage as stage_utils
+stage_utils.create_new_stage()                      # 新 stage
+stage_utils.add_reference_to_stage(usd_path, path)  # 引用外部 USD
+stage_utils.define_prim(path, &quot;PhysicsScene&quot;)       # 定義 prim
+stage_utils.get_current_stage()                     # 取得目前 stage
+
+# ── 物件 ──────────────────────────────────────────────
+from isaacsim.core.experimental.objects import Cube, GroundPlane, DistantLight, Cone, Mesh
+Cube(paths, positions=..., sizes=..., scales=..., colors=...)
+
+# ── 能力疊加 ──────────────────────────────────────────
+from isaacsim.core.experimental.prims import XformPrim, GeomPrim, RigidPrim, Articulation
+XformPrim(p).set_world_poses(pos, quat_wxyz)        # 位姿
+GeomPrim(p, apply_collision_apis=True)              # 碰撞
+RigidPrim(p, masses=[1.0])                          # 剛體
+Articulation(p)                                     # 關節機構
+
+# ── 關節控制（Play 中） ────────────────────────────────
+arm.num_dofs; arm.dof_names
+arm.get_dof_positions(); arm.get_dof_velocities(); arm.get_dof_efforts()
+arm.set_dof_positions([...]); arm.set_dof_position_targets([...])
+arm.switch_dof_control_mode(&quot;velocity&quot; | &quot;effort&quot;)
+arm.get_dof_indices(&quot;joint_name&quot;)
+
+# ── 模擬管理 ──────────────────────────────────────────
+import isaacsim.core.experimental.utils.app as app_utils
+app_utils.play(); app_utils.stop()
+await app_utils.update_app_async(steps=N)
+from isaacsim.core.simulation_manager import SimulationManager, IsaacEvents, PhysxScene
+cb_id = SimulationManager.register_callback(fn, IsaacEvents.POST_PHYSICS_STEP)
+SimulationManager.deregister_callback(cb_id)
+PhysxScene(&quot;/World/physicsScene&quot;).set_gravity([0, 0, -9.81])
+
+# ── 轉換工具 ──────────────────────────────────────────
+import isaacsim.core.experimental.utils.transform as transform_utils
+transform_utils.euler_angles_to_quaternion([r, p, y], degrees=True)
+transform_utils.quaternion_to_rotation_matrix(quat)
+
+# ── 資產與存檔 ────────────────────────────────────────
+from isaacsim.storage.native import get_assets_root_path
+get_assets_root_path()                              # 官方資產庫根路徑
+import omni
+omni.usd.get_context().save_as_stage(path, None)    # 存 USD
+omni.usd.get_context().get_stage()                  # 原生 USD stage
+omni.timeline.get_timeline_interface().play()       # 時間軸控制
+</code></pre>
+<p><strong>延伸閱讀</strong>：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/python_scripting/index.html">Python Scripting 總覽</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/core_api_tutorials/index.html">Core API 教學系列</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/reference_python_api.html">API 參考</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/development_tools/omniverse_script_editor.html">官方 Script Editor 頁面</a></p>
+<hr>
+<p><em>本教學由 Claude 依據 Isaac Sim 6.0.1 官方文檔設計；官方程式片段經整理改編，執行環境如有差異請以官方文檔為準。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>（6.0.1）。內容如與官方不符，請以官方為準。</footer>
+  </main>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>機器人：匯入、設定與模擬（Robots） — Isaac Sim 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Isaac Sim</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與設定</a>
+        <a href="gui.html">GUI 介面參考</a>
+        <div class="nav-group-title">教學系列</div>
+        <a href="tutorial.html">Script Editor 教學</a>
+        <a href="extension.html">Extension 教學</a>
+        <a href="standalone.html">Standalone Python 教學</a>
+        <div class="nav-group-title">專題章節</div>
+        <a href="robots.html" class="current">機器人：匯入・設定・模擬</a>
+        <a href="sensors.html">感測器</a>
+        <a href="physics.html">物理模擬</a>
+        <a href="ros2.html">ROS 2 整合</a>
+        <a href="sdg.html">合成資料生成</a>
+        <a href="isaaclab.html">Isaac Lab／數位孿生</a>
+        <a href="devtools.html">開發工具與擴充開發</a>
+        <div class="nav-group-title">參考</div>
+        <a href="reference.html">資產、USD 與參考資訊</a>
+    </nav>
+    <hr class="sidebar-divider">
+    <div class="sidebar-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#%E6%95%B4%E9%AB%94%E6%B5%81%E7%A8%8B">整體流程</a>
+      <a class="toc-h2" href="#1-%E5%8C%AF%E5%85%A5%E8%88%87%E5%8C%AF%E5%87%BAimporters-amp-exporters">1. 匯入與匯出（Importers &amp; Exporters）</a>
+      <a class="toc-h2" href="#2-%E6%A9%9F%E5%99%A8%E4%BA%BA%E8%A8%AD%E5%AE%9Arobot-setup">2. 機器人設定（Robot Setup）</a>
+      <a class="toc-h2" href="#3-%E6%A9%9F%E5%99%A8%E4%BA%BA%E6%A8%A1%E6%93%AC%E8%88%87%E6%8E%A7%E5%88%B6robot-simulation">3. 機器人模擬與控制（Robot Simulation）</a>
+      <a class="toc-h2" href="#4-%E9%81%8B%E5%8B%95%E8%A6%8F%E5%8A%83%E5%AF%A6%E9%A9%97%E6%80%A7-robot-motion">4. 運動規劃（實驗性 Robot Motion）</a>
+      <a class="toc-h2" href="#%E7%96%91%E9%9B%A3%E6%8E%92%E8%A7%A3">疑難排解</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="機器人匯入設定與模擬robots">機器人：匯入、設定與模擬（Robots）<a class="anchor" href="#機器人匯入設定與模擬robots" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/importer_exporter/importers_exporters.html">Importers and Exporters</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup/index.html">Robot Setup</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_simulation/index.html">Robot Simulation</a> 與 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_motion_experimental/index.html">Robot Motion (Experimental)</a> 章節的中文導覽。這是把「一台機器人」從描述檔帶進模擬、調到能用、控到會動的完整旅程。</p>
+</blockquote>
+<hr>
+<h2 id="整體流程">整體流程<a class="anchor" href="#整體流程" aria-hidden="true">#</a></h2>
+<pre><code>描述檔 (URDF / MJCF / CAD / USD)
+   → 匯入（Importers）
+   → 設定與調校（Robot Setup：關節、碰撞、增益）
+   → 模擬與控制（Articulation、控制器、夾爪）
+   → 進階運動規劃（cuMotion / PINK，實驗性）
+</code></pre>
+<h2 id="1-匯入與匯出importers-amp-exporters">1. 匯入與匯出（Importers &amp; Exporters）<a class="anchor" href="#1-匯入與匯出importers-amp-exporters" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>用途</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>URDF Importer</td>
+<td>ROS 生態標準格式匯入</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/importer_exporter/ext_isaacsim_asset_importer_urdf.html">說明</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/importer_exporter/import_urdf.html">教學</a></td>
+</tr>
+<tr>
+<td>USD → URDF Exporter</td>
+<td>反向匯出給 ROS 工具鏈</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/importer_exporter/ext_omni_exporter_urdf.html">說明</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/importer_exporter/export_urdf.html">教學</a></td>
+</tr>
+<tr>
+<td>MJCF Importer</td>
+<td>MuJoCo 格式匯入</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/importer_exporter/ext_isaacsim_asset_importer_mjcf.html">說明</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/importer_exporter/import_mjcf.html">教學</a></td>
+</tr>
+<tr>
+<td>Onshape Importer</td>
+<td>雲端 CAD 直接匯入</td>
+<td><a href="https://docs.omniverse.nvidia.com/extensions/latest/ext_onshape.html">說明</a></td>
+</tr>
+<tr>
+<td>CAD Converter</td>
+<td>STEP 等 CAD 格式轉 USD</td>
+<td><a href="https://docs.omniverse.nvidia.com/extensions/latest/ext_cad-converter.html">說明</a></td>
+</tr>
+<tr>
+<td>ShapeNet Importer</td>
+<td>ShapeNet 資料集物件</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/importer_exporter/ext_omni_isaac_shapenet.html">說明</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/importer_exporter/shapenet_importer.html">教學</a></td>
+</tr>
+</tbody></table>
+<p>各格式的能力比較見 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/importer_exporter/formats.html">Formats</a>。</p>
+<h2 id="2-機器人設定robot-setup">2. 機器人設定（Robot Setup）<a class="anchor" href="#2-機器人設定robot-setup" aria-hidden="true">#</a></h2>
+<p><strong>檢查與編輯工具</strong>：</p>
+<ul>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup/robot_inspector.html">Robot Inspector</a>——檢視機器人結構與屬性。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup/robot_poser.html">Robot Poser</a>——擺姿勢、存姿態。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup/assemble_robots.html">Robot Assembler</a>——把手臂＋夾爪、車＋手臂組裝成一台。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup/ext_isaacsim_robot_setup_gain_tuner.html">Gain Tuner</a>——關節增益（stiffness/damping）調校。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup/ext_isaacsim_robot_setup_collision_detector.html">自碰撞偵測</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup/ext_isaacsim_util_merge_mesh.html">網格合併工具</a>。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup/joint_inspector.html">Joint Inspector</a>／<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/physics/joint_inspector.html">Physics Inspector</a>——關節極限、驅動參數即時檢視。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup/asset_validation.html">Asset Validation（資產驗證）</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup/asset_transformer.html">Asset Transformer</a>（批次規則化轉換資產，含 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup/asset_transformer_api.html">API</a> 與<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup/asset_transformer_rules.html">規則參考</a>）。</li>
+<li>資產的標準結構規範：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup/asset_structure.html">Asset Structure</a>。</li>
+</ul>
+<p><strong><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup_tutorials/index.html">Robot Setup 教學系列（13 篇）</a></strong>——從零 rig 一台機器人的主線教材：</p>
+<ol>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup_tutorials/tutorial_intro_environment_setup.html">Stage 設定</a> → 2. <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup_tutorials/tutorial_intro_assemble_robot.html">組裝簡單機器人</a> → 3. <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup_tutorials/tutorial_gui_simple_robot.html">基礎 Articulation</a> → 4. <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup_tutorials/tutorial_gui_camera_sensors.html">加相機與感測器</a> → 5. <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup_tutorials/rig_mobile_robot.html">Rig 移動機器人</a> → 6. <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup_tutorials/tutorial_import_assemble_manipulator.html">設定機械手臂</a> → 7. <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup_tutorials/tutorial_configure_manipulator.html">配置機械手臂</a> → 8. <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup_tutorials/tutorial_generate_robot_config.html">產生機器人設定檔</a> → 9. <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup_tutorials/tutorial_pickplace_example.html">夾取放置範例</a> → 10. <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup_tutorials/rig_closed_loop_structures.html">閉鏈結構</a> → 11. <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup_tutorials/joint_tuning.html">關節增益調校</a> → 12. <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup_tutorials/optimizing_asset.html">資產最佳化</a> → 13. <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup_tutorials/tutorial_rig_legged_robot.html">腿式機器人 rigging（locomotion policy）</a>。</li>
+</ol>
+<p>另有 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/openusd_tuning_tutorials/index.html">OpenUSD 與調校最佳實務系列（7 篇）</a>：以靈巧手為例走過資產結構、碰撞對、關節驅動與增益調校。</p>
+<h2 id="3-機器人模擬與控制robot-simulation">3. 機器人模擬與控制（Robot Simulation）<a class="anchor" href="#3-機器人模擬與控制robot-simulation" aria-hidden="true">#</a></h2>
+<ul>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_simulation/articulation_controller.html">Articulation Controller</a>——關節層控制核心（Python 用法見《完整文檔》7.3 節與《Script Editor 教學》第 6 課）。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_simulation/mobile_robot_controllers.html">移動機器人控制器</a>——差速、Ackermann 等。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_simulation/ext_isaacsim_robot_surface_gripper.html">Surface Gripper（吸附式夾爪）</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_simulation/grasp_editor.html">Grasp Editor</a>。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_simulation/ext_isaacsim_robot_policy_example.html">RL 策略範例</a>——在 Isaac Sim 內執行訓練好的策略（四足、人形等）。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_simulation/robot_simulation_tips.html">模擬技巧</a>與<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_simulation/robot_simulation_core_concepts.html">核心概念連結集</a>。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/newton_actuators_tutorials/index.html">Newton Actuators 教學</a>——Newton 引擎的致動器：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/newton_actuators_tutorials/newton_actuators_python.html">Python 設定</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/newton_actuators_tutorials/newton_actuators_usd.html">USD 撰寫</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/newton_actuators_tutorials/newton_actuators_omnigraph.html">OmniGraph 驅動</a>。</li>
+</ul>
+<p><strong>已棄用但仍在文檔中的 Motion Generation（Lula）</strong>：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/manipulators/motion_generation_overview.html">總覽</a>——RMPflow、RRT、運動學求解器、軌跡生成等，新專案請改用下方實驗性方案。</p>
+<h2 id="4-運動規劃實驗性-robot-motion">4. 運動規劃（實驗性 Robot Motion）<a class="anchor" href="#4-運動規劃實驗性-robot-motion" aria-hidden="true">#</a></h2>
+<ul>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/motion_generation/index.html">Motion Generation (Experimental)</a>：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/motion_generation/scene_interaction.html">場景互動</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/motion_generation/mobile_robot_control_example.html">控制器與 RobotState</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/motion_generation/trajectory_planning.html">軌跡規劃與執行</a>。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/cumotion/index.html">cuMotion 整合</a>：GPU 加速運動規劃——機器人設定、世界介面、RMPflow、圖式規劃器、軌跡生成／最佳化教學。</li>
+<li><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/pink/index.html">PINK 整合</a>：微分 IK——<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/pink/tutorial_ik_controller.html">IK 控制器</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/pink/tutorial_multi_task.html">多任務</a>。</li>
+</ul>
+<h2 id="疑難排解">疑難排解<a class="anchor" href="#疑難排解" aria-hidden="true">#</a></h2>
+<p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/robot_setup/troubleshooting.html">Robot Setup Troubleshooting</a>——匯入後爆炸、關節抖動、增益不穩等經典問題。</p>
+<hr>
+<p><em>本頁為官方文檔中文導覽，內容以官方為準。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>（6.0.1）。內容如與官方不符，請以官方為準。</footer>
+  </main>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>
