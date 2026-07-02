@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IMU 感測器教學：驗證 AMR 運動 — Isaac Sim 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Isaac Sim</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與設定</a>
+        <a href="gui.html">GUI 介面參考</a>
+        <div class="nav-group-title">教學系列</div>
+        <a href="tutorial.html">Script Editor 教學</a>
+        <a href="extension.html">Extension 教學</a>
+        <a href="standalone.html">Standalone Python 教學</a>
+        <a href="imu.html" class="current">IMU 感測器教學</a>
+        <div class="nav-group-title">專題章節</div>
+        <a href="robots.html">機器人：匯入・設定・模擬</a>
+        <a href="sensors.html">感測器</a>
+        <a href="physics.html">物理模擬</a>
+        <a href="ros2.html">ROS 2 整合</a>
+        <a href="sdg.html">合成資料生成</a>
+        <a href="isaaclab.html">Isaac Lab／數位孿生</a>
+        <a href="devtools.html">開發工具與擴充開發</a>
+        <div class="nav-group-title">參考</div>
+        <a href="reference.html">資產、USD 與參考資訊</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="imu-感測器教學驗證-amr-運動是否符合預期">IMU 感測器教學——驗證 AMR 運動是否符合預期<a class="anchor" href="#imu-感測器教學驗證-amr-運動是否符合預期" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>專為 <strong>AMR（自主移動機器人）運動驗證</strong>設計的 IMU 教學，適用 <strong>Isaac Sim 6.0.x</strong>，程式碼採用 <strong><code>isaacsim.sensors.experimental.physics</code></strong> Experimental API。對應官方 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physics_imu.html">IMU sensor</a> 章節。</p>
+</blockquote>
+<p><strong>學習目標</strong>：在 AMR 底盤掛上 IMU、讀取加速度／角速度／姿態；設計「直線加速 → 等速 → 原地旋轉」的已知運動剖面，把 IMU 讀值與模擬 ground truth、命令值互相比對並自動判定 PASS／FAIL；最後銜接 ROS 2，與實車 IMU 資料做 sim-to-real 驗證。</p>
+<p><strong>參考官方頁面</strong>：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physics_imu.html">IMU sensor</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/py/source/extensions/isaacsim.sensors.experimental.physics/docs/index.html">isaacsim.sensors.experimental.physics API</a>｜<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/reference_material/reference_conventions.html">Isaac Sim Conventions</a></p>
+<blockquote>
+<p><strong>6.0 重要變更</strong>：<code>isaacsim.sensors.physics</code> 的 IMU 已棄用，請改用 <strong><code>isaacsim.sensors.experimental.physics</code></strong> 的 <code>IMU</code>（USD 建立）＋<code>IMUSensor</code>（執行期讀取）。舊 <code>sensorPeriod</code> 屬性同時棄用——新 API <strong>每個物理步</strong>都會讀取。</p>
+</blockquote>
+<hr>
+<h2 id="第-1-課imu-量什麼能驗證什麼">第 1 課：IMU 量什麼、能驗證什麼<a class="anchor" href="#第-1-課imu-量什麼能驗證什麼" aria-hidden="true">#</a></h2>
+<p>IMU（慣性測量單元）模擬加速度計與陀螺儀，輸出三種資料，皆為感測器<strong>本體座標系</strong>的 x／y／z 分量（單位依 stage units，預設公尺）：</p>
+<table>
+<thead>
+<tr>
+<th>輸出</th>
+<th>內容</th>
+<th>單位</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>linear_acceleration</code></td>
+<td>線加速度（含或不含重力，可選）</td>
+<td>m/s²</td>
+</tr>
+<tr>
+<td><code>angular_velocity</code></td>
+<td>角速度</td>
+<td>rad/s</td>
+</tr>
+<tr>
+<td><code>orientation</code></td>
+<td>姿態四元數（<strong>wxyz</strong> 順序）</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p>用 IMU 驗證 AMR 運動的核心思路——<strong>同一個運動量，用三種來源互相對照</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>檢核</th>
+<th>IMU 提供</th>
+<th>比對對象</th>
+<th>驗證什麼</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>靜止零點</td>
+<td><code>lin_acc ≈ [0, 0, +9.81]</code>、<code>ang_vel ≈ 0</code></td>
+<td>物理常數</td>
+<td>感測器安裝方向、重力設定正確</td>
+</tr>
+<tr>
+<td>直線加減速</td>
+<td>加速度積分成速度</td>
+<td>ground truth 速度／輪速里程計</td>
+<td>車體確實跟上速度命令、無打滑</td>
+</tr>
+<tr>
+<td>原地旋轉</td>
+<td>角速度 z 分量</td>
+<td>下達的 yaw rate 命令</td>
+<td>轉向控制正確</td>
+</tr>
+<tr>
+<td>航向角</td>
+<td>四元數換算 yaw</td>
+<td>ground truth 朝向</td>
+<td>姿態一致、無累積漂移</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>模擬中的「ground truth」可以直接讀物理引擎的位姿與速度（<code>RigidPrim.get_world_poses()</code>／<code>get_velocities()</code>）——這是模擬獨有的優勢。實車上沒有 ground truth，就改成「模擬 IMU vs 實車 IMU」的比對，見第 6 課。</p>
+</blockquote>
+<p>先建立三個觀念：</p>
+<ol>
+<li><strong>重力</strong>：讀取時預設 <code>read_gravity=True</code>，靜止時加速度計會讀到約 <code>+9.81 m/s²</code>（z 軸向上）——和真實加速度計量「比力」的行為一致。要把加速度積分成速度時，改用 <code>read_gravity=False</code> 較方便。</li>
+<li><strong>積分漂移</strong>：加速度積分成速度、再積分成位移，誤差會隨時間累積。所以直線段驗證要用「短時間、已知剖面」，不要拿 IMU 長時間推算位置。</li>
+<li><strong>必須掛在 Rigid Body 上</strong>：IMU 要正確回報，必須附加在具剛體（Rigid Body）物理的 prim 上——掛錯位置最常見的症狀是讀值全為 0。</li>
+</ol>
+<hr>
+<h2 id="第-2-課gui-建立-imu-與內建範例">第 2 課：GUI 建立 IMU 與內建範例<a class="anchor" href="#第-2-課gui-建立-imu-與內建範例" aria-hidden="true">#</a></h2>
+<p>在 GUI 中建立 IMU（<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physics_imu.html#gui">官方步驟</a>）：</p>
+<ol>
+<li>確認場景有 Physics Scene（沒有就 <strong>Create &gt; Physics &gt; Physics Scene</strong>）。</li>
+<li>在 <strong>Stage</strong> 面板點選要掛 IMU 的 prim——AMR 請選<strong>底盤的剛體 link</strong>。</li>
+<li><strong>Create &gt; Sensors &gt; Imu Sensor</strong>，IMU 會成為該 prim 的子節點。</li>
+<li>點選 <code>Imu_Sensor</code> prim → <strong>Property</strong> 頁籤：<strong>Transform</strong> 調整安裝位置與朝向；<strong>Raw USD Properties</strong> 調整下表屬性。</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>屬性</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>enabled</code></td>
+<td>感測器開關</td>
+</tr>
+<tr>
+<td><code>linearAccelerationFilterWidth</code></td>
+<td>線加速度滾動平均視窗大小，調大輸出更平滑</td>
+</tr>
+<tr>
+<td><code>angularVelocityFilterWidth</code></td>
+<td>角速度滾動平均視窗大小</td>
+</tr>
+<tr>
+<td><code>orientationFilterWidth</code></td>
+<td>姿態滾動平均視窗大小</td>
+</tr>
+<tr>
+<td><code>sensorPeriod</code></td>
+<td>量測週期——<strong>已棄用</strong>，新 API 每個物理步都讀取</td>
+</tr>
+</tbody></table>
+<p>跑內建範例最快有感：<strong>Window &gt; Examples &gt; Robotics Examples</strong> → <strong>Sensors &gt; IMU Sensor &gt; Load Scene</strong>，按 <strong>Play</strong> 後用 <code>SHIFT + 左鍵</code> 拖動 Ant 模型，觀察加速度計與陀螺儀讀值變化；<strong>Open Source Code</strong> 可看官方怎麼用 Python API 掛感測器。</p>
+<blockquote>
+<p><strong>注意</strong>：感測器是在按下 <strong>Play</strong> 時動態建立的；模擬進行中移動 IMU prim 會使感測器失效。要改階層（例如換父剛體）或改 filter width，請先 <strong>Stop</strong>、修改、再重新 Play。</p>
+</blockquote>
+<hr>
+<h2 id="第-3-課python-api建立與讀取">第 3 課：Python API——建立與讀取<a class="anchor" href="#第-3-課python-api建立與讀取" aria-hidden="true">#</a></h2>
+<p>6.0 的寫法分兩層：<code>IMU</code> 負責建立／設定 USD prim（authoring），<code>IMUSensor</code> 負責執行期讀資料（runtime）：</p>
+<pre><code class="language-python">import numpy as np
+from isaacsim.sensors.experimental.physics import IMU, IMUSensor
+
+sensor = IMUSensor(
+    IMU.create(
+        &quot;/World/AMR/imu&quot;,                                # 父路徑必須是剛體 prim
+        translations=np.array([[0.0, 0.0, 0.15]]),       # 相對底盤的安裝位置
+        orientations=np.array([[1.0, 0.0, 0.0, 0.0]]),   # wxyz
+        linear_acceleration_filter_size=10,
+        angular_velocity_filter_size=10,
+        orientation_filter_size=10,
+    )
+)
+</code></pre>
+<blockquote>
+<p><code>translations</code>（父座標系）與 <code>positions</code>（世界座標系）<strong>二選一</strong>，不能同時給。若 prim 已存在，直接用 <code>IMU(&quot;/World/AMR/imu&quot;)</code> 包裝即可。</p>
+</blockquote>
+<p>讀取有三種方式：</p>
+<table>
+<thead>
+<tr>
+<th>方式</th>
+<th>回傳</th>
+<th>適合</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>get_sensor_reading(read_gravity=True)</code></td>
+<td>C++ 結構：<code>is_valid</code>、<code>time</code>、<code>linear_acceleration_x/y/z</code>、<code>angular_velocity_x/y/z</code>、<code>orientation_w/x/y/z</code></td>
+<td>最低開銷的逐步讀取</td>
+</tr>
+<tr>
+<td><code>get_data(read_gravity=True)</code></td>
+<td>dict：<code>time</code>、<code>physics_step</code>、<code>linear_acceleration (3,)</code>、<code>angular_velocity (3,)</code>、<code>orientation (4,) wxyz</code></td>
+<td>Python 分析（本教學採用）</td>
+</tr>
+<tr>
+<td>OmniGraph「Isaac Read IMU Node」</td>
+<td>圖形節點輸出</td>
+<td>不寫程式、銜接 ROS 2</td>
+</tr>
+</tbody></table>
+<pre><code class="language-python">data = sensor.get_data(read_gravity=False)   # 不含重力，方便積分
+print(data[&quot;linear_acceleration&quot;])           # np.ndarray (3,)
+print(data[&quot;angular_velocity&quot;])              # np.ndarray (3,)
+print(data[&quot;orientation&quot;])                   # np.ndarray (4,)，wxyz
+</code></pre>
+<p>OmniGraph 讀法（GUI 工作流）：<strong>Window &gt; Graph Editors &gt; Action Graph</strong> 建立 <code>On Playback Tick → Isaac Read IMU Node → To String → Print Text</code> 四個節點，把 Isaac Read IMU Node 的 <strong>IMU Prim</strong> 指到你的 IMU，Play 後 Console 就會印出讀值（<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physics_imu.html#omnigraph-workflow">官方圖解</a>）。</p>
+<hr>
+<h2 id="第-4-課實戰amr-運動驗證腳本">第 4 課：實戰——AMR 運動驗證腳本<a class="anchor" href="#第-4-課實戰amr-運動驗證腳本" aria-hidden="true">#</a></h2>
+<p>完整 Standalone 腳本：用一個方塊當「簡化 AMR 底盤」，下達已知運動剖面（0–2 s 直線加速 → 2–4 s 等速 → 4–6 s 原地旋轉），每個物理步同步記錄 IMU 讀值與 ground truth，結束後自動比對並輸出 CSV。存成 <code>imu_verify.py</code> 後用 <code>./python.sh imu_verify.py</code>（Windows 用 <code>python.bat</code>）執行：</p>
+<pre><code class="language-python">from isaacsim import SimulationApp
+
+simulation_app = SimulationApp({&quot;headless&quot;: True})
+
+import numpy as np
+import omni.timeline
+import omni.usd
+from isaacsim.core.experimental.objects import Cube, GroundPlane
+from isaacsim.core.experimental.prims import GeomPrim, RigidPrim
+from isaacsim.sensors.experimental.physics import IMU, IMUSensor
+from pxr import UsdPhysics
+
+# ── 1) 場景：物理場景、地板、代表 AMR 底盤的方塊 ──
+stage = omni.usd.get_context().get_stage()
+UsdPhysics.Scene.Define(stage, &quot;/World/PhysicsScene&quot;)
+GroundPlane(&quot;/World/groundPlane&quot;, sizes=20, colors=np.array([0.5, 0.5, 0.5]))
+Cube(
+    &quot;/World/AMR&quot;,
+    positions=np.array([0.0, 0.0, 0.15]),
+    scales=np.array([0.6, 0.4, 0.3]),        # 近似底盤尺寸（m）
+    colors=np.array([0.2, 0.6, 0.9]),
+)
+chassis = RigidPrim(&quot;/World/AMR&quot;)
+GeomPrim(&quot;/World/AMR&quot;, apply_collision_apis=True)
+
+# ── 2) 底盤上掛 IMU ──
+imu = IMUSensor(
+    IMU.create(
+        &quot;/World/AMR/imu&quot;,
+        translations=np.array([[0.0, 0.0, 0.15]]),
+        orientations=np.array([[1.0, 0.0, 0.0, 0.0]]),
+    )
+)
+
+# ── 3) 已知運動剖面：這就是「應該發生的運動」──
+def command(t):
+    &quot;&quot;&quot;回傳 (前進速度 m/s, 原地角速度 rad/s)&quot;&quot;&quot;
+    if t &lt; 2.0:                      # 0–2 s：0→1 m/s 直線加速（a = 0.5 m/s²）
+        return 0.5 * t, 0.0
+    elif t &lt; 4.0:                    # 2–4 s：1 m/s 等速
+        return 1.0, 0.0
+    else:                            # 4–6 s：原地旋轉 45°/s
+        return 0.0, np.deg2rad(45.0)
+
+def yaw_of(quat_wxyz):
+    w, x, y, z = quat_wxyz
+    return np.arctan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y * y + z * z))
+
+# ── 4) 模擬迴圈：下命令 → 步進 → 同步記錄 IMU 與 ground truth ──
+dt = 1.0 / 60.0                      # 預設物理步長
+timeline = omni.timeline.get_timeline_interface()
+timeline.play()
+simulation_app.update()              # 感測器於 Play 後才建立
+
+log = []
+for i in range(int(6.0 / dt)):
+    t = i * dt
+    v_cmd, w_cmd = command(t)
+
+    _, q = chassis.get_world_poses()                 # warp array → numpy
+    yaw = yaw_of(q.numpy()[0])
+    chassis.set_velocities(                          # 沿車頭方向下速度命令
+        np.array([[v_cmd * np.cos(yaw), v_cmd * np.sin(yaw), 0.0]]),
+        np.array([[0.0, 0.0, w_cmd]]),
+    )
+
+    simulation_app.update()                          # 物理前進一步
+
+    data = imu.get_data(read_gravity=False)          # 不含重力，方便積分
+    lin_gt, ang_gt = chassis.get_velocities()
+    _, q_gt = chassis.get_world_poses()
+    log.append((
+        t, v_cmd, w_cmd,
+        *data[&quot;linear_acceleration&quot;], *data[&quot;angular_velocity&quot;],
+        yaw_of(data[&quot;orientation&quot;]),
+        *lin_gt.numpy()[0], *ang_gt.numpy()[0],
+        yaw_of(q_gt.numpy()[0]),
+    ))
+
+timeline.stop()
+arr = np.array(log)   # 欄位：t, v_cmd, w_cmd, ax, ay, az, wx, wy, wz,
+                      #       yaw_imu, gt_vx, gt_vy, gt_vz, gt_wx, gt_wy, gt_wz, yaw_gt
+
+# ── 5) 驗證 ──
+n = int(4.0 / dt)                                    # 直線段（0–4 s）
+v_imu = np.cumsum(arr[:n, 3]) * dt                   # 車體 x 加速度積分成速度
+v_gt = np.linalg.norm(arr[:n, 10:12], axis=1)        # ground truth 平面速度
+rmse_v = np.sqrt(np.mean((v_imu - v_gt) ** 2))
+
+w_err = arr[n:, 8] - arr[n:, 2]                      # 旋轉段：IMU ωz vs 命令
+rmse_w = np.sqrt(np.mean(w_err ** 2))
+
+yaw_err = np.rad2deg(np.abs(np.unwrap(arr[:, 9]) - np.unwrap(arr[:, 16])).max())
+
+print(f&quot;[直線段] IMU 積分速度 vs ground truth  RMSE = {rmse_v:.3f} m/s&quot;)
+print(f&quot;[旋轉段] IMU 角速度  vs 命令          RMSE = {np.rad2deg(rmse_w):.2f} deg/s&quot;)
+print(f&quot;[全程]   IMU 航向    vs ground truth  最大誤差 = {yaw_err:.2f} deg&quot;)
+ok = rmse_v &lt; 0.05 and np.rad2deg(rmse_w) &lt; 2.0 and yaw_err &lt; 1.0
+print(&quot;驗證結果：&quot;, &quot;PASS&quot; if ok else &quot;FAIL（見第 5 課異常對策表）&quot;)
+
+np.savetxt(
+    &quot;imu_verify_log.csv&quot;, arr, delimiter=&quot;,&quot;,
+    header=&quot;t,v_cmd,w_cmd,ax,ay,az,wx,wy,wz,yaw_imu,&quot;
+           &quot;gt_vx,gt_vy,gt_vz,gt_wx,gt_wy,gt_wz,yaw_gt&quot;,
+    comments=&quot;&quot;,
+)
+print(&quot;已輸出 imu_verify_log.csv（可用 pandas / matplotlib 畫圖）&quot;)
+
+simulation_app.close()
+</code></pre>
+<blockquote>
+<p><strong>換成真正的 AMR</strong>：把方塊換成你的機器人資產（Nova Carter、iw_hub 或自家 URDF 匯入的車體，見本站《機器人》章節），IMU 掛在<strong>底盤剛體 link</strong> 之下；速度命令改由差速控制器或輪關節速度下達——記錄與比對的程式完全不變。此時輪胎打滑、懸吊晃動、質量分佈都會反映在 IMU 讀值與命令的差異上，<strong>這正是你要驗證的東西</strong>：本課的「理想剛體」版本先確認驗證流程本身正確（門檻可設很嚴），再套到真車模型上看差異來自哪裡。</p>
+</blockquote>
+<hr>
+<h2 id="第-5-課結果判讀三個檢核">第 5 課：結果判讀——三個檢核<a class="anchor" href="#第-5-課結果判讀三個檢核" aria-hidden="true">#</a></h2>
+<p><strong>檢核 A：靜止零點</strong>。腳本開頭多跑 1–2 秒不下命令，用 <code>read_gravity=True</code> 讀取：<code>linear_acceleration</code> 應接近 <code>[0, 0, +9.81]</code>、<code>angular_velocity</code> 接近 <code>[0, 0, 0]</code>。不對就先別往下驗——多半是安裝方向或重力設定問題。</p>
+<p><strong>檢核 B：直線段（0–4 s）</strong>。IMU 車體 x 加速度應出現「0.5 m/s² 平台 → 0」的形狀；積分後的速度曲線應貼合 ground truth 的斜坡→平台。RMSE 小於門檻（範例設 0.05 m/s）即通過。注意積分漂移是常態——窗口越長誤差越大，屬正常物理。</p>
+<p><strong>檢核 C：旋轉段（4–6 s）</strong>。IMU 的 ωz 應為 45°/s 的平台，與命令的 RMSE 在幾 deg/s 內；同時 yaw（IMU 四元數換算）應以 45°/s 線性增加、與 ground truth 重合。</p>
+<p>異常對策表：</p>
+<table>
+<thead>
+<tr>
+<th>現象</th>
+<th>可能原因</th>
+<th>對策</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>讀值全為 0／<code>is_valid</code> 為 False</td>
+<td>IMU 沒掛在剛體上；還沒 Play 就讀取</td>
+<td>掛到 rigid body prim；Play 之後再讀</td>
+</tr>
+<tr>
+<td>靜止時 z 加速度不是 ~9.81</td>
+<td>stage 單位不是公尺；PhysicsScene 重力被改過</td>
+<td>檢查 stage units 與重力設定</td>
+</tr>
+<tr>
+<td>曲線毛刺很大</td>
+<td>物理步長太大；filter width 太小</td>
+<td>提高物理頻率；加大 <code>*FilterWidth</code>（改完要重新 Play）</td>
+</tr>
+<tr>
+<td>積分速度越來越飄</td>
+<td>加速度積分的累積誤差（正常）</td>
+<td>縮短驗證窗；用 ground truth／里程計定期校正</td>
+</tr>
+<tr>
+<td>旋轉時出現側向加速度</td>
+<td>IMU 不在旋轉中心，量到離心／切向加速度</td>
+<td>這是<strong>物理正確</strong>的現象；旋轉驗證以 <code>angular_velocity</code> 為準，或把 IMU 移到旋轉軸上</td>
+</tr>
+<tr>
+<td>改了 filter width 沒生效</td>
+<td>filter 在模擬啟動時由 C++ 端取值</td>
+<td>Stop → 改屬性 → 重新 Play</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="第-6-課銜接-ros-2-與實車比對sim-to-real">第 6 課：銜接 ROS 2 與實車比對（sim-to-real）<a class="anchor" href="#第-6-課銜接-ros-2-與實車比對sim-to-real" aria-hidden="true">#</a></h2>
+<p>模擬內部驗證通過後，最後一哩是回答「<strong>和真實世界一致嗎？</strong>」——讓模擬與實車跑同一段命令，比較兩邊的 IMU：</p>
+<ol>
+<li><strong>模擬端發布 IMU</strong>：Action Graph 串 <code>On Playback Tick → Isaac Read IMU Node → ROS2 Publish Imu</code>，topic 設為 <code>/imu</code>，即發布標準 <code>sensor_msgs/msg/Imu</code>（ROS 2 Bridge 需先啟用，見本站《ROS 2 整合》章節）。</li>
+<li><strong>兩邊錄包</strong>：模擬與實車執行同一段速度命令腳本，各自 <code>ros2 bag record /imu /odom</code>。</li>
+<li><strong>對齊與比較</strong>：以命令起點對齊時間戳，比較角速度／加速度的 RMSE、峰值、上升時間；也可以比較功率譜（實車會多出振動頻段）。</li>
+<li><strong>解讀差異</strong>：真實 IMU 有 bias、雜訊、溫漂，模擬 IMU 預設是乾淨的——所以比的是<strong>趨勢與量級</strong>（加速平台高度、轉彎角速度、到達時間），不要求逐點相等。若希望模擬更像實車，可在讀值後疊加你實測的 bias＋高斯雜訊模型。</li>
+</ol>
+<p>差異來源的排查順序建議：命令執行（模擬器的控制器參數）→ 物理參數（質量、慣量、輪胎摩擦）→ 感測器安裝位置 → 感測器雜訊模型。</p>
+<hr>
+<h2 id="常見問題faq">常見問題（FAQ）<a class="anchor" href="#常見問題faq" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>Q：<code>get_data()</code> 回傳全是 0？</strong> A：最常見兩個原因——IMU 的父 prim 不是剛體、或還沒按 Play。感測器是 Play 時才動態建立，讀取前至少先 <code>update()</code> 一步。</li>
+<li><strong>Q：靜止時 z 是 +9.81 不是 −9.81，正常嗎？</strong> A：正常。加速度計量的是「比力」：靜止時支撐力抵抗重力，讀值為 +g（z 向上），與真實 IMU 一致。純運動加速度請用 <code>read_gravity=False</code>。</li>
+<li><strong>Q：舊程式 <code>from isaacsim.sensors.physics import IMUSensor</code> 還能跑嗎？</strong> A：6.0 已標記棄用，請改 <code>isaacsim.sensors.experimental.physics</code>。新舊 API 對照見<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/migration_guides/isaac_sim_6_0/index.html">遷移指南</a>。</li>
+<li><strong>Q：IMU 更新頻率能設嗎？</strong> A：舊 <code>sensorPeriod</code> 已棄用，新 API 固定<strong>每個物理步</strong>讀取——要改頻率就改物理步長，或在你的程式裡降採樣。</li>
+<li><strong>Q：想模擬真實 IMU 的雜訊？</strong> A：模擬輸出預設乾淨（只有 filter 平滑）。可在讀值後自行疊加 bias＋高斯雜訊，參數用你實車 IMU 的 datasheet 或 Allan variance 實測值。</li>
+</ul>
+<hr>
+<h2 id="附錄速查與參考連結">附錄：速查與參考連結<a class="anchor" href="#附錄速查與參考連結" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>主題</th>
+<th>連結</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>IMU sensor 官方頁（本教學主要依據）</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physics_imu.html">sensors/isaacsim_sensors_physics_imu</a></td>
+</tr>
+<tr>
+<td>experimental.physics API 文件</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/py/source/extensions/isaacsim.sensors.experimental.physics/docs/index.html">isaacsim.sensors.experimental.physics</a></td>
+</tr>
+<tr>
+<td>座標與單位慣例</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/reference_material/reference_conventions.html">Isaac Sim Conventions</a></td>
+</tr>
+<tr>
+<td>4.x/5.x → 6.0 感測器遷移</td>
+<td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/migration_guides/isaac_sim_6_0/index.html">Migration Guide</a></td>
+</tr>
+<tr>
+<td>感測器總覽（本站）</td>
+<td><a href="sensors.html">sensors.html</a></td>
+</tr>
+<tr>
+<td>ROS 2 整合（本站）</td>
+<td><a href="ros2.html">ros2.html</a></td>
+</tr>
+<tr>
+<td>機器人匯入與設定（本站）</td>
+<td><a href="robots.html">robots.html</a></td>
+</tr>
+</tbody></table>
+<hr>
+<p><em>本頁為官方文檔中文教學導覽，內容以官方為準。</em></p>
+
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physics_imu.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>（6.0.1）。內容如與官方不符，請以官方為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#%E7%AC%AC-1-%E8%AA%B2imu-%E9%87%8F%E4%BB%80%E9%BA%BC%E8%83%BD%E9%A9%97%E8%AD%89%E4%BB%80%E9%BA%BC">第 1 課：IMU 量什麼、能驗證什麼</a>
+      <a class="toc-h2" href="#%E7%AC%AC-2-%E8%AA%B2gui-%E5%BB%BA%E7%AB%8B-imu-%E8%88%87%E5%85%A7%E5%BB%BA%E7%AF%84%E4%BE%8B">第 2 課：GUI 建立 IMU 與內建範例</a>
+      <a class="toc-h2" href="#%E7%AC%AC-3-%E8%AA%B2python-api%E5%BB%BA%E7%AB%8B%E8%88%87%E8%AE%80%E5%8F%96">第 3 課：Python API——建立與讀取</a>
+      <a class="toc-h2" href="#%E7%AC%AC-4-%E8%AA%B2%E5%AF%A6%E6%88%B0amr-%E9%81%8B%E5%8B%95%E9%A9%97%E8%AD%89%E8%85%B3%E6%9C%AC">第 4 課：實戰——AMR 運動驗證腳本</a>
+      <a class="toc-h2" href="#%E7%AC%AC-5-%E8%AA%B2%E7%B5%90%E6%9E%9C%E5%88%A4%E8%AE%80%E4%B8%89%E5%80%8B%E6%AA%A2%E6%A0%B8">第 5 課：結果判讀——三個檢核</a>
+      <a class="toc-h2" href="#%E7%AC%AC-6-%E8%AA%B2%E9%8A%9C%E6%8E%A5-ros-2-%E8%88%87%E5%AF%A6%E8%BB%8A%E6%AF%94%E5%B0%8Dsim-to-real">第 6 課：銜接 ROS 2 與實車比對（sim-to-real）</a>
+      <a class="toc-h2" href="#%E5%B8%B8%E8%A6%8B%E5%95%8F%E9%A1%8Cfaq">常見問題（FAQ）</a>
+      <a class="toc-h2" href="#%E9%99%84%E9%8C%84%E9%80%9F%E6%9F%A5%E8%88%87%E5%8F%83%E8%80%83%E9%80%A3%E7%B5%90">附錄：速查與參考連結</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

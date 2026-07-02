@@ -17,7 +17,7 @@
     <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
   </nav>
 </header>
-<div class="layout">
+<div class="layout has-toc">
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-title">站內導覽</div>
     <nav class="site-nav">
@@ -29,6 +29,7 @@
         <a href="tutorial.html">Script Editor 教學</a>
         <a href="extension.html" class="current">Extension 教學</a>
         <a href="standalone.html">Standalone Python 教學</a>
+        <a href="imu.html">IMU 感測器教學</a>
         <div class="nav-group-title">專題章節</div>
         <a href="robots.html">機器人：匯入・設定・模擬</a>
         <a href="sensors.html">感測器</a>
@@ -39,22 +40,6 @@
         <a href="devtools.html">開發工具與擴充開發</a>
         <div class="nav-group-title">參考</div>
         <a href="reference.html">資產、USD 與參考資訊</a>
-    </nav>
-    <hr class="sidebar-divider">
-    <div class="sidebar-title">本頁目錄</div>
-    <nav class="toc">
-      <a class="toc-h2" href="#%E7%AC%AC-1-%E8%AA%B2extension-%E6%98%AF%E4%BB%80%E9%BA%BC">第 1 課：Extension 是什麼</a>
-      <a class="toc-h2" href="#%E7%AC%AC-2-%E8%AA%B2%E5%BE%9E%E5%85%A7%E5%BB%BA%E7%AF%84%E4%BE%8B%E9%96%8B%E5%A7%8Bhello-world">第 2 課：從內建範例開始——Hello World</a>
-      <a class="toc-h3" href="#basesample%E7%AF%84%E4%BE%8B%E7%9A%84%E5%85%B1%E5%90%8C%E9%AA%A8%E6%9E%B6">BaseSample：範例的共同骨架</a>
-      <a class="toc-h2" href="#%E7%AC%AC-3-%E8%AA%B2%E7%86%B1%E9%87%8D%E8%BC%89extension-%E7%9A%84%E6%AE%BA%E6%89%8B%E7%B4%9A%E5%8A%9F%E8%83%BD">第 3 課：熱重載——Extension 的殺手級功能</a>
-      <a class="toc-h2" href="#%E7%AC%AC-4-%E8%AA%B2%E5%9C%A8%E5%A0%B4%E6%99%AF%E4%B8%AD%E5%8A%A0%E5%85%A5%E5%89%9B%E9%AB%94%E6%96%B9%E5%A1%8A">第 4 課：在場景中加入剛體方塊</a>
-      <a class="toc-h2" href="#%E7%AC%AC-5-%E8%AA%B2%E6%9F%A5%E8%A9%A2%E7%89%A9%E9%AB%94%E7%8B%80%E6%85%8Bsetuppostload-%E8%88%87-warp-%E9%99%A3%E5%88%97">第 5 課：查詢物體狀態——setup_post_load 與 warp 陣列</a>
-      <a class="toc-h2" href="#%E7%AC%AC-6-%E8%AA%B2%E6%A8%A1%E6%93%AC%E4%BA%8B%E4%BB%B6%E5%9B%9E%E5%91%BC%E5%AE%8C%E6%95%B4%E7%9A%84-extension-%E9%A1%9E">第 6 課：模擬事件回呼——完整的 Extension 類</a>
-      <a class="toc-h2" href="#%E7%AC%AC-7-%E8%AA%B2%E5%BB%BA%E7%AB%8B%E8%87%AA%E5%B7%B1%E7%9A%84-extension%E5%AE%98%E6%96%B9%E6%A8%A1%E6%9D%BF">第 7 課：建立自己的 Extension——官方模板</a>
-      <a class="toc-h2" href="#%E7%AC%AC-8-%E8%AA%B2loaded-scenario-%E6%A8%A1%E5%BC%8Floadresetrun">第 8 課：Loaded Scenario 模式——Load／Reset／Run</a>
-      <a class="toc-h2" href="#%E7%AC%AC-9-%E8%AA%B2scripting-%E6%A8%A1%E5%BC%8F%E7%94%A8-yield-%E5%AF%AB%E9%95%B7%E6%99%82%E9%96%93%E4%BB%BB%E5%8B%99">第 9 課：Scripting 模式——用 yield 寫「長時間任務」</a>
-      <a class="toc-h2" href="#%E5%B8%B8%E8%A6%8B%E5%95%8F%E9%A1%8C%E8%88%87%E6%9C%80%E4%BD%B3%E5%AF%A6%E5%8B%99">常見問題與最佳實務</a>
-      <a class="toc-h2" href="#%E4%B8%8B%E4%B8%80%E6%AD%A5">下一步</a>
     </nav>
   </aside>
   <main class="content">
@@ -383,6 +368,23 @@ class HelloWorld(BaseSample):
     </article>
     <footer class="page-footer">本頁整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>（6.0.1）。內容如與官方不符，請以官方為準。</footer>
   </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#%E7%AC%AC-1-%E8%AA%B2extension-%E6%98%AF%E4%BB%80%E9%BA%BC">第 1 課：Extension 是什麼</a>
+      <a class="toc-h2" href="#%E7%AC%AC-2-%E8%AA%B2%E5%BE%9E%E5%85%A7%E5%BB%BA%E7%AF%84%E4%BE%8B%E9%96%8B%E5%A7%8Bhello-world">第 2 課：從內建範例開始——Hello World</a>
+      <a class="toc-h3" href="#basesample%E7%AF%84%E4%BE%8B%E7%9A%84%E5%85%B1%E5%90%8C%E9%AA%A8%E6%9E%B6">BaseSample：範例的共同骨架</a>
+      <a class="toc-h2" href="#%E7%AC%AC-3-%E8%AA%B2%E7%86%B1%E9%87%8D%E8%BC%89extension-%E7%9A%84%E6%AE%BA%E6%89%8B%E7%B4%9A%E5%8A%9F%E8%83%BD">第 3 課：熱重載——Extension 的殺手級功能</a>
+      <a class="toc-h2" href="#%E7%AC%AC-4-%E8%AA%B2%E5%9C%A8%E5%A0%B4%E6%99%AF%E4%B8%AD%E5%8A%A0%E5%85%A5%E5%89%9B%E9%AB%94%E6%96%B9%E5%A1%8A">第 4 課：在場景中加入剛體方塊</a>
+      <a class="toc-h2" href="#%E7%AC%AC-5-%E8%AA%B2%E6%9F%A5%E8%A9%A2%E7%89%A9%E9%AB%94%E7%8B%80%E6%85%8Bsetuppostload-%E8%88%87-warp-%E9%99%A3%E5%88%97">第 5 課：查詢物體狀態——setup_post_load 與 warp 陣列</a>
+      <a class="toc-h2" href="#%E7%AC%AC-6-%E8%AA%B2%E6%A8%A1%E6%93%AC%E4%BA%8B%E4%BB%B6%E5%9B%9E%E5%91%BC%E5%AE%8C%E6%95%B4%E7%9A%84-extension-%E9%A1%9E">第 6 課：模擬事件回呼——完整的 Extension 類</a>
+      <a class="toc-h2" href="#%E7%AC%AC-7-%E8%AA%B2%E5%BB%BA%E7%AB%8B%E8%87%AA%E5%B7%B1%E7%9A%84-extension%E5%AE%98%E6%96%B9%E6%A8%A1%E6%9D%BF">第 7 課：建立自己的 Extension——官方模板</a>
+      <a class="toc-h2" href="#%E7%AC%AC-8-%E8%AA%B2loaded-scenario-%E6%A8%A1%E5%BC%8Floadresetrun">第 8 課：Loaded Scenario 模式——Load／Reset／Run</a>
+      <a class="toc-h2" href="#%E7%AC%AC-9-%E8%AA%B2scripting-%E6%A8%A1%E5%BC%8F%E7%94%A8-yield-%E5%AF%AB%E9%95%B7%E6%99%82%E9%96%93%E4%BB%BB%E5%8B%99">第 9 課：Scripting 模式——用 yield 寫「長時間任務」</a>
+      <a class="toc-h2" href="#%E5%B8%B8%E8%A6%8B%E5%95%8F%E9%A1%8C%E8%88%87%E6%9C%80%E4%BD%B3%E5%AF%A6%E5%8B%99">常見問題與最佳實務</a>
+      <a class="toc-h2" href="#%E4%B8%8B%E4%B8%80%E6%AD%A5">下一步</a>
+    </nav>
+  </aside>
 </div>
 <script src="assets/script.js"></script>
 </body>
