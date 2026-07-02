@@ -17,7 +17,7 @@
     <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
   </nav>
 </header>
-<div class="layout">
+<div class="layout has-toc">
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-title">站內導覽</div>
     <nav class="site-nav">
@@ -29,6 +29,7 @@
         <a href="tutorial.html">Script Editor 教學</a>
         <a href="extension.html">Extension 教學</a>
         <a href="standalone.html">Standalone Python 教學</a>
+        <a href="imu.html">IMU 感測器教學</a>
         <div class="nav-group-title">專題章節</div>
         <a href="robots.html">機器人：匯入・設定・模擬</a>
         <a href="sensors.html">感測器</a>
@@ -39,17 +40,6 @@
         <a href="devtools.html">開發工具與擴充開發</a>
         <div class="nav-group-title">參考</div>
         <a href="reference.html">資產、USD 與參考資訊</a>
-    </nav>
-    <hr class="sidebar-divider">
-    <div class="sidebar-title">本頁目錄</div>
-    <nav class="toc">
-      <a class="toc-h2" href="#%E5%B7%A5%E4%BD%9C%E5%8D%80%E7%B5%84%E6%88%90">工作區組成</a>
-      <a class="toc-h2" href="#%E5%B8%B8%E7%94%A8%E9%81%B8%E5%96%AE">常用選單</a>
-      <a class="toc-h3" href="#create-%E9%81%B8%E5%96%AE">Create 選單</a>
-      <a class="toc-h3" href="#%E5%85%B6%E4%BB%96%E9%81%B8%E5%96%AE">其他選單</a>
-      <a class="toc-h2" href="#%E5%BF%AB%E6%8D%B7%E9%8D%B5%E8%88%87%E6%93%8D%E4%BD%9C">快捷鍵與操作</a>
-      <a class="toc-h2" href="#gui-%E8%88%87%E7%A8%8B%E5%BC%8F%E7%A2%BC%E7%9A%84%E5%B0%8D%E7%85%A7%E5%AD%B8%E7%BF%92%E6%B3%95">GUI 與程式碼的對照學習法</a>
-      <a class="toc-h2" href="#%E6%9C%AC%E7%AB%A0%E5%AE%98%E6%96%B9%E9%A0%81%E9%9D%A2%E7%B8%BD%E8%A1%A8">本章官方頁面總表</a>
     </nav>
   </aside>
   <main class="content">
@@ -210,6 +200,18 @@
     </article>
     <footer class="page-footer">本頁整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>（6.0.1）。內容如與官方不符，請以官方為準。</footer>
   </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#%E5%B7%A5%E4%BD%9C%E5%8D%80%E7%B5%84%E6%88%90">工作區組成</a>
+      <a class="toc-h2" href="#%E5%B8%B8%E7%94%A8%E9%81%B8%E5%96%AE">常用選單</a>
+      <a class="toc-h3" href="#create-%E9%81%B8%E5%96%AE">Create 選單</a>
+      <a class="toc-h3" href="#%E5%85%B6%E4%BB%96%E9%81%B8%E5%96%AE">其他選單</a>
+      <a class="toc-h2" href="#%E5%BF%AB%E6%8D%B7%E9%8D%B5%E8%88%87%E6%93%8D%E4%BD%9C">快捷鍵與操作</a>
+      <a class="toc-h2" href="#gui-%E8%88%87%E7%A8%8B%E5%BC%8F%E7%A2%BC%E7%9A%84%E5%B0%8D%E7%85%A7%E5%AD%B8%E7%BF%92%E6%B3%95">GUI 與程式碼的對照學習法</a>
+      <a class="toc-h2" href="#%E6%9C%AC%E7%AB%A0%E5%AE%98%E6%96%B9%E9%A0%81%E9%9D%A2%E7%B8%BD%E8%A1%A8">本章官方頁面總表</a>
+    </nav>
+  </aside>
 </div>
 <script src="assets/script.js"></script>
 </body>

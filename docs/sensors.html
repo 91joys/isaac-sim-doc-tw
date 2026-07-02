@@ -17,7 +17,7 @@
     <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
   </nav>
 </header>
-<div class="layout">
+<div class="layout has-toc">
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-title">站內導覽</div>
     <nav class="site-nav">
@@ -29,6 +29,7 @@
         <a href="tutorial.html">Script Editor 教學</a>
         <a href="extension.html">Extension 教學</a>
         <a href="standalone.html">Standalone Python 教學</a>
+        <a href="imu.html">IMU 感測器教學</a>
         <div class="nav-group-title">專題章節</div>
         <a href="robots.html">機器人：匯入・設定・模擬</a>
         <a href="sensors.html" class="current">感測器</a>
@@ -39,16 +40,6 @@
         <a href="devtools.html">開發工具與擴充開發</a>
         <div class="nav-group-title">參考</div>
         <a href="reference.html">資產、USD 與參考資訊</a>
-    </nav>
-    <hr class="sidebar-divider">
-    <div class="sidebar-title">本頁目錄</div>
-    <nav class="toc">
-      <a class="toc-h2" href="#%E6%80%8E%E9%BA%BC%E9%81%B8%E6%84%9F%E6%B8%AC%E5%99%A8">怎麼選感測器</a>
-      <a class="toc-h2" href="#%E7%9B%B8%E6%A9%9F%E6%84%9F%E6%B8%AC%E5%99%A8camera">相機感測器（Camera）</a>
-      <a class="toc-h2" href="#rtx-%E6%84%9F%E6%B8%AC%E5%99%A8">RTX 感測器</a>
-      <a class="toc-h2" href="#%E7%89%A9%E7%90%86%E5%BC%8F%E6%84%9F%E6%B8%AC%E5%99%A8physics-based">物理式感測器（Physics-based）</a>
-      <a class="toc-h2" href="#physx-sdk-%E6%84%9F%E6%B8%AC%E5%99%A8">PhysX SDK 感測器</a>
-      <a class="toc-h2" href="#%E8%88%87-ros-2sdg-%E7%9A%84%E9%8A%9C%E6%8E%A5">與 ROS 2／SDG 的銜接</a>
     </nav>
   </aside>
   <main class="content">
@@ -170,6 +161,9 @@
 <td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physics_raycast.html">說明</a></td>
 </tr>
 </tbody></table>
+<blockquote>
+<p>本站提供 <a href="imu.html">IMU 感測器教學</a>——用已知運動剖面驗證 AMR 移動是否符合預期，含完整 Standalone 驗證腳本與 ROS 2 sim-to-real 比對流程。</p>
+</blockquote>
 <h2 id="physx-sdk-感測器">PhysX SDK 感測器<a class="anchor" href="#physx-sdk-感測器" aria-hidden="true">#</a></h2>
 <p><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physx.html">總覽</a>——基於 PhysX 場景查詢的輕量感測器：<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physx_generic.html">泛用感測器</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physx_lidar.html">PhysX 光達</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physx_lightbeam.html">光束感測器</a>、<a href="https://docs.isaacsim.omniverse.nvidia.com/latest/sensors/isaacsim_sensors_physx_proximity.html">近接感測器</a>。</p>
 <blockquote>
@@ -187,6 +181,17 @@
     </article>
     <footer class="page-footer">本頁整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>（6.0.1）。內容如與官方不符，請以官方為準。</footer>
   </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#%E6%80%8E%E9%BA%BC%E9%81%B8%E6%84%9F%E6%B8%AC%E5%99%A8">怎麼選感測器</a>
+      <a class="toc-h2" href="#%E7%9B%B8%E6%A9%9F%E6%84%9F%E6%B8%AC%E5%99%A8camera">相機感測器（Camera）</a>
+      <a class="toc-h2" href="#rtx-%E6%84%9F%E6%B8%AC%E5%99%A8">RTX 感測器</a>
+      <a class="toc-h2" href="#%E7%89%A9%E7%90%86%E5%BC%8F%E6%84%9F%E6%B8%AC%E5%99%A8physics-based">物理式感測器（Physics-based）</a>
+      <a class="toc-h2" href="#physx-sdk-%E6%84%9F%E6%B8%AC%E5%99%A8">PhysX SDK 感測器</a>
+      <a class="toc-h2" href="#%E8%88%87-ros-2sdg-%E7%9A%84%E9%8A%9C%E6%8E%A5">與 ROS 2／SDG 的銜接</a>
+    </nav>
+  </aside>
 </div>
 <script src="assets/script.js"></script>
 </body>

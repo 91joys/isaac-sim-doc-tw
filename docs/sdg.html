@@ -17,7 +17,7 @@
     <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
   </nav>
 </header>
-<div class="layout">
+<div class="layout has-toc">
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-title">站內導覽</div>
     <nav class="site-nav">
@@ -29,6 +29,7 @@
         <a href="tutorial.html">Script Editor 教學</a>
         <a href="extension.html">Extension 教學</a>
         <a href="standalone.html">Standalone Python 教學</a>
+        <a href="imu.html">IMU 感測器教學</a>
         <div class="nav-group-title">專題章節</div>
         <a href="robots.html">機器人：匯入・設定・模擬</a>
         <a href="sensors.html">感測器</a>
@@ -39,15 +40,6 @@
         <a href="devtools.html">開發工具與擴充開發</a>
         <div class="nav-group-title">參考</div>
         <a href="reference.html">資產、USD 與參考資訊</a>
-    </nav>
-    <hr class="sidebar-divider">
-    <div class="sidebar-title">本頁目錄</div>
-    <nav class="toc">
-      <a class="toc-h2" href="#%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5">核心概念</a>
-      <a class="toc-h2" href="#replicator%E6%84%9F%E7%9F%A5%E8%B3%87%E6%96%99%E7%94%9F%E6%88%90">Replicator（感知資料生成）</a>
-      <a class="toc-h2" href="#%E5%8B%95%E4%BD%9C%E8%88%87%E4%BA%8B%E4%BB%B6%E8%B3%87%E6%96%99%E7%94%9F%E6%88%90">動作與事件資料生成</a>
-      <a class="toc-h2" href="#%E5%B0%88%E9%96%80%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B">專門工作流程</a>
-      <a class="toc-h2" href="#%E7%96%91%E9%9B%A3%E6%8E%92%E8%A7%A3">疑難排解</a>
     </nav>
   </aside>
   <main class="content">
@@ -156,6 +148,16 @@
     </article>
     <footer class="page-footer">本頁整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>（6.0.1）。內容如與官方不符，請以官方為準。</footer>
   </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5">核心概念</a>
+      <a class="toc-h2" href="#replicator%E6%84%9F%E7%9F%A5%E8%B3%87%E6%96%99%E7%94%9F%E6%88%90">Replicator（感知資料生成）</a>
+      <a class="toc-h2" href="#%E5%8B%95%E4%BD%9C%E8%88%87%E4%BA%8B%E4%BB%B6%E8%B3%87%E6%96%99%E7%94%9F%E6%88%90">動作與事件資料生成</a>
+      <a class="toc-h2" href="#%E5%B0%88%E9%96%80%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B">專門工作流程</a>
+      <a class="toc-h2" href="#%E7%96%91%E9%9B%A3%E6%8E%92%E8%A7%A3">疑難排解</a>
+    </nav>
+  </aside>
 </div>
 <script src="assets/script.js"></script>
 </body>
