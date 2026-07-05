@@ -3,151 +3,190 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Isaac Sim 中文文檔</title>
-  <meta name="description" content="NVIDIA Isaac Sim 6.0.1 官方文檔中文版：總覽文檔、四大工作流程教學與全章節專題導覽">
-  <link rel="stylesheet" href="assets/style.css">
+  <title>中文文檔大全</title>
+  <meta name="description" content="機器人模擬中文文檔大全：NVIDIA Isaac Sim 與 Newton Physics 官方文檔的完整中文整理">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC",
+        "Microsoft JhengHei", "PingFang TC", sans-serif;
+      color: #1f2428;
+      background: #f5f7f9;
+      line-height: 1.75;
+    }
+    .hero {
+      background: linear-gradient(150deg, #0b1016 0%, #17222e 55%, #1d3a2a 100%);
+      color: #fff;
+      padding: 90px 24px 120px;
+      text-align: center;
+    }
+    .hero h1 { font-size: 2.7rem; margin: 0 0 14px; line-height: 1.3; letter-spacing: 0.04em; }
+    .hero p.sub { color: #aebcc6; max-width: 660px; margin: 0 auto; font-size: 1.1rem; }
+    .badges { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 26px; }
+    .badge {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: #cfd8dc;
+      border-radius: 999px;
+      padding: 4px 14px;
+      font-size: 0.82rem;
+    }
+    .picker {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 28px;
+      max-width: 1020px;
+      margin: -60px auto 0;
+      padding: 0 24px;
+    }
+    .site-card {
+      background: #fff;
+      border-radius: 18px;
+      padding: 34px 34px 26px;
+      box-shadow: 0 10px 34px rgba(10,16,22,0.14);
+      text-decoration: none;
+      color: #1f2428;
+      display: flex;
+      flex-direction: column;
+      border-top: 6px solid transparent;
+      transition: transform 0.16s, box-shadow 0.16s;
+    }
+    .site-card:hover { transform: translateY(-4px); box-shadow: 0 16px 44px rgba(10,16,22,0.2); }
+    .site-card.isaac { border-top-color: #76b900; }
+    .site-card.newton { border-top-color: #1e88e5; }
+    .site-card .logo { font-size: 2.2rem; margin-bottom: 10px; }
+    .site-card h2 { margin: 0 0 4px; font-size: 1.5rem; }
+    .site-card h2 .hl-isaac { color: #5a8f00; }
+    .site-card h2 .hl-newton { color: #1565c0; }
+    .site-card .tagline { color: #57606a; font-size: 0.95rem; margin: 0 0 16px; }
+    .site-card ul {
+      margin: 0 0 18px;
+      padding: 0;
+      list-style: none;
+      flex: 1;
+    }
+    .site-card li {
+      padding: 5px 0 5px 22px;
+      position: relative;
+      font-size: 0.92rem;
+      color: #3c454d;
+    }
+    .site-card li::before {
+      content: "▸";
+      position: absolute;
+      left: 4px;
+    }
+    .site-card.isaac li::before { color: #76b900; }
+    .site-card.newton li::before { color: #1e88e5; }
+    .enter {
+      display: inline-block;
+      align-self: flex-start;
+      padding: 10px 24px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.98rem;
+      color: #fff;
+    }
+    .site-card.isaac .enter { background: #76b900; color: #10151a; }
+    .site-card.newton .enter { background: #1e88e5; }
+    .section {
+      max-width: 1020px;
+      margin: 56px auto;
+      padding: 0 24px;
+    }
+    .section h2 { font-size: 1.4rem; border-left: 5px solid #37474f; padding-left: 14px; }
+    .section p { color: #57606a; }
+    .compare {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 18px rgba(10,16,22,0.07);
+      font-size: 0.92rem;
+    }
+    .compare th, .compare td { padding: 12px 18px; text-align: left; border-bottom: 1px solid #e6ebef; vertical-align: top; }
+    .compare th { background: #10151a; color: #fff; font-weight: 600; }
+    .compare th.isaac-col { color: #b6e35e; }
+    .compare th.newton-col { color: #7fc3ff; }
+    .compare tr:last-child td { border-bottom: none; }
+    .compare td:first-child { font-weight: 600; white-space: nowrap; color: #37474f; }
+    .site-footer {
+      margin-top: 70px;
+      padding: 28px 24px;
+      background: #10151a;
+      color: #90a0a8;
+      text-align: center;
+      font-size: 0.85rem;
+    }
+    .site-footer a { color: #8ab4f8; }
+    @media (max-width: 720px) {
+      .hero h1 { font-size: 1.9rem; }
+      .compare { display: block; overflow-x: auto; }
+    }
+  </style>
 </head>
 <body>
-<header class="topbar">
-  <a class="brand" href="index.html"><span class="brand-mark">Isaac Sim</span> 中文文檔</a>
-  <nav class="topnav">
-    <a href="index.html" class="active">首頁</a>
-    <a href="docs.html">總覽文檔</a>
-    <a href="index.html#sections">全部章節</a>
-    <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
-  </nav>
-</header>
 
-<main class="content-full">
-  <section class="hero">
-    <h1>NVIDIA <span class="hl">Isaac Sim</span> 中文文檔</h1>
-    <p class="sub">開源機器人模擬器的完整中文文檔網站——涵蓋官方文檔全部章節的中文整理、三大工作流程實戰教學，與逐章官方原文連結對照。</p>
-    <div class="badges">
-      <span class="badge">依據官方文檔 6.0.1</span>
-      <span class="badge">Core Experimental API</span>
-      <span class="badge">15 頁全章節涵蓋</span>
-      <span class="badge">繁體中文</span>
-    </div>
-    <div class="hero-actions">
-      <a class="btn btn-primary" href="tutorial.html">開始實戰教學</a>
-      <a class="btn btn-ghost" href="docs.html">閱讀總覽文檔</a>
-    </div>
-  </section>
-
-  <div class="cards">
-    <a class="card" href="docs.html">
-      <div class="icon">📘</div>
-      <h3>總覽文檔</h3>
-      <p>10 章系統性整理：產品總覽、系統需求、安裝、快速入門、核心概念、Python 腳本、機器人與感測器、生態系，與官方章節對照表。</p>
-      <span class="go">前往閱讀 →</span>
-    </a>
-    <a class="card" href="tutorial.html">
-      <div class="icon">🦾</div>
-      <h3>Script Editor 教學</h3>
-      <p>11 課循序實戰：建場景、加物理、載入 Franka 手臂、關節控制、物理回呼、場景查詢，到全自動綜合練習。</p>
-      <span class="go">開始學習 →</span>
-    </a>
-    <a class="card" href="extension.html">
-      <div class="icon">🧩</div>
-      <h3>Extension 教學</h3>
-      <p>9 課帶你從內建範例（BaseSample）出發：熱重載、模擬事件回呼、官方模板與 UI 擴充開發、yield 腳本化行為。</p>
-      <span class="go">開始學習 →</span>
-    </a>
-    <a class="card" href="standalone.html">
-      <div class="icon">⚙️</div>
-      <h3>Standalone Python 教學</h3>
-      <p>7 課掌握獨立應用：SimulationApp 鐵則、顯式步進迴圈、無頭模式與串流，到無頭批次實驗綜合練習。</p>
-      <span class="go">開始學習 →</span>
-    </a>
-    <a class="card" href="imu.html">
-      <div class="icon">🧭</div>
-      <h3>IMU 感測器教學</h3>
-      <p>6 課驗證 AMR 運動：IMU 原理與建立、已知運動剖面與 ground truth 自動比對，到 ROS 2 sim-to-real 實車驗證。</p>
-      <span class="go">開始學習 →</span>
-    </a>
+<section class="hero">
+  <h1>中文文檔大全</h1>
+  <p class="sub">機器人模擬技術文檔的繁體中文整理站——選擇下方文檔庫開始閱讀，每站皆附官方原文連結對照。</p>
+  <div class="badges">
+    <span class="badge">繁體中文</span>
+    <span class="badge">Isaac Sim 6.0.1</span>
+    <span class="badge">Newton Physics 1.3.0</span>
+    <span class="badge">非官方學習資源</span>
   </div>
+</section>
 
-  <section class="section" id="sections">
-    <h2>全部章節</h2>
-    <p>依官方文檔章節組織的中文專題頁，每頁附完整官方原文連結對照。</p>
-    <div class="feature-grid">
-      <a class="card" href="installation.html">
-        <div class="icon">💿</div>
-        <h3>安裝與設定</h3>
-        <p>Quick Install、工作站、容器、pip、雲端部署與串流的選擇指南。</p>
-        <span class="go">前往 →</span>
-      </a>
-      <a class="card" href="gui.html">
-        <div class="icon">🖥️</div>
-        <h3>GUI 介面參考</h3>
-        <p>工作區組成、Create 選單、快捷鍵，與 GUI↔程式碼對照學習法。</p>
-        <span class="go">前往 →</span>
-      </a>
-      <a class="card" href="robots.html">
-        <div class="icon">🤖</div>
-        <h3>機器人</h3>
-        <p>URDF／MJCF／CAD 匯入、Robot Setup 13 篇教學、Articulation 控制與運動規劃。</p>
-        <span class="go">前往 →</span>
-      </a>
-      <a class="card" href="sensors.html">
-        <div class="icon">📡</div>
-        <h3>感測器</h3>
-        <p>相機、RTX 光達／雷達、IMU 與接觸感測器的選擇與 6.0 遷移重點。</p>
-        <span class="go">前往 →</span>
-      </a>
-      <a class="card" href="physics.html">
-        <div class="icon">🍎</div>
-        <h3>物理模擬</h3>
-        <p>PhysX／Newton 雙後端、物理場景設定、接觸力查詢與調校建議。</p>
-        <span class="go">前往 →</span>
-      </a>
-      <a class="card" href="ros2.html">
-        <div class="icon">🔗</div>
-        <h3>ROS 2 整合</h3>
-        <p>Bridge、TurtleBot 主線、Nav2、MoveIt 2 與 30+ 官方教學導覽。</p>
-        <span class="go">前往 →</span>
-      </a>
-      <a class="card" href="sdg.html">
-        <div class="icon">🎲</div>
-        <h3>合成資料生成</h3>
-        <p>Replicator、域隨機化、動作事件資料與抓取／移動／遙操作工作流。</p>
-        <span class="go">前往 →</span>
-      </a>
-      <a class="card" href="isaaclab.html">
-        <div class="icon">🧠</div>
-        <h3>Isaac Lab／數位孿生</h3>
-        <p>強化學習訓練閉環、倉儲物流工具、Isaac Cortex 決策框架。</p>
-        <span class="go">前往 →</span>
-      </a>
-      <a class="card" href="devtools.html">
-        <div class="icon">🛠️</div>
-        <h3>開發工具與擴充開發</h3>
-        <p>VS Code、Jupyter、MCP、OmniGraph、擴充模板、除錯與效能分析。</p>
-        <span class="go">前往 →</span>
-      </a>
-      <a class="card" href="reference.html">
-        <div class="icon">📚</div>
-        <h3>資產、USD 與參考</h3>
-        <p>官方資產庫、OpenUSD、詞彙慣例、版本遷移與求助管道。</p>
-        <span class="go">前往 →</span>
-      </a>
-    </div>
-  </section>
+<div class="picker">
+  <a class="site-card isaac" href="isaac/index.html">
+    <div class="logo">🤖</div>
+    <h2><span class="hl-isaac">Isaac Sim</span> 中文文檔</h2>
+    <p class="tagline">NVIDIA 開源機器人模擬器——GUI、Python 腳本、感測器、ROS 2 與合成資料的完整中文導覽。</p>
+    <ul>
+      <li>總覽文檔：10 章系統性整理（安裝到生態系）</li>
+      <li>四大實戰教學：Script Editor、Extension、Standalone、IMU</li>
+      <li>10 個專題章節：機器人、感測器、物理、ROS 2、SDG…</li>
+      <li>逐章附官方原文連結對照</li>
+    </ul>
+    <span class="enter">進入 Isaac Sim 文檔 →</span>
+  </a>
 
-  <section class="section">
-    <h2>建議學習路徑</h2>
-    <ol>
-      <li><a href="installation.html">安裝與設定</a>：選擇安裝方式，把 Isaac Sim 跑起來（詳細指令見<a href="docs.html#3-安裝">總覽文檔第 3 章</a>）。</li>
-      <li><a href="docs.html#4-快速入門">快速入門</a>＋<a href="gui.html">GUI 介面</a>：用滑鼠完成第一個會掉落的方塊與 Franka 手臂。</li>
-      <li><a href="docs.html#5-核心概念">核心概念</a>：建立三大工作流程與 World／Scene／Stage 的心智模型。</li>
-      <li>實戰教學三部曲：<a href="tutorial.html">Script Editor</a>（互動探索）→ <a href="extension.html">Extension</a>（UI 工具開發）→ <a href="standalone.html">Standalone Python</a>（無頭批次）。</li>
-      <li>依方向深入專題：<a href="ros2.html">ROS 2</a>、<a href="sdg.html">合成資料</a>、<a href="isaaclab.html">Isaac Lab</a>、<a href="robots.html">機器人設定</a>、<a href="imu.html">IMU 感測器教學（AMR 運動驗證）</a>。</li>
-    </ol>
-  </section>
-</main>
+  <a class="site-card newton" href="newton/index.html">
+    <div class="logo">🍏</div>
+    <h2><span class="hl-newton">Newton</span> Physics 中文文檔</h2>
+    <p class="tagline">GPU 加速、可微分的開源物理引擎——由 Disney Research、Google DeepMind 與 NVIDIA 共同發起。</p>
+    <ul>
+      <li>總覽文檔：架構、核心概念與模擬迴圈</li>
+      <li>安裝與快速入門：pip 安裝到第一個模擬</li>
+      <li>8 種求解器比較：MuJoCo、XPBD、Featherstone…</li>
+      <li>多世界平行模擬、感測器、視覺化與 Isaac Lab 整合</li>
+    </ul>
+    <span class="enter">進入 Newton 文檔 →</span>
+  </a>
+</div>
+
+<section class="section">
+  <h2>兩套文檔的關係</h2>
+  <p>Isaac Sim 是完整的機器人「模擬器應用」，Newton 是專注於物理計算的「物理引擎」。Isaac Sim 6.0 起支援以 Newton 作為可切換的物理後端，Isaac Lab 亦提供實驗性 Newton 整合——兩者互補而非取代。</p>
+  <table class="compare">
+    <thead>
+      <tr><th></th><th class="isaac-col">Isaac Sim</th><th class="newton-col">Newton Physics</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>定位</td><td>全功能機器人模擬器（渲染、感測器、ROS 2、合成資料）</td><td>GPU 加速物理引擎（模擬計算核心）</td></tr>
+      <tr><td>主要用途</td><td>數位孿生、感測器模擬、sim-to-real 工作流程</td><td>機器人學習（RL）、可微分模擬、多物理研究</td></tr>
+      <tr><td>物理後端</td><td>PhysX 與 Newton 可切換</td><td>自身即引擎：MuJoCo、XPBD、VBD、Featherstone 等 8 種求解器</td></tr>
+      <tr><td>使用介面</td><td>GUI ＋ Python（Kit / Omniverse）</td><td>純 Python API（建構於 NVIDIA Warp）</td></tr>
+      <tr><td>維護者</td><td>NVIDIA</td><td>Linux Foundation 專案（Disney Research、Google DeepMind、NVIDIA）</td></tr>
+    </tbody>
+  </table>
+</section>
 
 <footer class="site-footer">
-  <p>本站內容整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>（6.0.1）。內容如與最新版官方文檔不符，請以官方為準。<br>Isaac Sim、Omniverse 為 NVIDIA Corporation 之商標；本站為非官方學習資源。</p>
+  <p>本站內容整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a> 與 <a href="https://newton-physics.github.io/newton/stable/guide/overview.html" target="_blank" rel="noopener">Newton Physics 官方文檔</a>。內容如與最新版官方文檔不符，請以官方為準。<br>本站為非官方學習資源。</p>
 </footer>
 </body>
 </html>

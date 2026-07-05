@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Isaac Sim 中文文檔</title>
+  <meta name="description" content="NVIDIA Isaac Sim 6.0.1 官方文檔中文版：總覽文檔、四大工作流程教學與全章節專題導覽">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">Isaac Sim</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html" class="active">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+
+<main class="content-full">
+  <section class="hero">
+    <h1>NVIDIA <span class="hl">Isaac Sim</span> 中文文檔</h1>
+    <p class="sub">開源機器人模擬器的完整中文文檔網站——涵蓋官方文檔全部章節的中文整理、三大工作流程實戰教學，與逐章官方原文連結對照。</p>
+    <div class="badges">
+      <span class="badge">依據官方文檔 6.0.1</span>
+      <span class="badge">Core Experimental API</span>
+      <span class="badge">15 頁全章節涵蓋</span>
+      <span class="badge">繁體中文</span>
+    </div>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="tutorial.html">開始實戰教學</a>
+      <a class="btn btn-ghost" href="docs.html">閱讀總覽文檔</a>
+    </div>
+  </section>
+
+  <div class="cards">
+    <a class="card" href="docs.html">
+      <div class="icon">📘</div>
+      <h3>總覽文檔</h3>
+      <p>10 章系統性整理：產品總覽、系統需求、安裝、快速入門、核心概念、Python 腳本、機器人與感測器、生態系，與官方章節對照表。</p>
+      <span class="go">前往閱讀 →</span>
+    </a>
+    <a class="card" href="tutorial.html">
+      <div class="icon">🦾</div>
+      <h3>Script Editor 教學</h3>
+      <p>11 課循序實戰：建場景、加物理、載入 Franka 手臂、關節控制、物理回呼、場景查詢，到全自動綜合練習。</p>
+      <span class="go">開始學習 →</span>
+    </a>
+    <a class="card" href="extension.html">
+      <div class="icon">🧩</div>
+      <h3>Extension 教學</h3>
+      <p>9 課帶你從內建範例（BaseSample）出發：熱重載、模擬事件回呼、官方模板與 UI 擴充開發、yield 腳本化行為。</p>
+      <span class="go">開始學習 →</span>
+    </a>
+    <a class="card" href="standalone.html">
+      <div class="icon">⚙️</div>
+      <h3>Standalone Python 教學</h3>
+      <p>7 課掌握獨立應用：SimulationApp 鐵則、顯式步進迴圈、無頭模式與串流，到無頭批次實驗綜合練習。</p>
+      <span class="go">開始學習 →</span>
+    </a>
+    <a class="card" href="imu.html">
+      <div class="icon">🧭</div>
+      <h3>IMU 感測器教學</h3>
+      <p>6 課驗證 AMR 運動：IMU 原理與建立、已知運動剖面與 ground truth 自動比對，到 ROS 2 sim-to-real 實車驗證。</p>
+      <span class="go">開始學習 →</span>
+    </a>
+  </div>
+
+  <section class="section" id="sections">
+    <h2>全部章節</h2>
+    <p>依官方文檔章節組織的中文專題頁，每頁附完整官方原文連結對照。</p>
+    <div class="feature-grid">
+      <a class="card" href="installation.html">
+        <div class="icon">💿</div>
+        <h3>安裝與設定</h3>
+        <p>Quick Install、工作站、容器、pip、雲端部署與串流的選擇指南。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="gui.html">
+        <div class="icon">🖥️</div>
+        <h3>GUI 介面參考</h3>
+        <p>工作區組成、Create 選單、快捷鍵，與 GUI↔程式碼對照學習法。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="robots.html">
+        <div class="icon">🤖</div>
+        <h3>機器人</h3>
+        <p>URDF／MJCF／CAD 匯入、Robot Setup 13 篇教學、Articulation 控制與運動規劃。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="sensors.html">
+        <div class="icon">📡</div>
+        <h3>感測器</h3>
+        <p>相機、RTX 光達／雷達、IMU 與接觸感測器的選擇與 6.0 遷移重點。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="physics.html">
+        <div class="icon">🍎</div>
+        <h3>物理模擬</h3>
+        <p>PhysX／Newton 雙後端、物理場景設定、接觸力查詢與調校建議。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="ros2.html">
+        <div class="icon">🔗</div>
+        <h3>ROS 2 整合</h3>
+        <p>Bridge、TurtleBot 主線、Nav2、MoveIt 2 與 30+ 官方教學導覽。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="sdg.html">
+        <div class="icon">🎲</div>
+        <h3>合成資料生成</h3>
+        <p>Replicator、域隨機化、動作事件資料與抓取／移動／遙操作工作流。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="isaaclab.html">
+        <div class="icon">🧠</div>
+        <h3>Isaac Lab／數位孿生</h3>
+        <p>強化學習訓練閉環、倉儲物流工具、Isaac Cortex 決策框架。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="devtools.html">
+        <div class="icon">🛠️</div>
+        <h3>開發工具與擴充開發</h3>
+        <p>VS Code、Jupyter、MCP、OmniGraph、擴充模板、除錯與效能分析。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="reference.html">
+        <div class="icon">📚</div>
+        <h3>資產、USD 與參考</h3>
+        <p>官方資產庫、OpenUSD、詞彙慣例、版本遷移與求助管道。</p>
+        <span class="go">前往 →</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>建議學習路徑</h2>
+    <ol>
+      <li><a href="installation.html">安裝與設定</a>：選擇安裝方式，把 Isaac Sim 跑起來（詳細指令見<a href="docs.html#3-安裝">總覽文檔第 3 章</a>）。</li>
+      <li><a href="docs.html#4-快速入門">快速入門</a>＋<a href="gui.html">GUI 介面</a>：用滑鼠完成第一個會掉落的方塊與 Franka 手臂。</li>
+      <li><a href="docs.html#5-核心概念">核心概念</a>：建立三大工作流程與 World／Scene／Stage 的心智模型。</li>
+      <li>實戰教學三部曲：<a href="tutorial.html">Script Editor</a>（互動探索）→ <a href="extension.html">Extension</a>（UI 工具開發）→ <a href="standalone.html">Standalone Python</a>（無頭批次）。</li>
+      <li>依方向深入專題：<a href="ros2.html">ROS 2</a>、<a href="sdg.html">合成資料</a>、<a href="isaaclab.html">Isaac Lab</a>、<a href="robots.html">機器人設定</a>、<a href="imu.html">IMU 感測器教學（AMR 運動驗證）</a>。</li>
+    </ol>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>本站內容整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>（6.0.1）。內容如與最新版官方文檔不符，請以官方為準。<br>Isaac Sim、Omniverse 為 NVIDIA Corporation 之商標；本站為非官方學習資源。</p>
+</footer>
+</body>
+</html>

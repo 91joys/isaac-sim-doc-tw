@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>安裝與快速入門 — Newton Physics 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Newton</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://newton-physics.github.io/newton/stable/guide/installation.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html" class="current">安裝與快速入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="concepts.html">核心概念</a>
+        <a href="solvers.html">求解器</a>
+        <a href="collisions.html">碰撞與接觸</a>
+        <a href="sensors.html">感測器與致動器</a>
+        <div class="nav-group-title">工具與教學</div>
+        <a href="visualization.html">視覺化</a>
+        <a href="tutorials.html">教學與範例</a>
+        <a href="diffsim.html">可微分物理教學</a>
+        <div class="nav-group-title">參考</div>
+        <a href="faq.html">FAQ・整合・遷移</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="安裝">安裝與快速入門<a class="anchor" href="#安裝" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://newton-physics.github.io/newton/stable/guide/installation.html">Installation</a> 章節。本頁涵蓋從 PyPI 安裝的建議方式；從原始碼安裝或使用 <code>uv</code> 請見官方 <a href="https://newton-physics.github.io/newton/stable/guide/development.html">Development</a> 指南。</p>
+</blockquote>
+
+<h2 id="系統需求">系統需求<a class="anchor" href="#系統需求" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>需求</th><th>最低</th><th>備註</th></tr></thead>
+<tbody>
+<tr><td>Python</td><td>3.10</td><td>建議 3.11+（3.10 安裝 <code>imgui_bundle</code> 可能出錯）</td></tr>
+<tr><td>作業系統</td><td>Linux（x86-64、aarch64）、Windows（x86-64）、macOS（僅 CPU）</td><td>macOS 無 GPU 加速</td></tr>
+<tr><td>NVIDIA GPU</td><td>Compute Capability 5.0+（Maxwell）</td><td>GeForce GTX 9xx 以上皆可</td></tr>
+<tr><td>NVIDIA 驅動</td><td>545 以上（CUDA 12）</td><td>建議 550 以上（CUDA 12.4）以獲得最佳效能</td></tr>
+<tr><td>CUDA</td><td>12、13</td><td><strong>不需安裝本機 CUDA Toolkit</strong>——Warp 自帶 runtime</td></tr>
+</tbody>
+</table>
+<blockquote><p><strong>ARM64 Linux（Jetson Thor、DGX Spark 等）</strong>：安裝 <code>examples</code> 附加依賴時需要 X11 開發函式庫來編譯 <code>imgui_bundle</code>：<br>
+<code>sudo apt-get install -y libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev</code></p></blockquote>
+
+<h2 id="安裝-newton">安裝 Newton<a class="anchor" href="#安裝-newton" aria-hidden="true">#</a></h2>
+<p>基本安裝（唯一必要依賴是 NVIDIA Warp）：</p>
+<pre><code class="language-bash">pip install newton
+</code></pre>
+<p>加裝 <code>examples</code> 附加集以執行內建範例（含模擬與視覺化依賴）。建議在虛擬環境中安裝：</p>
+<pre><code class="language-bash"># Windows（PowerShell）
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install "newton[examples]"
+
+# macOS / Linux
+python -m venv .venv
+source .venv/bin/activate
+pip install "newton[examples]"
+</code></pre>
+
+<h3 id="附加依賴集">附加依賴集（extras）<a class="anchor" href="#附加依賴集" aria-hidden="true">#</a></h3>
+<table>
+<thead><tr><th>集合</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><code>sim</code></td><td>模擬依賴，含 MuJoCo（使用 <code>SolverMuJoCo</code> 必裝）</td></tr>
+<tr><td><code>importers</code></td><td>資產匯入與網格處理</td></tr>
+<tr><td><code>remesh</code></td><td>重新網格化（Open3D、pyfqmr）</td></tr>
+<tr><td><code>examples</code></td><td>執行範例（含視覺化；包含 <code>sim</code>＋<code>importers</code>）</td></tr>
+<tr><td><code>torch-cu12</code>／<code>torch-cu13</code></td><td>PyTorch（CUDA 12.8+／13），執行 RL 策略範例（包含 <code>examples</code>）</td></tr>
+<tr><td><code>notebook</code></td><td>Jupyter＋Rerun 視覺化（包含 <code>examples</code>）</td></tr>
+<tr><td><code>dev</code>／<code>docs</code></td><td>開發測試／建置文檔</td></tr>
+</tbody>
+</table>
+<p>集合有遞移包含關係（<code>examples</code> ⊃ <code>sim</code>＋<code>importers</code>），只需安裝最符合用途的那一組。</p>
+
+<h2 id="執行範例">執行內建範例<a class="anchor" href="#執行範例" aria-hidden="true">#</a></h2>
+<pre><code class="language-bash"># 啟動預設 basic_pendulum 範例（可在側欄瀏覽其他範例）
+python -m newton.examples
+
+# 列出全部範例
+python -m newton.examples --list
+</code></pre>
+<p>執行 RL 策略推論範例——先用 <code>nvidia-smi</code> 查驅動支援的 CUDA 版本（輸出右上角），選擇對應的 extra：</p>
+<pre><code class="language-bash">pip install newton[torch-cu12] --extra-index-url https://download.pytorch.org/whl/cu128
+python -m newton.examples robot_anymal_c_walk
+</code></pre>
+<blockquote><p><code>torch-cu12</code> 安裝的是 CUDA 12.8 版 PyTorch。若驅動只支援 CUDA 12.4／12.5，請改手動安裝：<br>
+<code>pip install "newton[examples]"</code> 後接 <code>pip install torch==2.6.0 --extra-index-url https://download.pytorch.org/whl/cu124</code></p></blockquote>
+
+<h2 id="快速入門">快速入門：第一個模擬<a class="anchor" href="#快速入門" aria-hidden="true">#</a></h2>
+<p>只用基本安裝（<code>pip install newton</code>）即可執行——一顆球落到地面：</p>
+<pre><code class="language-python">import warp as wp
+import newton
+
+# 建構模型
+builder = newton.ModelBuilder()
+body = builder.add_body(
+    xform=wp.transform((0.0, 1.0, 0.0), wp.quat_identity()),
+    mass=1.0,
+)
+builder.add_shape_sphere(body, radius=0.25)
+builder.add_ground_plane()
+model = builder.finalize()
+
+# 建立求解器並配置狀態
+solver = newton.solvers.SolverXPBD(model)
+state_0 = model.state()
+state_1 = model.state()
+control = model.control()
+contacts = model.contacts()
+
+newton.eval_fk(model, model.joint_q, model.joint_qd, state_0)
+
+# 步進模擬
+for step in range(120):
+    state_0.clear_forces()
+    model.collide(state_0, contacts)
+    solver.step(state_0, state_1, control, contacts, 1.0 / 60.0)
+    state_0, state_1 = state_1, state_0
+</code></pre>
+
+<p>進一步：用 <code>SolverMuJoCo</code>（需 <code>pip install "newton[sim]"</code>）把一個機器人模板複製成 1024 個平行世界，GPU 一次步進全部：</p>
+<pre><code class="language-python">template = newton.ModelBuilder()
+template.add_mjcf("humanoid.xml")
+
+builder = newton.ModelBuilder()
+builder.replicate(template, world_count=1024)
+builder.add_ground_plane()
+model = builder.finalize()
+
+solver = newton.solvers.SolverMuJoCo(model)
+</code></pre>
+
+<h2 id="相容性">相容性與支援<a class="anchor" href="#相容性" aria-hidden="true">#</a></h2>
+<ul>
+<li>Newton 遵循語意化版本；穩定版文檔對應 <strong>1.3.0</strong>。</li>
+<li>CUDA 12 與 13 皆支援；Warp 自帶 CUDA runtime，無需本機 Toolkit。</li>
+<li>平台測試組態、版本策略與棄用政策見官方 <a href="https://newton-physics.github.io/newton/stable/guide/compatibility.html">Compatibility and Support</a>。</li>
+</ul>
+
+<h2 id="下一步">下一步<a class="anchor" href="#下一步" aria-hidden="true">#</a></h2>
+<ol>
+<li><code>python -m newton.examples --list</code> 看看有哪些範例，搭配<a href="visualization.html">視覺化</a>頁學習操作檢視器。</li>
+<li>讀<a href="concepts.html">核心概念</a>理解 Model／State／Worlds 的資料流。</li>
+<li>跟著<a href="tutorials.html">教學與範例</a>的 Colab 筆記本動手做，或挑戰<a href="diffsim.html">可微分物理教學</a>。</li>
+</ol>
+
+<footer class="page-footer">
+  <p>本頁整理自 Newton Physics 官方文檔 1.3.0（CC-BY-4.0）。內容以官方為準。</p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#系統需求">系統需求</a>
+      <a href="#安裝-newton">安裝 Newton</a>
+      <a href="#執行範例">執行內建範例</a>
+      <a href="#快速入門">快速入門</a>
+      <a href="#相容性">相容性與支援</a>
+      <a href="#下一步">下一步</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>視覺化 — Newton Physics 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Newton</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://newton-physics.github.io/newton/stable/guide/visualization.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="concepts.html">核心概念</a>
+        <a href="solvers.html">求解器</a>
+        <a href="collisions.html">碰撞與接觸</a>
+        <a href="sensors.html">感測器與致動器</a>
+        <div class="nav-group-title">工具與教學</div>
+        <a href="visualization.html" class="current">視覺化</a>
+        <a href="tutorials.html">教學與範例</a>
+        <a href="diffsim.html">可微分物理教學</a>
+        <div class="nav-group-title">參考</div>
+        <a href="faq.html">FAQ・整合・遷移</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="視覺化">視覺化（Visualization）<a class="anchor" href="#視覺化" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://newton-physics.github.io/newton/stable/guide/visualization.html">Visualization</a> 章節。Newton 內建的視覺化以除錯為目的；需要高品質即時渲染時，官方建議搭配 Isaac Lab，或輸出時間取樣 USD 到 Omniverse／Isaac Sim 檢視。</p>
+</blockquote>
+
+<h2 id="選擇指南">七種 Viewer 選擇指南<a class="anchor" href="#選擇指南" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>Viewer</th><th>使用情境</th><th>輸出</th><th>依賴</th></tr></thead>
+<tbody>
+<tr><td><code>ViewerGL</code></td><td>互動開發與除錯（預設範例用）</td><td>即時視窗</td><td>pyglet、imgui_bundle</td></tr>
+<tr><td><code>ViewerRTX</code></td><td>NVIDIA GPU 上的路徑追蹤即時渲染</td><td>即時視窗</td><td>ovrtx、usd-core、pyglet</td></tr>
+<tr><td><code>ViewerFile</code></td><td>錄製供回放／分享</td><td>.json／.bin 檔</td><td>無</td></tr>
+<tr><td><code>ViewerUSD</code></td><td>整合 3D 製作管線（Omniverse／Isaac Sim）</td><td>.usd 檔</td><td>usd-core</td></tr>
+<tr><td><code>ViewerRerun</code></td><td>進階視覺化與分析（時間序列圖）</td><td>網頁介面</td><td>rerun-sdk</td></tr>
+<tr><td><code>ViewerViser</code></td><td>瀏覽器視覺化與 Jupyter notebook</td><td>網頁介面、.viser 檔</td><td>viser</td></tr>
+<tr><td><code>ViewerNull</code></td><td>無頭（headless）／自動化環境</td><td>無</td><td>無</td></tr>
+</tbody>
+</table>
+
+<h2 id="共通介面">共通介面（ViewerBase）<a class="anchor" href="#共通介面" aria-hidden="true">#</a></h2>
+<p>所有 viewer 繼承 <code>ViewerBase</code>，共用同一套迴圈模式：</p>
+<pre><code class="language-python">viewer = newton.viewer.ViewerGL()
+viewer.set_model(model)              # 可加 max_worlds=4 只渲染前 4 個環境
+
+while viewer.is_running():
+    if viewer.should_step():         # 每 frame 呼叫一次；暫停時可用「.」單步
+        simulate_substeps()          # 推進模擬
+    viewer.begin_frame(sim_time)
+    viewer.log_state(state)          # 更新剛體變換、粒子位置
+    viewer.end_frame()
+
+viewer.close()
+</code></pre>
+<ul>
+<li><strong>核心迴圈</strong>：<code>set_model()</code>、<code>begin_frame()</code>、<code>log_state()</code>、<code>end_frame()</code>、<code>is_running()</code>、<code>is_paused()</code>（ViewerGL 以空白鍵切換）、<code>should_step()</code>、<code>close()</code>。</li>
+<li><strong>相機與排版</strong>：<code>set_camera()</code>（位置、pitch、yaw）；<code>set_world_offsets()</code> 把多個世界以網格間距排開（物理保持在原點、只有視覺偏移——與 <code>replicate(spacing=…)</code> 相比更穩定）。</li>
+<li><strong>除錯疊加</strong>：<code>log_lines()</code>（射線、法線、力向量）、<code>log_points()</code>（點雲）、<code>log_contacts()</code>（接觸法線）、<code>log_gizmo()</code>（變換 gizmo）、<code>log_scalar()／log_array()</code>（數值序列，Rerun 可畫時間圖）、<code>log_image()</code>（ViewerGL 的可停靠影像視窗，適合顯示 TiledCamera 輸出）。</li>
+<li><strong>RL 訓練提示</strong>：大量平行環境時用 <code>max_worlds</code> 限制渲染數量以免拖慢訓練。</li>
+</ul>
+
+<h2 id="錄製與離線">錄製與離線輸出<a class="anchor" href="#錄製與離線" aria-hidden="true">#</a></h2>
+<pre><code class="language-python"># 錄製到 JSON（人類可讀、零依賴）
+viewer = newton.viewer.ViewerFile("recording.json")
+# ... 模擬迴圈 ...
+viewer.close()   # 關閉時存檔
+
+# 輸出時間取樣 USD，供 Omniverse / Isaac Sim 開啟
+viewer = newton.viewer.ViewerUSD("output.usd")
+# ... 模擬迴圈 ...
+viewer.close()
+</code></pre>
+<p>錄製檔可重新載入回放，並能還原 model 與 state。</p>
+
+<h2 id="網頁檢視器">網頁檢視器：Rerun 與 Viser<a class="anchor" href="#網頁檢視器" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>ViewerRerun</strong>：預設在本機啟動 Rerun 檢視器，也可指定遠端伺服器位址；擅長時間序列數據分析。</li>
+<li><strong>ViewerViser</strong>：啟動網頁伺服器（預設 <code>http://localhost:8080</code>），支援 <code>.viser</code> 錄製檔與 notebook 內嵌時間軸播放——Jupyter 工作流程首選（<code>pip install "newton[notebook]"</code>）。</li>
+</ul>
+
+<footer class="page-footer">
+  <p>本頁整理自 Newton Physics 官方文檔 1.3.0（CC-BY-4.0）。內容以官方為準。下一步：<a href="tutorials.html">教學與範例 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#選擇指南">七種 Viewer 選擇指南</a>
+      <a href="#共通介面">共通介面</a>
+      <a href="#錄製與離線">錄製與離線輸出</a>
+      <a href="#網頁檢視器">網頁檢視器</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

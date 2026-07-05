@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>碰撞與接觸 — Newton Physics 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Newton</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://newton-physics.github.io/newton/stable/concepts/collisions.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="concepts.html">核心概念</a>
+        <a href="solvers.html">求解器</a>
+        <a href="collisions.html" class="current">碰撞與接觸</a>
+        <a href="sensors.html">感測器與致動器</a>
+        <div class="nav-group-title">工具與教學</div>
+        <a href="visualization.html">視覺化</a>
+        <a href="tutorials.html">教學與範例</a>
+        <a href="diffsim.html">可微分物理教學</a>
+        <div class="nav-group-title">參考</div>
+        <a href="faq.html">FAQ・整合・遷移</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="碰撞與接觸">碰撞與接觸（Collisions and Contacts）<a class="anchor" href="#碰撞與接觸" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://newton-physics.github.io/newton/stable/concepts/collisions.html">Collisions and Contacts</a> 章節——原文非常詳盡，本頁整理核心觀念與最常用的模式。</p>
+</blockquote>
+
+<h2 id="管線總覽">碰撞管線總覽<a class="anchor" href="#管線總覽" aria-hidden="true">#</a></h2>
+<p>Newton 的碰撞偵測分兩階段：</p>
+<ol>
+<li><strong>Broad phase（粗篩）</strong>：以 AABB 快速剔除包圍盒不重疊的形狀對。</li>
+<li><strong>Narrow phase（細算）</strong>：對存活的形狀對計算實際接觸幾何。演算法依形狀表示而定：
+<ul>
+<li><strong>凸包與基本體</strong>（球、盒、膠囊、圓柱、圓錐、橢球、凸網格）→ <strong>MPR/GJK</strong>，直接產生少量接觸點。</li>
+<li><strong>無預計算 SDF 的三角網格</strong> → Warp BVH 即時距離查詢＋可選接觸縮減；開箱即用但高面數網格較慢，且不支援 hydroelastic。</li>
+<li><strong>預計算 SDF</strong>（<code>mesh.build_sdf(...)</code> 或基本體的 ShapeConfig SDF 參數）→ O(1) 距離查詢，支援距離查詢與 hydroelastic 兩種接觸生成。</li>
+</ul></li>
+</ol>
+<blockquote><p><strong>效能提示</strong>：SDF 或 hydroelastic 等昂貴碰撞的場景，可以「每 frame 呼叫一次 <code>collide()</code>」而非每個 substep 都呼叫，通常能顯著提速。</p></blockquote>
+
+<h2 id="broad-phase">Broad Phase 模式<a class="anchor" href="#broad-phase" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>模式</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td><strong>EXPLICIT</strong>（預設）</td><td>使用預先計算的形狀對——結合靜態配對效率與進階接觸演算法</td></tr>
+<tr><td><strong>NxN</strong></td><td>全配對 AABB，O(N²)，適合小場景（&lt;100 形狀）</td></tr>
+<tr><td><strong>SAP</strong></td><td>Sweep-and-prune，O(N log N)，適合較大且空間相干的場景</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python">from newton import CollisionPipeline
+
+pipeline = CollisionPipeline(model)                      # 預設 EXPLICIT
+pipeline = CollisionPipeline(model, broad_phase="nxn")   # 小場景
+pipeline = CollisionPipeline(model, broad_phase="sap")   # 大場景
+
+contacts = pipeline.contacts()
+pipeline.collide(state, contacts)
+</code></pre>
+
+<h2 id="形狀類型">支援的形狀類型（GeoType）<a class="anchor" href="#形狀類型" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>類型</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td><code>PLANE</code></td><td>無限平面（地面）</td></tr>
+<tr><td><code>HFIELD</code></td><td>高度場地形（2D 高程網格）</td></tr>
+<tr><td><code>SPHERE</code>／<code>CAPSULE</code>／<code>BOX</code>／<code>CYLINDER</code>／<code>CONE</code>／<code>ELLIPSOID</code></td><td>基本體</td></tr>
+<tr><td><code>MESH</code></td><td>任意三角網格（含非凸）</td></tr>
+<tr><td><code>CONVEX_MESH</code></td><td>凸包網格</td></tr>
+</tbody>
+</table>
+<blockquote><p>SDF 是「碰撞資料」而非獨立形狀類型：網格用 <code>mesh.build_sdf(...)</code> 建立後傳入 <code>add_shape_mesh(...)</code>；基本體經 <code>ShapeConfig</code> 的 SDF 參數產生。<br>
+非凸網格建議用 <code>builder.approximate_meshes(method="convex_hull")</code> 以凸包近似（預設方法），或針對個別形狀保留視覺幾何。</p></blockquote>
+
+<h2 id="碰撞過濾">碰撞過濾<a class="anchor" href="#碰撞過濾" aria-hidden="true">#</a></h2>
+<h3 id="世界索引">層次一：世界索引<a class="anchor" href="#世界索引" aria-hidden="true">#</a></h3>
+<p>不同世界的形狀永不碰撞；世界 <code>-1</code> 的全域形狀（如地面）與所有世界碰撞。這是 RL 多環境隔離的機制，見<a href="concepts.html#worlds">核心概念・多世界</a>。</p>
+<h3 id="碰撞群組">層次二：碰撞群組（同世界內）<a class="anchor" href="#碰撞群組" aria-hidden="true">#</a></h3>
+<table>
+<thead><tr><th>群組規則</th><th>行為</th></tr></thead>
+<tbody>
+<tr><td><strong>0</strong></td><td>停用碰撞</td></tr>
+<tr><td><strong>正數（1, 2, …）</strong></td><td>只與同群組或任何負群組碰撞</td></tr>
+<tr><td><strong>負數（-1, -2, …）</strong></td><td>與所有正、負群組碰撞，但不與<em>相同</em>負群組碰撞</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python"># 群組 1：只與群組 1 及負群組碰撞
+builder.add_shape_sphere(body1, radius=0.5, cfg=builder.ShapeConfig(collision_group=1))
+
+# 群組 -1：與所有東西碰撞（除了其他 -1）
+builder.add_shape_sphere(body2, radius=0.5, cfg=builder.ShapeConfig(collision_group=-1))
+</code></pre>
+<h3 id="自碰撞與配對排除">層次三：自碰撞與逐對排除<a class="anchor" href="#自碰撞與配對排除" aria-hidden="true">#</a></h3>
+<ul>
+<li>Articulation 內自碰撞：載入時 <code>add_usd("robot.usda", enable_self_collisions=True)</code>（MJCF 同）。預設父子相鄰體不碰撞（<code>collision_filter_parent=True</code>）。</li>
+<li>粒子 vs 形狀：<code>ShapeConfig(has_shape_collision=…, has_particle_collision=…)</code> 細部控制。</li>
+<li>特定形狀對排除：<code>builder.add_shape_collision_filter_pair(a, b)</code>；USD 匯入時自動讀取 UsdPhysics 的 CollisionGroup 與 <code>physics:filteredPairs</code>。</li>
+</ul>
+
+<h2 id="接觸資料">接觸資料（Contacts）<a class="anchor" href="#接觸資料" aria-hidden="true">#</a></h2>
+<p><code>Contacts</code> 儲存碰撞偵測結果，由 <code>solver.step()</code> 消耗。剛體接觸的主要欄位：</p>
+<table>
+<thead><tr><th>屬性</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td><code>rigid_contact_count</code></td><td>目前有效的剛體接觸數（純量）</td></tr>
+<tr><td><code>rigid_contact_shape0/1</code></td><td>碰撞形狀索引</td></tr>
+<tr><td><code>rigid_contact_point0/1</code></td><td>各形狀上的接觸點（body 框架）</td></tr>
+<tr><td><code>rigid_contact_normal</code></td><td>接觸法線，由形狀 0 指向形狀 1（世界框架）</td></tr>
+<tr><td><code>rigid_contact_match_index</code></td><td>跨 frame 接觸匹配結果：≥0 匹配舊索引、-1 新接觸、-2 已斷開（需啟用 contact_matching）</td></tr>
+<tr><td><code>force</code>（擴充屬性）</td><td>每接觸空間力，供 <code>SensorContact</code> 使用，由 <code>solver.update_contacts()</code> 填入</td></tr>
+</tbody>
+</table>
+<pre><code class="language-python">contacts = model.contacts()
+model.collide(state, contacts)
+
+n = contacts.rigid_contact_count.numpy()[0]
+points0 = contacts.rigid_contact_point0.numpy()[:n]
+normals = contacts.rigid_contact_normal.numpy()[:n]
+shape0  = contacts.rigid_contact_shape0.numpy()[:n]
+</code></pre>
+<p>另有軟接觸（粒子—形狀）欄位 <code>soft_contact_*</code>。</p>
+
+<h2 id="hydroelastic">Hydroelastic 接觸<a class="anchor" href="#hydroelastic" aria-hidden="true">#</a></h2>
+<p><strong>選擇性啟用</strong>的功能：以 SDF 產生「接觸面」而非接觸點，力分布更真實連續——特別適合機器人操作（manipulation）情境：非凸形狀互動更穩定、大接觸面力分布更佳、面對面接觸的摩擦更真實。</p>
+<p>需求：配對<strong>雙方</strong>都設 <code>is_hydroelastic=True</code>、雙方都有 SDF 資料（網格 <code>build_sdf</code>；基本體用 <code>sdf_max_resolution</code>／<code>sdf_target_voxel_size</code>）、僅支援體積形狀（不含平面、高度場、非水密網格）。預設關閉時，SDF 形狀使用高效的硬 SDF 點接觸。</p>
+
+<h2 id="常用模式">常用模式速覽<a class="anchor" href="#常用模式" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>靜態地面</strong>：<code>builder.add_ground_plane()</code>；或把形狀掛在 <code>body=-1</code> 上手動建立靜態幾何。</li>
+<li><strong>形狀預設值</strong>：在加形狀前設定 <code>builder.default_shape_cfg</code>（摩擦、restitution、密度等）。</li>
+<li><strong>接觸縮減</strong>：SDF／hydroelastic 路徑自動適用；MPR/GJK 凸對本來就只產生少量接觸點。</li>
+<li><strong>確定性</strong>：接觸排序可設為確定性（deterministic contact ordering），利於重現。</li>
+<li><strong>可微分接觸</strong>：SDF 距離可反向傳播，見官方 Differentiable Contacts 一節。</li>
+</ul>
+
+<footer class="page-footer">
+  <p>本頁整理自 Newton Physics 官方文檔 1.3.0（CC-BY-4.0）。內容以官方為準，進階主題（Contact Matching、Contact Reports、效能調校、自訂管線）請見<a href="https://newton-physics.github.io/newton/stable/concepts/collisions.html">官方原文</a>。下一步：<a href="sensors.html">感測器與致動器 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#管線總覽">碰撞管線總覽</a>
+      <a href="#broad-phase">Broad Phase 模式</a>
+      <a href="#形狀類型">支援的形狀類型</a>
+      <a href="#碰撞過濾">碰撞過濾</a>
+      <a href="#接觸資料">接觸資料</a>
+      <a href="#hydroelastic">Hydroelastic 接觸</a>
+      <a href="#常用模式">常用模式速覽</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

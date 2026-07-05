@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Newton Physics 中文文檔</title>
+  <meta name="description" content="Newton Physics 1.3.0 官方文檔中文版：GPU 加速、可微分的開源物理引擎完整中文導覽">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">Newton</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html" class="active">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://newton-physics.github.io/newton/stable/guide/overview.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+
+<main class="content-full">
+  <section class="hero">
+    <h1><span class="hl">Newton</span> Physics 中文文檔</h1>
+    <p class="sub">GPU 加速、可擴充、可微分的開源物理引擎——專為機器人學、強化學習與先進模擬工作流程打造，由 Disney Research、Google DeepMind 與 NVIDIA 共同發起的 Linux Foundation 專案。</p>
+    <div class="badges">
+      <span class="badge">依據官方文檔 1.3.0（stable）</span>
+      <span class="badge">建構於 NVIDIA Warp</span>
+      <span class="badge">Apache-2.0 開源</span>
+      <span class="badge">繁體中文</span>
+    </div>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="installation.html">安裝與快速入門</a>
+      <a class="btn btn-ghost" href="docs.html">閱讀總覽文檔</a>
+    </div>
+  </section>
+
+  <div class="cards">
+    <a class="card" href="docs.html">
+      <div class="icon">📘</div>
+      <h3>總覽文檔</h3>
+      <p>Newton 是什麼、與 Warp／MuJoCo／PhysX 的關係、七大核心物件與模擬迴圈六步驟，一頁建立完整心智模型。</p>
+      <span class="go">前往閱讀 →</span>
+    </a>
+    <a class="card" href="installation.html">
+      <div class="icon">💿</div>
+      <h3>安裝與快速入門</h3>
+      <p>系統需求、pip 安裝選項（examples／sim／torch）、內建範例啟動，到第一個彈跳球與 1024 個平行機器人世界。</p>
+      <span class="go">開始安裝 →</span>
+    </a>
+    <a class="card" href="solvers.html">
+      <div class="icon">⚙️</div>
+      <h3>求解器</h3>
+      <p>8 種求解器（MuJoCo、XPBD、VBD、Featherstone…）的功能支援矩陣、關節特性對照與可微分模擬入門。</p>
+      <span class="go">前往比較 →</span>
+    </a>
+    <a class="card" href="tutorials.html">
+      <div class="icon">🦾</div>
+      <h3>教學與範例</h3>
+      <p>官方 Colab 教學筆記本導覽：從 ModelBuilder 到 CUDA Graph 加速，再到 Franka 手臂 IK 取放實戰。</p>
+      <span class="go">開始學習 →</span>
+    </a>
+    <a class="card" href="diffsim.html">
+      <div class="icon">🎯</div>
+      <h3>可微分物理教學</h3>
+      <p>7 課實戰 demo：用 wp.Tape() 把梯度反向傳播穿過 288 步模擬，讓梯度下降自己學會丟球命中目標。</p>
+      <span class="go">開始實戰 →</span>
+    </a>
+  </div>
+
+  <section class="section" id="sections">
+    <h2>全部章節</h2>
+    <p>依官方文檔章節組織的中文專題頁，每頁附完整官方原文連結對照。</p>
+    <div class="feature-grid">
+      <a class="card" href="concepts.html">
+        <div class="icon">🧩</div>
+        <h3>核心概念</h3>
+        <p>Model／State／Control／Contacts、多世界（Worlds）平行模擬、Articulation、質量慣量與座標慣例。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="collisions.html">
+        <div class="icon">💥</div>
+        <h3>碰撞與接觸</h3>
+        <p>碰撞管線（broad／narrow phase）、形狀相容性、碰撞過濾、接觸資料與 Hydroelastic 接觸。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="sensors.html">
+        <div class="icon">📡</div>
+        <h3>感測器與致動器</h3>
+        <p>IMU、接觸力、座標框架、平鋪相機等 5 種感測器，Sites 標記點與致動器架構。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="visualization.html">
+        <div class="icon">🖥️</div>
+        <h3>視覺化</h3>
+        <p>ViewerGL、RTX 路徑追蹤、USD 輸出、Rerun／Viser 網頁檢視器——7 種 Viewer 的選擇指南。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="tutorials.html">
+        <div class="icon">📓</div>
+        <h3>教學與範例</h3>
+        <p>兩套官方 Colab 筆記本與 newton/examples 範例庫導覽，含 RL 策略推論範例。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="faq.html">
+        <div class="icon">❓</div>
+        <h3>FAQ・整合・遷移</h3>
+        <p>與 PhysX／MuJoCo／Isaac 的關係、Isaac Lab 整合現況，與 warp.sim 遷移指南。</p>
+        <span class="go">前往 →</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>建議學習路徑</h2>
+    <ol>
+      <li><a href="docs.html">總覽文檔</a>：先理解 Newton 的定位（引擎 vs. 模擬器）與七大核心物件。</li>
+      <li><a href="installation.html">安裝與快速入門</a>：<code>pip install "newton[examples]"</code>，跑起第一個內建範例與快速入門程式。</li>
+      <li><a href="concepts.html">核心概念</a>：掌握 ModelBuilder → Model → State 的資料流，與多世界（Worlds）平行模擬。</li>
+      <li><a href="solvers.html">求解器</a>：依需求選擇求解器——機器人 RL 用 MuJoCo、布料軟體用 VBD／Style3D、可微分用 SemiImplicit／Featherstone。</li>
+      <li><a href="tutorials.html">教學與範例</a>：跟著官方 Colab 筆記本完成 Franka 手臂 IK 取放。</li>
+      <li><a href="diffsim.html">可微分物理教學</a>：親手做一個梯度穿過整段模擬的最佳化 demo，體驗 Newton 最獨特的能力。</li>
+      <li>依方向深入：<a href="collisions.html">碰撞</a>、<a href="sensors.html">感測器</a>、<a href="visualization.html">視覺化</a>，或到 <a href="faq.html">FAQ</a> 了解 Isaac Lab 整合。</li>
+    </ol>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>本站內容整理自 <a href="https://newton-physics.github.io/newton/stable/guide/overview.html" target="_blank" rel="noopener">Newton Physics 官方文檔</a>（1.3.0，CC-BY-4.0）。內容如與最新版官方文檔不符，請以官方為準。<br>Newton 為 Linux Foundation 專案；本站為非官方學習資源。 · <a href="../index.html">返回中文文檔大全</a></p>
+</footer>
+<script src="assets/script.js"></script>
+</body>
+</html>

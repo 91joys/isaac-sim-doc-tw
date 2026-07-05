@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAQ・整合・遷移 — Newton Physics 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Newton</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://newton-physics.github.io/newton/stable/faq.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="concepts.html">核心概念</a>
+        <a href="solvers.html">求解器</a>
+        <a href="collisions.html">碰撞與接觸</a>
+        <a href="sensors.html">感測器與致動器</a>
+        <div class="nav-group-title">工具與教學</div>
+        <a href="visualization.html">視覺化</a>
+        <a href="tutorials.html">教學與範例</a>
+        <a href="diffsim.html">可微分物理教學</a>
+        <div class="nav-group-title">參考</div>
+        <a href="faq.html" class="current">FAQ・整合・遷移</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="faq">FAQ・整合・遷移<a class="anchor" href="#faq" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://newton-physics.github.io/newton/stable/faq.html">FAQ</a>、<a href="https://newton-physics.github.io/newton/stable/integrations/index.html">Integrations</a> 與 <a href="https://newton-physics.github.io/newton/stable/migration.html">Migration Guide</a>。技術問答請至 <a href="https://github.com/newton-physics/newton/discussions">GitHub Discussions</a>。</p>
+</blockquote>
+
+<h2 id="常見問題">常見問題<a class="anchor" href="#常見問題" aria-hidden="true">#</a></h2>
+
+<h3 id="warp-差異">Warp、warp.sim 與 Newton 的差異？<a class="anchor" href="#warp-差異" aria-hidden="true">#</a></h3>
+<ul>
+<li><strong>Warp</strong> 是撰寫高效能可微分 GPU kernel 的 Python 框架；<strong>Newton</strong> 是建構於 Warp 之上的完整物理引擎（高階模擬 API、可互換求解器、資產 I/O）。</li>
+<li><strong>warp.sim</strong> 是 Newton 的前身（NVIDIA 開發的 Warp 內建模組），Warp 1.8 棄用、1.10 移除。遷移見<a href="#遷移">下方指南</a>。</li>
+</ul>
+
+<h3 id="mujoco-支援">Newton 支援 MuJoCo 模擬嗎？<a class="anchor" href="#mujoco-支援" aria-hidden="true">#</a></h3>
+<p>是。Newton 以 <a href="https://github.com/google-deepmind/mujoco_warp">MuJoCo Warp</a>（Google DeepMind 與 NVIDIA 以 Warp 重新實作的 GPU 加速 MuJoCo）作為關鍵求解器，並可匯入 MJCF／URDF／OpenUSD 資產——在資產與求解器兩個層面都與 MuJoCo 相容。</p>
+
+<h3 id="physx-關係">Newton 會取代 PhysX 嗎？<a class="anchor" href="#physx-關係" aria-hidden="true">#</a></h3>
+<p><strong>不會</strong>，兩者目標不同：Newton 主攻機器人學習與可擴充的可微分多物理；PhysX 主攻工業數位孿生的成熟、多平台即時物理 SDK，持續維護更新。PhysX 目前無法作為 Newton 的求解器（但支援方式在評估中）。Isaac Lab 的實驗性 Newton 整合不支援 PhysX，但 Isaac Lab 計畫持續支援 PhysX 後端。</p>
+
+<h3 id="多物理">支援多物理耦合／協同模擬嗎？<a class="anchor" href="#多物理" aria-hidden="true">#</a></h3>
+<p>是。Newton 明確設計為可擴充多求解器的多物理場景，提供求解器之間耦合的 API。官方已展示單向耦合範例（機械臂操作布料、四足行走於非剛性地形）；雙向耦合與特定求解器間的隱式耦合在路線圖上。也支援自訂求解器、積分器與數值方法。</p>
+
+<h3 id="standalone">Newton 可以獨立使用嗎？<a class="anchor" href="#standalone" aria-hidden="true">#</a></h3>
+<p>可以，Newton 與其 Python API 可作為獨立模擬框架使用；視覺化以除錯為目的（見<a href="visualization.html">視覺化</a>），需要高品質渲染可搭配 Isaac Lab，或匯出時間取樣 USD 到 Omniverse／Isaac Sim。</p>
+
+<h2 id="整合">整合（Integrations）<a class="anchor" href="#整合" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>整合對象</th><th>現況</th><th>連結</th></tr></thead>
+<tbody>
+<tr><td><strong>Isaac Lab</strong></td><td>實驗性整合、積極開發中——初始訓練環境含四足／雙足行走與基本操作（manipulation）</td><td><a href="https://isaac-sim.github.io/IsaacLab/main/source/experimental-features/newton-physics-integration/index.html">Isaac Lab 文檔</a></td></tr>
+<tr><td><strong>Isaac Sim</strong></td><td>作為物理後端的整合開發中（Isaac Sim 6.0 已可切換 Newton 後端，見 <a href="../isaac/physics.html">Isaac 中文文檔・物理模擬</a>）</td><td><a href="https://docs.isaacsim.omniverse.nvidia.com/latest/physics/newton_physics.html">Isaac Sim 文檔</a></td></tr>
+<tr><td><strong>MuJoCo</strong></td><td>經 MuJoCo Warp 求解器與 MJCF 匯入深度整合；sites 預設匯出到 MuJoCo</td><td><a href="https://newton-physics.github.io/newton/stable/integrations/mujoco.html">官方頁面</a></td></tr>
+</tbody>
+</table>
+
+<h2 id="遷移">warp.sim → Newton 遷移指南<a class="anchor" href="#遷移" aria-hidden="true">#</a></h2>
+<h3 id="名稱對照">主要 API 名稱對照<a class="anchor" href="#名稱對照" aria-hidden="true">#</a></h3>
+<table>
+<thead><tr><th>warp.sim</th><th>Newton</th></tr></thead>
+<tbody>
+<tr><td><code>FeatherstoneIntegrator</code>／<code>SemiImplicitIntegrator</code>／<code>VBDIntegrator</code>／<code>XPBDIntegrator</code></td><td><code>SolverFeatherstone</code>／<code>SolverSemiImplicit</code>／<code>SolverVBD</code>／<code>SolverXPBD</code></td></tr>
+<tr><td><code>integrator.simulate(model, state0, state1, dt, None)</code></td><td><code>solver.step(state0, state1, control, None, dt)</code></td></tr>
+<tr><td><code>parse_urdf()</code>／<code>parse_mjcf()</code>／<code>parse_usd()</code></td><td><code>ModelBuilder.add_urdf()</code>／<code>add_mjcf()</code>／<code>add_usd()</code>（<code>add_usd</code> 直接接受 URL）</td></tr>
+<tr><td>匯入器的關節／接觸參數引數</td><td>改設於 <code>builder.default_joint_cfg</code>／<code>builder.default_shape_cfg</code></td></tr>
+<tr><td><code>eval_fk(model, q, qd, mask, state)</code></td><td><code>eval_fk(model, q, qd, state, mask=None)</code>（mask 改為可選）</td></tr>
+<tr><td><code>Model.ground</code>（特殊地面處理）</td><td>已移除——改用 <code>builder.add_ground_plane()</code></td></tr>
+<tr><td><code>Model.shape_geo.*</code>／<code>Model.shape_materials.*</code> 結構</td><td>攤平為 <code>Model.shape_type</code>、<code>shape_scale</code>、<code>shape_material_ke</code> 等逐形狀陣列</td></tr>
+</tbody>
+</table>
+<h3 id="行為變更">重要行為變更<a class="anchor" href="#行為變更" aria-hidden="true">#</a></h3>
+<ul>
+<li><strong>spatial_vector 順序</strong>：Newton 公開陣列改用 <code>(linear, angular)</code> 順序（如 <code>State.body_qd</code> 存 <code>(lin_vel, ang_vel)</code>）；warp.sim 沿用 Warp 原生的 <code>(ang, lin)</code>。剛體線速度是<strong>質心</strong>的世界座標速度，需要 body 原點速度時用 <code>v_origin = v_com − ω × r_com_world</code> 換算。</li>
+<li><strong>Control 職責拆分</strong>：<code>joint_target_q</code>／<code>joint_target_qd</code> 存位置／速度目標，<code>joint_act</code> 存前饋致動輸入，<code>joint_f</code> 存廣義力——<code>joint_act</code> 不再是目標陣列。<code>JointMode</code> 改為 <code>JointTargetMode</code>（<code>EFFORT</code>、<code>POSITION_VELOCITY</code>）。</li>
+<li><strong>joint-target 版面</strong>：Newton 1.3 新增 opt-in 旗標 <code>newton.use_coord_layout_targets</code>，讓 <code>joint_target_q</code> 改用與 <code>joint_q</code> 對齊的座標版面（free joint 7 座標 vs 6 DOF 的差異）。</li>
+<li><strong>MJCF 密度</strong>：Newton 的 MJCF 匯入器對<strong>所有</strong>形狀類型都採用 <code>geom_density</code>（warp.sim 只對球與盒），模擬結果可能不同、需重調參數。</li>
+<li><strong>匯入器上軸</strong>：MJCF／URDF 匯入器 <code>up_axis</code> 預設 +Z；所有匯入器現在會旋轉資產以符合 builder 的 <code>up_axis</code>（而非覆寫 builder 設定）。</li>
+</ul>
+<p>完整逐項對照（Renderers、Collisions 等）見官方 <a href="https://newton-physics.github.io/newton/stable/migration.html">Migration Guide</a>。</p>
+
+<h2 id="社群">社群與貢獻<a class="anchor" href="#社群" aria-hidden="true">#</a></h2>
+<ul>
+<li>Newton 歡迎社群貢獻：<a href="https://github.com/newton-physics/newton/blob/main/CONTRIBUTING.md">Contribution Guide</a>、<a href="https://newton-physics.github.io/newton/stable/guide/development.html">Development Guide</a>。</li>
+<li>授權：Apache-2.0（程式碼）、CC-BY-4.0（文檔）。</li>
+<li>GitHub：<a href="https://github.com/newton-physics/newton">newton-physics/newton</a></li>
+</ul>
+
+<footer class="page-footer">
+  <p>本頁整理自 Newton Physics 官方文檔 1.3.0（CC-BY-4.0）。內容以官方為準。<a href="../index.html">返回中文文檔大全</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#常見問題">常見問題</a>
+      <a href="#整合">整合</a>
+      <a href="#遷移">warp.sim 遷移指南</a>
+      <a href="#社群">社群與貢獻</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

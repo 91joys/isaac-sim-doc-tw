@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>核心概念 — Newton Physics 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Newton</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://newton-physics.github.io/newton/stable/concepts/worlds.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="concepts.html" class="current">核心概念</a>
+        <a href="solvers.html">求解器</a>
+        <a href="collisions.html">碰撞與接觸</a>
+        <a href="sensors.html">感測器與致動器</a>
+        <div class="nav-group-title">工具與教學</div>
+        <a href="visualization.html">視覺化</a>
+        <a href="tutorials.html">教學與範例</a>
+        <a href="diffsim.html">可微分物理教學</a>
+        <div class="nav-group-title">參考</div>
+        <a href="faq.html">FAQ・整合・遷移</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="核心概念">核心概念<a class="anchor" href="#核心概念" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 Concepts 章節：<a href="https://newton-physics.github.io/newton/stable/concepts/worlds.html">Worlds</a>、<a href="https://newton-physics.github.io/newton/stable/concepts/articulations.html">Articulations</a>、<a href="https://newton-physics.github.io/newton/stable/concepts/mass_inertia.html">Mass and Inertia</a>、<a href="https://newton-physics.github.io/newton/stable/concepts/sites.html">Sites</a> 與 <a href="https://newton-physics.github.io/newton/stable/concepts/conventions.html">Conventions</a>。</p>
+</blockquote>
+
+<h2 id="worlds">多世界（Worlds）<a class="anchor" href="#worlds" aria-hidden="true">#</a></h2>
+<p>Newton 允許在<strong>單一 <code>Model</code></strong> 內建立多個互相獨立的模擬「世界」——這是 RL 大規模平行訓練的基礎。每個世界以索引將粒子、剛體、形狀、關節、articulation 分組：</p>
+<ul>
+<li><strong>世界索引 <code>0, 1, 2, …</code></strong>：世界專屬實體，不與其他世界碰撞。</li>
+<li><strong>全域索引 <code>-1</code></strong>：全域實體（如地面），與所有世界碰撞。全域實體使用世界 0 的重力。</li>
+</ul>
+<p>三種建立方式：</p>
+<pre><code class="language-python">import newton
+
+# 方式一：begin_world / end_world 手動分組
+builder = newton.ModelBuilder()
+builder.add_ground_plane()          # 全域（world -1）
+builder.begin_world()               # world 0
+b0 = builder.add_body(mass=1.0)
+builder.add_shape_sphere(body=b0, radius=0.1)
+builder.end_world()
+
+# 方式二：add_world —— 把預先建好的子 builder 當成一個世界加入
+arm = newton.ModelBuilder()
+# ... 在 arm 中建構手臂 ...
+scene = newton.ModelBuilder()
+scene.add_ground_plane()
+scene.add_world(arm)
+scene.add_world(arm)
+
+# 方式三：replicate —— 一次複製 N 個世界（RL 最常用）
+scene2 = newton.ModelBuilder()
+scene2.add_ground_plane()
+scene2.replicate(arm, world_count=1024)
+model = scene2.finalize()
+</code></pre>
+<blockquote><p><strong>兩個實務提醒</strong>：<br>
+① <code>replicate()</code> 的 <code>spacing</code> 會把物體移離原點、降低數值穩定性——物理上保持 <code>spacing=(0,0,0)</code>，視覺分隔改用 <code>viewer.set_world_offsets()</code>。<br>
+② 若子 builder 含網格，先呼叫 <code>approximate_meshes()</code> 再 <code>replicate()</code>，讓所有世界共用同一份簡化網格。</p></blockquote>
+<p>每個世界可有自己的重力（例如地球與月球並存）：</p>
+<pre><code class="language-python">model.set_gravity((0.0, 0.0, -9.81), world=0)  # 地球
+model.set_gravity((0.0, 0.0, -1.62), world=1)  # 月球
+</code></pre>
+<p>模型並提供 <code>body_world</code>、<code>shape_world</code> 等分組陣列與 <code>*_world_start</code> 起始索引陣列，方便在自訂 Warp kernel 中以「(世界, 實體)」2D 執行緒網格平行處理。異質世界（不同內容）支援仍屬實驗性。</p>
+
+<h2 id="articulations">Articulation 與座標表示<a class="anchor" href="#articulations" aria-hidden="true">#</a></h2>
+<p>Articulation 是由關節連接的剛體集合（機器人）。描述其組態有兩種參數化：</p>
+<table>
+<thead><tr><th></th><th>廣義座標（generalized / reduced）</th><th>最大座標（maximal）</th></tr></thead>
+<tbody>
+<tr><td>狀態儲存</td><td><code>State.joint_q</code>（關節位置）、<code>State.joint_qd</code>（關節速度）</td><td><code>State.body_q</code>（每體 7 參數：位置＋XYZW 四元數）、<code>State.body_qd</code>（6 參數：線速度＋角速度）</td></tr>
+<tr><td>例：雙擺</td><td>2 個關節角＋2 個關節速度</td><td>2 個剛體位姿＋速度</td></tr>
+<tr><td>浮動基座</td><td>廣義座標另含基座位姿（位置＋四元數）</td><td>——</td></tr>
+<tr><td>採用的求解器</td><td><code>SolverMuJoCo</code>、<code>SolverFeatherstone</code></td><td><code>SolverXPBD</code>、<code>SolverSemiImplicit</code>、<code>SolverVBD</code></td></tr>
+</tbody>
+</table>
+<p>兩種表示之間用運動學互換：<strong><code>newton.eval_fk()</code></strong>（廣義 → 最大）與 <strong><code>newton.eval_ik()</code></strong>（最大 → 廣義）。注意：碰撞偵測 <code>Model.collide()</code> 需要 state 中的<strong>最大座標是最新的</strong>——這就是快速入門範例在迴圈前呼叫 <code>eval_fk()</code> 的原因。</p>
+<pre><code class="language-python">builder = newton.ModelBuilder()
+body = builder.add_link()
+builder.add_shape_box(body)   # 加形狀以產生慣量
+joint = builder.add_joint_revolute(parent=-1, child=body, axis=wp.vec3(0.0, 0.0, 1.0))
+builder.add_articulation([joint])
+builder.joint_q[-1] = 0.5     # 初始關節角
+builder.joint_qd[-1] = 10.0   # 初始關節速度
+
+model = builder.finalize()
+state = model.state()
+newton.eval_fk(model, model.joint_q, model.joint_qd, state)  # 同步 body 位姿
+</code></pre>
+<h3 id="關節類型">關節類型<a class="anchor" href="#關節類型" aria-hidden="true">#</a></h3>
+<p>Newton 支援 PRISMATIC（滑動）、REVOLUTE（旋轉）、BALL（球）、FIXED（固定）、FREE（自由）、DISTANCE（距離）、D6（六自由度）與 CABLE（纜線，VBD 專用）——各求解器的支援程度見<a href="solvers.html#關節支援">求解器・關節支援矩陣</a>。閉鏈（loop closure）機制：迴路閉合關節照常以 <code>add_joint_*</code> 建立，但<strong>不放入</strong> articulation，讓 articulation 圖保持樹狀。</p>
+
+<h2 id="mass">質量與慣量<a class="anchor" href="#mass" aria-hidden="true">#</a></h2>
+<p>每個動態剛體都需要正質量與物理上合理的慣量張量。三種指定方式：</p>
+<ol>
+<li><strong>直接指定</strong>：<code>add_link(mass=…, inertia=…)</code>（質量 kg、對質心的 3×3 慣量張量）。</li>
+<li><strong>密度推算</strong>：由碰撞形狀的 <code>ShapeConfig</code> 密度自動計算（<strong>官方建議優先</strong>——與碰撞幾何一致、免手動簿記）。</li>
+<li><strong>檔案匯入</strong>：USD／MJCF／URDF 中的質量屬性自動解析。</li>
+</ol>
+<p>最佳實務：</p>
+<ul>
+<li>沒有帶密度形狀的動態剛體，務必在 <code>add_link()</code> 明確給 <code>mass</code> 與 <code>inertia</code>。</li>
+<li>要做預定運動（prescribed motion）用 <code>is_kinematic=True</code>，<strong>不要</strong>靠零質量讓物體不動。</li>
+<li>手動指定的質量屬性用 <code>lock_inertia=True</code> 保護，避免被後續加入的形狀改寫（MJCF 匯入器遇到 <code>&lt;inertial&gt;</code> 即用此機制）。</li>
+<li>開發期設 <code>validate_inertia_detailed=True</code>，<code>finalize()</code> 時會對每個被修正的剛體提出警告。</li>
+</ul>
+
+<h2 id="sites">Sites（抽象標記點）<a class="anchor" href="#sites" aria-hidden="true">#</a></h2>
+<p>Site 是附著在剛體（或世界）上的無碰撞參考框架，用途：感測器安裝點（IMU）、相對變換的參考框架、MuJoCo 互通。</p>
+<pre><code class="language-python">body = builder.add_body(xform=wp.transform((0, 0, 1), wp.quat_identity()))
+builder.add_site(body, label="imu_0")                      # 體原點
+builder.add_site(body, xform=wp.transform(...), label="tip")  # 帶偏移
+</code></pre>
+<p>MJCF／USD 匯入時可用參數控制只載入碰撞形狀與 sites。搭配感測器的用法見<a href="sensors.html">感測器與致動器</a>。</p>
+
+<h2 id="conventions">慣例（Conventions）<a class="anchor" href="#conventions" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>項目</th><th>Newton 慣例</th></tr></thead>
+<tbody>
+<tr><td>上軸</td><td><strong>Z-up（預設）</strong>、右手座標系；可用 <code>ModelBuilder(up_axis=newton.Axis.Y)</code> 改為 Y-up，重力向量自動對齊所選上軸</td></tr>
+<tr><td>四元數</td><td><strong>XYZW</strong> 儲存順序（向量部在前、純量 w 在後，同 Warp）——與 MuJoCo 的 WXYZ 不同，跨引擎交換資料時務必注意</td></tr>
+<tr><td>剛體速度</td><td><code>body_qd</code> 線性部分＝質心的世界座標速度；FREE 關節的 <code>joint_qd</code> 為 parent 框架下的 child-COM twist</td></tr>
+<tr><td>顏色</td><td>表面顏色預設視為 display／sRGB 值</td></tr>
+<tr><td>各引擎上軸對照</td><td>Newton＝Z、MuJoCo＝Z、USD＝Y（可設 Z）、Isaac Lab/Sim＝Z；Newton 本身座標系無關（agnostic），任何選擇都能運作</td></tr>
+</tbody>
+</table>
+<p>空間 twist／wrench 的參考點慣例、與 Drake／MuJoCo／Isaac 的詳細對照，見官方 <a href="https://newton-physics.github.io/newton/stable/concepts/conventions.html">Conventions</a> 全文。</p>
+
+<h2 id="更多概念">更多概念頁（官方）<a class="anchor" href="#更多概念" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>主題</th><th>內容</th><th>官方原文</th></tr></thead>
+<tbody>
+<tr><td>USD Parsing</td><td>UsdPhysics 解析、Schema Resolver（newton:／physxJoint:／mjc: 屬性優先序）、SDF 與 Hydroelastic 屬性對映</td><td><a href="https://newton-physics.github.io/newton/stable/concepts/usd_parsing.html">連結</a></td></tr>
+<tr><td>Custom Attributes</td><td>從 USD 匯入自訂屬性到 Model／State</td><td><a href="https://newton-physics.github.io/newton/stable/concepts/custom_attributes.html">連結</a></td></tr>
+<tr><td>Extended Attributes</td><td>State／Contacts 的可選陣列（如 <code>body_qdd</code> 加速度、接觸力），感測器所需</td><td><a href="https://newton-physics.github.io/newton/stable/concepts/extended_attributes.html">連結</a></td></tr>
+</tbody>
+</table>
+
+<footer class="page-footer">
+  <p>本頁整理自 Newton Physics 官方文檔 1.3.0（CC-BY-4.0）。內容以官方為準。下一步：<a href="solvers.html">求解器 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#worlds">多世界（Worlds）</a>
+      <a href="#articulations">Articulation 與座標表示</a>
+      <a href="#mass">質量與慣量</a>
+      <a href="#sites">Sites（標記點）</a>
+      <a href="#conventions">慣例</a>
+      <a href="#更多概念">更多概念頁</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

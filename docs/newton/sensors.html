@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>感測器與致動器 — Newton Physics 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Newton</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://newton-physics.github.io/newton/stable/concepts/sensors.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="concepts.html">核心概念</a>
+        <a href="solvers.html">求解器</a>
+        <a href="collisions.html">碰撞與接觸</a>
+        <a href="sensors.html" class="current">感測器與致動器</a>
+        <div class="nav-group-title">工具與教學</div>
+        <a href="visualization.html">視覺化</a>
+        <a href="tutorials.html">教學與範例</a>
+        <a href="diffsim.html">可微分物理教學</a>
+        <div class="nav-group-title">參考</div>
+        <a href="faq.html">FAQ・整合・遷移</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="感測器與致動器">感測器與致動器<a class="anchor" href="#感測器與致動器" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://newton-physics.github.io/newton/stable/concepts/sensors.html">Sensors</a> 與 <a href="https://newton-physics.github.io/newton/stable/concepts/actuators.html">Actuators</a> 章節。感測器從模擬中萃取觀測值（控制、RL、分析所需）；致動器把控制律計算的力矩寫回模擬。</p>
+</blockquote>
+
+<h2 id="感測器模式">感測器的共通模式<a class="anchor" href="#感測器模式" aria-hidden="true">#</a></h2>
+<ol>
+<li><strong>初始化</strong>：用 model 建立感測器並指定量測對象。</li>
+<li><strong>更新</strong>：模擬迴圈中呼叫 <code>sensor.update(state, ...)</code>。</li>
+<li><strong>讀取</strong>：從感測器屬性取得結果（Warp 陣列）。</li>
+</ol>
+<pre><code class="language-python">import warp as wp
+import newton
+from newton.sensors import SensorIMU
+
+builder = newton.ModelBuilder()
+builder.add_ground_plane()
+body = builder.add_body(xform=wp.transform((0, 0, 1), wp.quat_identity()))
+builder.add_shape_sphere(body, radius=0.1)
+builder.add_site(body, label="imu_0")        # IMU 安裝點（site）
+model = builder.finalize()
+
+imu = SensorIMU(model, sites="imu_*")        # 1. 建立感測器
+
+solver = newton.solvers.SolverMuJoCo(model)
+state = model.state()
+
+for _ in range(100):
+    state.clear_forces()
+    solver.step(state, state, None, None, dt=1.0 / 60.0)
+    imu.update(state)                        # 2. 計算量測值
+    acc = imu.accelerometer.numpy()          # 3. (n_sensors, 3) 線加速度
+    gyro = imu.gyroscope.numpy()             #    (n_sensors, 3) 角速度
+</code></pre>
+<blockquote><p>感測器會在建構時自動向 model 註冊所需的<a href="https://newton-physics.github.io/newton/stable/concepts/extended_attributes.html">擴充屬性</a>（如 <code>body_qdd</code>、<code>Contacts.force</code>），之後建立的 <code>State</code>／<code>Contacts</code> 就會包含它們——所以<strong>先建感測器、再配置 state</strong>。<code>SensorContact</code> 另需在 <code>sensor.update()</code> 前呼叫 <code>solver.update_contacts()</code>。</p></blockquote>
+
+<h2 id="五種感測器">五種感測器<a class="anchor" href="#五種感測器" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>感測器</th><th>量測內容</th></tr></thead>
+<tbody>
+<tr><td><code>SensorIMU</code></td><td>site 框架的線加速度與角速度</td></tr>
+<tr><td><code>SensorContact</code></td><td>剛體／形狀間的接觸力，含摩擦分解，可按對手方細分</td></tr>
+<tr><td><code>SensorFrameTransform</code></td><td>形狀／sites 相對於參考 sites 的相對變換</td></tr>
+<tr><td><code>SensorTiledCamera</code></td><td>跨多世界的光線追蹤彩色＋深度渲染（結果寫入傳入 <code>update()</code> 的輸出陣列）</td></tr>
+<tr><td><code>SensorRaycast</code></td><td><em>（已棄用）</em>虛擬相機深度圖——請改用 <code>SensorTiledCamera</code></td></tr>
+</tbody>
+</table>
+
+<h2 id="label-matching">Label Matching（標籤選取）<a class="anchor" href="#label-matching" aria-hidden="true">#</a></h2>
+<p>多數感測器 API 用<strong>標籤模式</strong>選取 body／shape／joint／site，支援三種形式：</p>
+<pre><code class="language-python"># 單一萬用字元模式（fnmatch：* 與 ?）
+SensorIMU(model, sites="foot_*")
+
+# 模式清單（聯集）
+SensorContact(model, sensing_shapes=["*Plate*", "*Flap*"])
+
+# 整數索引清單（直接選取）
+SensorFrameTransform(model, shapes=[0, 3, 7], reference_sites=[1])
+</code></pre>
+
+<h2 id="感測器效能">效能注意事項<a class="anchor" href="#感測器效能" aria-hidden="true">#</a></h2>
+<ul>
+<li>感測器在 setup 階段<strong>建立一次、每步重用</strong>——讓 Newton 預先配置輸出陣列、避免每 frame 開銷。</li>
+<li>依賴擴充屬性的感測器（<code>body_qdd</code>、<code>Contacts.force</code>）會讓求解器每步多算這些量，即使當步沒讀取感測器也一樣——成本要算進去。</li>
+</ul>
+
+<h2 id="致動器">致動器（Actuators）<a class="anchor" href="#致動器" aria-hidden="true">#</a></h2>
+<blockquote><p><strong>實驗性</strong>：actuator API 可能變動。</p></blockquote>
+<p>致動器讀取模擬狀態、計算力矩（effort），並<strong>累加</strong>（scatter-add）到控制陣列——呼叫者每 frame 需先把輸出陣列清零。每個 <code>Actuator</code> 實例是<strong>向量化</strong>的：一個物件操作一批 DOF 索引，可高效整合到多平行環境的 RL 工作流程。三個可組合的構件（依序作用）：</p>
+<table>
+<thead><tr><th>構件</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td><strong>Delay</strong>（可選）</td><td>把指令輸入延遲 N 個致動器時步，模擬通訊／處理延遲</td></tr>
+<tr><td><strong>Controller</strong></td><td>控制律，由狀態與目標算出原始力矩——PD、PID 或神經網路控制</td></tr>
+<tr><td><strong>Clamping[]</strong>（可疊加）</td><td>馬達極限模型：<code>ClampingMaxEffort</code>（±對稱上限）、<code>ClampingDCMotor</code>（速度相關飽和）、<code>ClampingPositionBased</code>（位置相關查表）</td></tr>
+</tbody>
+</table>
+<p>每步管線：<code>Delay 讀取 → Controller → Clamping → Scatter-add → 狀態更新</code>。</p>
+<pre><code class="language-python"># 建模時註冊，finalize 時自動實例化
+builder.add_actuator(
+    ControllerPD,
+    index=dof_index,
+    kp=100.0,
+    kd=10.0,
+    delay_steps=5,
+    clamping=[(ClampingMaxEffort, {"max_effort": 50.0})],
+)
+model = builder.finalize()
+</code></pre>
+<p>Controller 與 Clamping 都可插拔——繼承基底類即可加入自訂模型；目標是在底層控制器支援時提供<strong>可微分</strong>與<strong>CUDA Graph 可捕捉</strong>的標準致動器模型。目前限制：尚無傳動模型（齒輪比）、僅支援 SISO（一 DOF 一致動器）、不含致動器動力學（慣性、摩擦、熱效應）。</p>
+
+<h2 id="sites-搭配">搭配 Sites 使用<a class="anchor" href="#sites-搭配" aria-hidden="true">#</a></h2>
+<p>Site（無碰撞參考框架）是感測器的安裝點與參考框架：IMU 裝在 site 上、FrameTransform 以 site 為參考。用 <code>builder.add_site(body, label=...)</code> 建立，或由 MJCF／USD 匯入。詳見<a href="concepts.html#sites">核心概念・Sites</a>。</p>
+
+<footer class="page-footer">
+  <p>本頁整理自 Newton Physics 官方文檔 1.3.0（CC-BY-4.0）。內容以官方為準。下一步：<a href="visualization.html">視覺化 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#感測器模式">感測器的共通模式</a>
+      <a href="#五種感測器">五種感測器</a>
+      <a href="#label-matching">Label Matching</a>
+      <a href="#感測器效能">效能注意事項</a>
+      <a href="#致動器">致動器</a>
+      <a href="#sites-搭配">搭配 Sites 使用</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

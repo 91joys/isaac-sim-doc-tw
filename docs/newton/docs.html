@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>總覽文檔 — Newton Physics 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Newton</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html" class="active">總覽文檔</a>
+    <a href="https://newton-physics.github.io/newton/stable/guide/overview.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html" class="current">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="concepts.html">核心概念</a>
+        <a href="solvers.html">求解器</a>
+        <a href="collisions.html">碰撞與接觸</a>
+        <a href="sensors.html">感測器與致動器</a>
+        <div class="nav-group-title">工具與教學</div>
+        <a href="visualization.html">視覺化</a>
+        <a href="tutorials.html">教學與範例</a>
+        <a href="diffsim.html">可微分物理教學</a>
+        <div class="nav-group-title">參考</div>
+        <a href="faq.html">FAQ・整合・遷移</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="總覽">Newton Physics 總覽文檔<a class="anchor" href="#總覽" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://newton-physics.github.io/newton/stable/guide/overview.html">Overview</a> 與 <a href="https://newton-physics.github.io/newton/stable/faq.html">FAQ</a> 章節的中文整理。本頁幫你在 10 分鐘內建立 Newton 的完整心智模型。</p>
+</blockquote>
+
+<h2 id="1-newton-是什麼">1. Newton 是什麼<a class="anchor" href="#1-newton-是什麼" aria-hidden="true">#</a></h2>
+<p><strong>Newton</strong> 是一套 GPU 加速、可擴充、<strong>可微分</strong>的開源物理模擬引擎，專為機器人學、研究與先進模擬工作流程設計。它建構於 <a href="https://github.com/NVIDIA/warp">NVIDIA Warp</a> 之上並整合 <a href="https://github.com/google-deepmind/mujoco_warp">MuJoCo Warp</a>，提供高效能模擬、現代化 Python API 與彈性的架構。</p>
+<ul>
+<li><strong>GPU 加速</strong>：以 NVIDIA Warp 實現快速、可擴展的模擬。</li>
+<li><strong>多求解器</strong>：XPBD、VBD、MuJoCo、Featherstone、SemiImplicit、Kamino、ImplicitMPM、Style3D 共 8 種實作。</li>
+<li><strong>模組化設計</strong>：容易擴充新的求解器與元件（可自製求解器）。</li>
+<li><strong>可微分</strong>：支援可微分模擬，用於機器學習與最佳化。</li>
+<li><strong>豐富的匯入／匯出</strong>：支援 URDF、MJCF、USD 等資產格式。</li>
+<li><strong>開源</strong>：由 Disney Research、Google DeepMind 與 NVIDIA 發起的 <a href="https://www.linuxfoundation.org/">Linux Foundation</a> 專案，採 Apache-2.0 授權。</li>
+</ul>
+
+<h3 id="11-與相關專案的關係">1.1 與相關專案的關係<a class="anchor" href="#11-與相關專案的關係" aria-hidden="true">#</a></h3>
+<table>
+<thead><tr><th>專案</th><th>關係</th></tr></thead>
+<tbody>
+<tr><td><strong>NVIDIA Warp</strong></td><td>Newton 的基底。Warp 是撰寫高效能、可微分 GPU kernel 的 Python 框架；Newton 在其上加入高階模擬 API、可互換求解器與資產 I/O，成為完整的物理引擎。</td></tr>
+<tr><td><strong>warp.sim</strong></td><td>Newton 的前身（Warp 內建模組），已於 Warp 1.8 棄用、1.10 移除。遷移方式見 <a href="faq.html#遷移">warp.sim 遷移指南</a>。</td></tr>
+<tr><td><strong>MuJoCo Warp</strong></td><td>Newton 的關鍵求解器之一——由 Google DeepMind 與 NVIDIA 以 Warp 重新實作的 GPU 加速版 MuJoCo。Newton 在資產（MJCF）與求解器兩個層面都與 MuJoCo 相容。</td></tr>
+<tr><td><strong>PhysX</strong></td><td>兩者目標不同、互不取代：Newton 主攻機器人學習與可微分多物理；PhysX 主攻工業數位孿生的成熟即時物理 SDK。PhysX 目前無法作為 Newton 的求解器。</td></tr>
+<tr><td><strong>Isaac Lab／Isaac Sim</strong></td><td>Isaac Lab 已提供實驗性 Newton 整合（四足／雙足行走與基本操作環境）；Isaac Sim 的 Newton 物理後端整合開發中。詳見 <a href="faq.html#整合">FAQ・整合</a>。</td></tr>
+</tbody>
+</table>
+
+<h2 id="2-核心架構">2. 核心架構：七大物件<a class="anchor" href="#2-核心架構" aria-hidden="true">#</a></h2>
+<p>Newton 的資料流：<strong>資產（URDF/MJCF/USD）→ Importer → ModelBuilder → Model → State ⇄ Solver（搭配 Control 與 Contacts）→ Sensors / Viewer</strong>。</p>
+<table>
+<thead><tr><th>物件</th><th>角色</th></tr></thead>
+<tbody>
+<tr><td><code>ModelBuilder</code></td><td>建構模擬模型的入口——用程式加入基本體，或匯入外部資產（<code>add_urdf()</code>、<code>add_mjcf()</code>、<code>add_usd()</code>），最後 <code>finalize()</code> 產出 Model。</td></tr>
+<tr><td><code>Model</code></td><td>封裝模擬世界的物理結構、參數與組態：剛體、關節、形狀與物理性質。建立後不隨時間變動。</td></tr>
+<tr><td><code>State</code></td><td>某個時間點的動態狀態（位置、速度），由求解器逐步更新。可選的「擴充屬性」可儲存衍生量（如剛體加速度）供感測器使用。</td></tr>
+<tr><td><code>Contacts</code></td><td>由 <code>Model.collide()</code> 產生的當前接觸集合，可選擴充屬性（如接觸力）供感測與分析。</td></tr>
+<tr><td><code>Control</code></td><td>控制輸入——關節目標（target）與力（force），在模擬迴圈中施加。</td></tr>
+<tr><td><code>Solver</code></td><td>推進模擬：積分動力學、處理接觸、滿足約束。8 種後端可選，見<a href="solvers.html">求解器</a>。</td></tr>
+<tr><td><code>Sensors</code>／<code>Viewer</code></td><td>感測器從 State、Contacts、sites 與 shapes 計算觀測值；Viewer 即時或離線視覺化。</td></tr>
+</tbody>
+</table>
+
+<h2 id="3-模擬迴圈">3. 模擬迴圈六步驟<a class="anchor" href="#3-模擬迴圈" aria-hidden="true">#</a></h2>
+<ol>
+<li>用 <code>ModelBuilder</code> 建構或匯入模型。</li>
+<li><code>finalize()</code> 產出 <code>Model</code>。</li>
+<li>建立感測器，配置一或多個 <code>State</code>、<code>Control</code> 與 <code>Contacts</code>。</li>
+<li>呼叫 <code>Model.collide()</code> 填入當前狀態的接觸集合。</li>
+<li>以當前 state、control、contacts 呼叫求解器 <code>step()</code>。</li>
+<li>更新感測器、檢查輸出、渲染或匯出結果。</li>
+</ol>
+<pre><code class="language-python">import warp as wp
+import newton
+
+# 1-2. 建構模型
+builder = newton.ModelBuilder()
+body = builder.add_body(
+    xform=wp.transform((0.0, 1.0, 0.0), wp.quat_identity()),
+    mass=1.0,
+)
+builder.add_shape_sphere(body, radius=0.25)
+builder.add_ground_plane()
+model = builder.finalize()
+
+# 3. 求解器與狀態
+solver = newton.solvers.SolverXPBD(model)
+state_0 = model.state()
+state_1 = model.state()
+control = model.control()
+contacts = model.contacts()
+
+newton.eval_fk(model, model.joint_q, model.joint_qd, state_0)
+
+# 4-5. 步進模擬
+for step in range(120):
+    state_0.clear_forces()
+    model.collide(state_0, contacts)
+    solver.step(state_0, state_1, control, contacts, 1.0 / 60.0)
+    state_0, state_1 = state_1, state_0
+</code></pre>
+<blockquote><p><strong>雙 State 交換（ping-pong）</strong>：求解器從 <code>state_0</code> 讀、寫入 <code>state_1</code>，每步後交換兩者——這是 Newton 的標準模式，也讓 CUDA Graph 捕捉成為可能。</p></blockquote>
+
+<h2 id="4-大規模平行">4. 大規模平行：一行複製 1024 個世界<a class="anchor" href="#4-大規模平行" aria-hidden="true">#</a></h2>
+<p>Newton 為 RL 訓練場景設計了「多世界（Worlds）」機制——同一個 <code>Model</code> 內可含上千個互不碰撞的獨立世界，由 GPU 一次全部步進：</p>
+<pre><code class="language-python"># 建構單一機器人模板
+template = newton.ModelBuilder()
+template.add_mjcf("humanoid.xml")
+
+# 複製為 1024 個平行世界
+builder = newton.ModelBuilder()
+builder.replicate(template, world_count=1024)
+builder.add_ground_plane()
+model = builder.finalize()
+
+# 求解器同時步進全部 1024 個世界
+solver = newton.solvers.SolverMuJoCo(model)
+</code></pre>
+<p>細節（世界指派、每世界重力、GPU 執行緒分割）見<a href="concepts.html#worlds">核心概念・多世界</a>。</p>
+
+<h2 id="5-能力速覽">5. 能力速覽<a class="anchor" href="#5-能力速覽" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>能力</th><th>重點</th><th>詳見</th></tr></thead>
+<tbody>
+<tr><td>剛體與 Articulation</td><td>廣義座標（MuJoCo、Featherstone）與最大座標（XPBD 等）兩種表示</td><td><a href="concepts.html#articulations">核心概念</a></td></tr>
+<tr><td>碰撞偵測</td><td>可組態的 broad/narrow phase 管線、碰撞群組與過濾、Hydroelastic 接觸</td><td><a href="collisions.html">碰撞與接觸</a></td></tr>
+<tr><td>粒子・布料・軟體</td><td>VBD、Style3D（布料）、ImplicitMPM（顆粒／彈塑性材料）</td><td><a href="solvers.html">求解器</a></td></tr>
+<tr><td>感測器</td><td>IMU、接觸力、框架變換、光線投射、平鋪相機</td><td><a href="sensors.html">感測器</a></td></tr>
+<tr><td>可微分模擬</td><td><code>requires_grad=True</code> ＋ <code>wp.Tape()</code> 反向傳播梯度</td><td><a href="diffsim.html">可微分物理教學</a></td></tr>
+<tr><td>視覺化</td><td>OpenGL／RTX 即時、USD／JSON 離線、Rerun／Viser 網頁</td><td><a href="visualization.html">視覺化</a></td></tr>
+<tr><td>多物理耦合</td><td>已展示單向耦合（機械臂操作布料、四足走非剛性地形）；雙向耦合在路線圖上</td><td><a href="faq.html">FAQ</a></td></tr>
+</tbody>
+</table>
+
+<h2 id="6-官方章節對照">6. 官方章節對照表<a class="anchor" href="#6-官方章節對照" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>官方章節</th><th>本站頁面</th><th>官方原文</th></tr></thead>
+<tbody>
+<tr><td>Overview</td><td>本頁</td><td><a href="https://newton-physics.github.io/newton/stable/guide/overview.html">連結</a></td></tr>
+<tr><td>Installation</td><td><a href="installation.html">安裝與快速入門</a></td><td><a href="https://newton-physics.github.io/newton/stable/guide/installation.html">連結</a></td></tr>
+<tr><td>Compatibility and Support</td><td><a href="installation.html#相容性">安裝・相容性</a></td><td><a href="https://newton-physics.github.io/newton/stable/guide/compatibility.html">連結</a></td></tr>
+<tr><td>Visualization</td><td><a href="visualization.html">視覺化</a></td><td><a href="https://newton-physics.github.io/newton/stable/guide/visualization.html">連結</a></td></tr>
+<tr><td>Tutorials</td><td><a href="tutorials.html">教學與範例</a>、<a href="diffsim.html">可微分物理教學</a></td><td><a href="https://newton-physics.github.io/newton/stable/guide/tutorials.html">連結</a></td></tr>
+<tr><td>Concepts：Worlds／Articulations／Mass and Inertia／Sites／Conventions</td><td><a href="concepts.html">核心概念</a></td><td><a href="https://newton-physics.github.io/newton/stable/concepts/worlds.html">連結</a></td></tr>
+<tr><td>Concepts：Collisions and Contacts</td><td><a href="collisions.html">碰撞與接觸</a></td><td><a href="https://newton-physics.github.io/newton/stable/concepts/collisions.html">連結</a></td></tr>
+<tr><td>Concepts：Sensors／Actuators</td><td><a href="sensors.html">感測器與致動器</a></td><td><a href="https://newton-physics.github.io/newton/stable/concepts/sensors.html">連結</a></td></tr>
+<tr><td>API：newton.solvers</td><td><a href="solvers.html">求解器</a></td><td><a href="https://newton-physics.github.io/newton/stable/api/newton_solvers.html">連結</a></td></tr>
+<tr><td>FAQ／Migration／Integrations</td><td><a href="faq.html">FAQ・整合・遷移</a></td><td><a href="https://newton-physics.github.io/newton/stable/faq.html">連結</a></td></tr>
+<tr><td>API Reference（newton、geometry、ik、math…）</td><td>——（請直接參考官方）</td><td><a href="https://newton-physics.github.io/newton/stable/api/newton.html">連結</a></td></tr>
+</tbody>
+</table>
+
+<footer class="page-footer">
+  <p>本頁整理自 Newton Physics 官方文檔 1.3.0（CC-BY-4.0）。內容以官方為準。下一步：<a href="installation.html">安裝與快速入門 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#1-newton-是什麼">1. Newton 是什麼</a>
+      <a href="#2-核心架構">2. 核心架構：七大物件</a>
+      <a href="#3-模擬迴圈">3. 模擬迴圈六步驟</a>
+      <a href="#4-大規模平行">4. 大規模平行</a>
+      <a href="#5-能力速覽">5. 能力速覽</a>
+      <a href="#6-官方章節對照">6. 官方章節對照表</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

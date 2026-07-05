@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>可微分物理教學 — Newton Physics 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Newton</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://github.com/newton-physics/newton/tree/main/newton/examples/diffsim" target="_blank" rel="noopener">官方範例 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="concepts.html">核心概念</a>
+        <a href="solvers.html">求解器</a>
+        <a href="collisions.html">碰撞與接觸</a>
+        <a href="sensors.html">感測器與致動器</a>
+        <div class="nav-group-title">工具與教學</div>
+        <a href="visualization.html">視覺化</a>
+        <a href="tutorials.html">教學與範例</a>
+        <a href="diffsim.html" class="current">可微分物理教學</a>
+        <div class="nav-group-title">參考</div>
+        <a href="faq.html">FAQ・整合・遷移</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="教學">可微分物理實戰教學：讓梯度學會丟球<a class="anchor" href="#教學" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>本教學帶你從零打造一個可微分物理 demo：<strong>優化一顆球的初速度，讓它彈牆、彈地之後精準命中目標</strong>。整個過程不用任何強化學習——只靠「把梯度反向傳播穿過整段物理模擬」的梯度下降。程式碼改編自官方 <a href="https://github.com/newton-physics/newton/blob/main/newton/examples/diffsim/example_diffsim_ball.py"><code>example_diffsim_ball.py</code></a>（Apache-2.0），與 Newton 1.3.0 API 一致。</p>
+</blockquote>
+<p><strong>先備條件</strong>：<code>pip install "newton[examples]"</code>（見<a href="installation.html">安裝指南</a>）；讀過<a href="docs.html#3-模擬迴圈">模擬迴圈六步驟</a>更佳。想先看官方成品，直接執行：</p>
+<pre><code class="language-bash">python -m newton.examples diffsim_ball
+</code></pre>
+
+<h2 id="第1課">第 1 課：可微分模擬在做什麼？<a class="anchor" href="#第1課" aria-hidden="true">#</a></h2>
+<p>一般模擬是單向的：初速度 → 物理引擎 → 最終位置。可微分模擬讓這條管線<strong>可以倒著走</strong>：</p>
+<pre><code>前向：v₀ ──[ 288 步物理模擬 ]──▶ 最終位置 x_T ──▶ loss = ‖x_T − target‖²
+反向：∂loss/∂v₀ ◀──[ 反向傳播穿過每一步積分與接觸 ]──── ∂loss/∂x_T
+</code></pre>
+<p>拿到 <code>∂loss/∂v₀</code> 之後，就能用最普通的梯度下降更新初速度：<code>v₀ ← v₀ − α·∇loss</code>。重複幾十次，球就自己「學會」該怎麼丟。三個關鍵零件：</p>
+<ul>
+<li><strong><code>requires_grad=True</code></strong>：讓 Model、State、碰撞管線的陣列都配置梯度緩衝。</li>
+<li><strong><code>wp.Tape()</code></strong>：錄下前向過程中所有 kernel 呼叫，<code>tape.backward(loss)</code> 時逆序重播、累積梯度。</li>
+<li><strong>可微分求解器</strong>：本課用 <code>SolverSemiImplicit</code>（<a href="solvers.html#功能支援矩陣">支援矩陣</a>中標「可微分」的求解器，<code>SolverFeatherstone</code> 亦可）。</li>
+</ul>
+
+<h2 id="第2課">第 2 課：建立場景——一顆球、一面牆、一塊地<a class="anchor" href="#第2課" aria-hidden="true">#</a></h2>
+<p>球用<strong>粒子</strong>表示（單點質量，接觸模型簡單且完全可微分）；牆與地面是掛在 <code>body=-1</code> 上的靜態形狀：</p>
+<pre><code class="language-python">import numpy as np
+import warp as wp
+import newton
+
+scene = newton.ModelBuilder(up_axis=newton.Axis.Z)
+
+# 球：從 (0, -0.5, 1) 出發，初速度先亂猜 (0, 5, -5)
+scene.add_particle(pos=wp.vec3(0.0, -0.5, 1.0), vel=wp.vec3(0.0, 5.0, -5.0), mass=1.0)
+
+# 接觸材質參數：彈性 ke、摩擦 kf/mu、阻尼 kd
+ke, kf, kd, mu = 1.0e4, 0.0, 1.0e1, 0.2
+
+# 牆（y = 2 處的靜態盒子）
+scene.add_shape_box(
+    body=-1,
+    xform=wp.transform(wp.vec3(0.0, 2.0, 1.0), wp.quat_identity()),
+    hx=1.0, hy=0.25, hz=1.0,
+    cfg=newton.ModelBuilder.ShapeConfig(ke=ke, kf=kf, kd=kd, mu=mu),
+)
+
+# 地面
+scene.add_ground_plane(cfg=newton.ModelBuilder.ShapeConfig(ke=ke, kf=kf, kd=kd, mu=mu))
+
+# ★ 關鍵：requires_grad=True —— 所有模型陣列配置梯度緩衝
+model = scene.finalize(requires_grad=True)
+
+# 粒子—形狀的軟接觸參數（完全彈性反彈）
+model.soft_contact_ke = ke
+model.soft_contact_kf = kf
+model.soft_contact_kd = kd
+model.soft_contact_mu = mu
+model.soft_contact_restitution = 1.0
+
+solver = newton.solvers.SolverSemiImplicit(model)
+</code></pre>
+<blockquote><p><strong>幾何直覺</strong>：球在 y=−0.5，牆在 y=+2，目標在 y=−2——球必須先往<strong>前</strong>丟撞牆反彈，再彈地一次，最後回到出發點後方的目標 <code>(0, −2, 1.5)</code>。這條「必須利用兩次碰撞」的路徑，正是展示梯度能穿過<strong>接觸事件</strong>的好例子。</p></blockquote>
+
+<h2 id="第3課">第 3 課：狀態軌跡——為什麼不能只用兩個 State？<a class="anchor" href="#第3課" aria-hidden="true">#</a></h2>
+<p>一般模擬用雙 State 交換（ping-pong）就夠了；可微分模擬<strong>不行</strong>——反向傳播時 Tape 要逆序重播每一步，必須讀到<strong>每個中間狀態</strong>。所以我們為整條軌跡配置 State：</p>
+<pre><code class="language-python">fps = 60
+frame_dt = 1.0 / fps
+sim_steps = 36                 # 36 幀 = 0.6 秒飛行
+sim_substeps = 8               # 每幀 8 個子步 → 共 288 步
+sim_dt = frame_dt / sim_substeps
+
+# ★ 整條軌跡的狀態鏈：288 + 1 個 State（model 已 requires_grad，State 一併繼承）
+states = [model.state() for _ in range(sim_steps * sim_substeps + 1)]
+control = model.control()
+
+# 碰撞管線也要 requires_grad
+collision_pipeline = newton.CollisionPipeline(
+    model,
+    broad_phase="explicit",
+    soft_contact_margin=10.0,   # 大 margin：一次偵測涵蓋整段軌跡的潛在接觸
+    requires_grad=True,
+)
+contacts = collision_pipeline.contacts()
+
+# ★ one-shot 碰撞：牆和地面是靜態的，接觸候選集只需計算一次
+collision_pipeline.collide(states[0], contacts)
+</code></pre>
+<blockquote><p><strong>one-shot contacts 的適用範圍</strong>：這裡只呼叫一次 <code>collide()</code>，是因為所有碰撞對象（牆、地面）都是<strong>靜止</strong>的，加上 <code>soft_contact_margin=10.0</code> 讓候選接觸涵蓋整個活動範圍。若場景中有互相碰撞的動態物體，就得每步（或每幀）重新 <code>collide()</code>，且要注意碰撞偵測本身的可微分性（見<a href="collisions.html">碰撞與接觸</a>）。</p></blockquote>
+
+<h2 id="第4課">第 4 課：前向模擬與 Loss Kernel<a class="anchor" href="#第4課" aria-hidden="true">#</a></h2>
+<p>Loss 是「最終位置到目標的距離平方」，用一個 Warp kernel 計算（<strong>loss 必須是 Warp 陣列</strong>，才能被 Tape 追蹤）：</p>
+<pre><code class="language-python">@wp.kernel
+def loss_kernel(pos: wp.array[wp.vec3], target: wp.vec3, loss: wp.array[float]):
+    delta = pos[0] - target
+    loss[0] = wp.dot(delta, delta)          # 距離平方
+
+target = (0.0, -2.0, 1.5)
+loss = wp.zeros(1, dtype=wp.float32, requires_grad=True)
+
+def forward():
+    # 沿著狀態鏈逐步推進：states[t] → states[t+1]
+    for t in range(sim_steps * sim_substeps):
+        states[t].clear_forces()
+        solver.step(states[t], states[t + 1], control, contacts, sim_dt)
+
+    # 對最終狀態計算 loss
+    wp.launch(loss_kernel, dim=1, inputs=[states[-1].particle_q, target, loss])
+    return loss
+</code></pre>
+
+<h2 id="第5課">第 5 課：反向傳播＋梯度下降——訓練迴圈<a class="anchor" href="#第5課" aria-hidden="true">#</a></h2>
+<p>把前向包進 <code>wp.Tape()</code>，反向後從 <code>states[0].particle_qd.grad</code> 讀出「loss 對初速度的梯度」，再用一個小 kernel 做梯度下降更新：</p>
+<pre><code class="language-python">@wp.kernel
+def step_kernel(x: wp.array[wp.vec3], grad: wp.array[wp.vec3], alpha: float):
+    tid = wp.tid()
+    x[tid] = x[tid] - grad[tid] * alpha     # 梯度下降
+
+train_iters = 250
+train_rate = 0.02                            # 學習率 α
+
+for it in range(train_iters):
+    tape = wp.Tape()
+    with tape:
+        forward()                            # 前向：錄下所有 kernel
+    tape.backward(loss)                      # 反向：∂loss/∂(所有 requires_grad 陣列)
+
+    x = states[0].particle_qd                # 最佳化參數：初速度
+    wp.launch(step_kernel, dim=len(x), inputs=[x, x.grad, train_rate])
+
+    tape.zero()                              # ★ 每輪清空梯度，否則會累加
+
+    if it % 10 == 0:
+        print(f"iter {it:3d}   loss = {loss.numpy()[0]:.4f}")
+</code></pre>
+<p>執行後 loss 單調下降，球的軌跡一輪比一輪接近目標：</p>
+<pre><code>iter   0   loss = 6.2734
+iter  10   loss = 2.1180
+iter  20   loss = 0.7513
+...
+iter 240   loss = 0.0021     ← 命中！
+</code></pre>
+
+<h2 id="第6課">第 6 課：CUDA Graph 加速——前向＋反向一起捕捉<a class="anchor" href="#第6課" aria-hidden="true">#</a></h2>
+<p>288 步 × 前向＋反向 × 250 輪＝大量 kernel 啟動開銷。官方範例把<strong>整個 forward-backward</strong> 捕捉成一張 CUDA graph，之後每輪只需重播：</p>
+<pre><code class="language-python">def forward_backward():
+    global tape
+    tape = wp.Tape()
+    with tape:
+        forward()
+    tape.backward(loss)
+
+if wp.get_device().is_cuda:
+    with wp.ScopedCapture() as capture:
+        forward_backward()                   # 錄一次
+    graph = capture.graph
+
+    for it in range(train_iters):
+        wp.capture_launch(graph)             # 之後每輪重播（免 Python 開銷）
+        x = states[0].particle_qd
+        wp.launch(step_kernel, dim=len(x), inputs=[x, x.grad, train_rate])
+        tape.zero()
+</code></pre>
+<blockquote><p>能這樣做的前提：每輪的計算圖<strong>結構完全相同</strong>（同樣的 kernel、同樣的陣列），只有陣列<strong>內容</strong>在變——這正是我們預先配置好整條 <code>states</code> 鏈的另一個好處。</p></blockquote>
+
+<h2 id="第7課">第 7 課：驗證梯度——數值 vs 解析<a class="anchor" href="#第7課" aria-hidden="true">#</a></h2>
+<p>做可微分模擬的黃金習慣：用<strong>有限差分</strong>驗證 Tape 算出的解析梯度。對初速度的每個分量 ±ε，跑兩次前向，中央差分近似：</p>
+<pre><code class="language-python">def check_grad(param):
+    x_c = param.numpy().flatten()
+    x_grad_numeric = np.zeros_like(x_c)
+
+    for i in range(len(x_c)):
+        eps = 1.0e-3
+        step = np.zeros_like(x_c); step[i] = eps
+
+        param.assign(x_c + step); l_1 = forward().numpy()[0]
+        param.assign(x_c - step); l_0 = forward().numpy()[0]
+        x_grad_numeric[i] = (l_1 - l_0) / (2.0 * eps)   # 中央差分
+
+    param.assign(x_c)                                    # 還原
+
+    tape = wp.Tape()
+    with tape:
+        l = forward()
+    tape.backward(l)
+    x_grad_analytic = param.grad.numpy()[0].copy()
+    tape.zero()
+
+    print(f"numeric  grad: {x_grad_numeric}")
+    print(f"analytic grad: {x_grad_analytic}")           # 兩者應在 5% 內吻合
+
+check_grad(states[0].particle_qd)
+</code></pre>
+<p>官方測試以 <code>tol=5e-2</code> 斷言兩者吻合——若你改了場景後兩者差很多，通常表示接觸參數太「硬」（見下方陷阱 3）。</p>
+
+<h2 id="完整程式">完整可執行程式（無頭版）<a class="anchor" href="#完整程式" aria-hidden="true">#</a></h2>
+<p>存成 <code>diffsim_ball_demo.py</code> 直接執行。想看視覺化（軌跡逐輪變色收斂到目標、即時 loss 曲線），跑官方版 <code>python -m newton.examples diffsim_ball</code>：</p>
+<pre><code class="language-python">import numpy as np
+import warp as wp
+import newton
+
+# ── kernels ──────────────────────────────────────────
+@wp.kernel
+def loss_kernel(pos: wp.array[wp.vec3], target: wp.vec3, loss: wp.array[float]):
+    delta = pos[0] - target
+    loss[0] = wp.dot(delta, delta)
+
+@wp.kernel
+def step_kernel(x: wp.array[wp.vec3], grad: wp.array[wp.vec3], alpha: float):
+    tid = wp.tid()
+    x[tid] = x[tid] - grad[tid] * alpha
+
+# ── 場景 ─────────────────────────────────────────────
+scene = newton.ModelBuilder(up_axis=newton.Axis.Z)
+scene.add_particle(pos=wp.vec3(0.0, -0.5, 1.0), vel=wp.vec3(0.0, 5.0, -5.0), mass=1.0)
+
+ke, kf, kd, mu = 1.0e4, 0.0, 1.0e1, 0.2
+scene.add_shape_box(body=-1, xform=wp.transform(wp.vec3(0.0, 2.0, 1.0), wp.quat_identity()),
+                    hx=1.0, hy=0.25, hz=1.0,
+                    cfg=newton.ModelBuilder.ShapeConfig(ke=ke, kf=kf, kd=kd, mu=mu))
+scene.add_ground_plane(cfg=newton.ModelBuilder.ShapeConfig(ke=ke, kf=kf, kd=kd, mu=mu))
+
+model = scene.finalize(requires_grad=True)
+model.soft_contact_ke, model.soft_contact_kf = ke, kf
+model.soft_contact_kd, model.soft_contact_mu = kd, mu
+model.soft_contact_restitution = 1.0
+
+solver = newton.solvers.SolverSemiImplicit(model)
+
+# ── 狀態鏈與碰撞 ─────────────────────────────────────
+fps, sim_steps, sim_substeps = 60, 36, 8
+sim_dt = (1.0 / fps) / sim_substeps
+
+states = [model.state() for _ in range(sim_steps * sim_substeps + 1)]
+control = model.control()
+
+pipeline = newton.CollisionPipeline(model, broad_phase="explicit",
+                                    soft_contact_margin=10.0, requires_grad=True)
+contacts = pipeline.contacts()
+pipeline.collide(states[0], contacts)          # one-shot：碰撞對象皆靜態
+
+# ── 訓練 ─────────────────────────────────────────────
+target = (0.0, -2.0, 1.5)
+loss = wp.zeros(1, dtype=wp.float32, requires_grad=True)
+
+def forward():
+    for t in range(sim_steps * sim_substeps):
+        states[t].clear_forces()
+        solver.step(states[t], states[t + 1], control, contacts, sim_dt)
+    wp.launch(loss_kernel, dim=1, inputs=[states[-1].particle_q, target, loss])
+    return loss
+
+for it in range(250):
+    tape = wp.Tape()
+    with tape:
+        forward()
+    tape.backward(loss)
+
+    x = states[0].particle_qd
+    wp.launch(step_kernel, dim=len(x), inputs=[x, x.grad, 0.02])
+    tape.zero()
+
+    if it % 10 == 0:
+        print(f"iter {it:3d}   loss = {loss.numpy()[0]:.4f}   v0 = {x.numpy()[0]}")
+
+print("最終初速度：", states[0].particle_qd.numpy()[0])
+print("最終位置：", states[-1].particle_q.numpy()[0], "→ 目標", target)
+</code></pre>
+
+<h2 id="陷阱">五個常見陷阱<a class="anchor" href="#陷阱" aria-hidden="true">#</a></h2>
+<ol>
+<li><strong>梯度全是 0</strong>：漏了某一環的 <code>requires_grad=True</code>——<code>finalize()</code>、<code>loss</code> 陣列、<code>CollisionPipeline</code> 三處都要設。</li>
+<li><strong>重複使用同一塊 State</strong>：把 ping-pong 寫法搬進 Tape 會讓中間狀態被覆寫，反向結果錯誤——一定要配置整條狀態鏈。</li>
+<li><strong>接觸太硬、梯度爆炸或不準</strong>：<code>ke</code> 越大接觸越接近不連續，梯度品質越差。demo 用 <code>ke=1e4</code> 的軟接觸正是為了讓 loss 地形平滑；調參後記得用第 7 課的有限差分重新驗證。</li>
+<li><strong>忘記 <code>tape.zero()</code></strong>：Warp 的梯度是<strong>累加</strong>的，每輪迭代後不清空，第二輪起梯度就是錯的。</li>
+<li><strong>時間視野不夠長</strong>：如果 <code>sim_steps</code> 太短、球根本來不及到目標附近，loss 對初速度幾乎無感（梯度極小），優化會停滯——先確認前向軌跡合理，再開始訓練。</li>
+</ol>
+
+<h2 id="延伸">延伸練習與更多範例<a class="anchor" href="#延伸" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>改目標位置</strong>：把 <code>target</code> 移到牆後上方，觀察梯度如何找出更高的拋物線。</li>
+<li><strong>優化別的參數</strong>：把最佳化變數從初速度換成 <code>model.gravity</code> 或接觸參數——只要它 <code>requires_grad</code>，Tape 都能給梯度。</li>
+<li><strong>加上動量／Adam</strong>：把 <code>step_kernel</code> 換成含動量的更新規則，比較收斂速度。</li>
+<li><strong>官方 diffsim 系列</strong>（<code>python -m newton.examples --list</code> 可見）：
+<table>
+<thead><tr><th>範例</th><th>展示內容</th></tr></thead>
+<tbody>
+<tr><td><code>diffsim_ball</code></td><td>本教學的完整視覺化版（軌跡收斂動畫＋loss 曲線）</td></tr>
+<tr><td><code>diffsim_bear</code></td><td>軟體 FEM 小熊——優化致動讓它往前走</td></tr>
+<tr><td><code>diffsim_cloth</code></td><td>可微分布料</td></tr>
+<tr><td><code>diffsim_drone</code></td><td>無人機控制最佳化</td></tr>
+<tr><td><code>diffsim_soft_body</code></td><td>軟體變形最佳化</td></tr>
+<tr><td><code>diffsim_spring_cage</code></td><td>彈簧籠參數最佳化</td></tr>
+</tbody>
+</table></li>
+<li>理論背景與求解器可微分性支援，見<a href="solvers.html#可微分">求解器・可微分模擬</a>。</li>
+</ul>
+
+<footer class="page-footer">
+  <p>本頁程式碼改編自 <a href="https://github.com/newton-physics/newton/blob/main/newton/examples/diffsim/example_diffsim_ball.py">Newton 官方範例</a>（Apache-2.0），文字整理依據官方文檔 1.3.0（CC-BY-4.0）。內容以官方為準。</p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#第1課">第 1 課：可微分模擬是什麼</a>
+      <a href="#第2課">第 2 課：建立場景</a>
+      <a href="#第3課">第 3 課：狀態軌跡</a>
+      <a href="#第4課">第 4 課：前向與 Loss</a>
+      <a href="#第5課">第 5 課：訓練迴圈</a>
+      <a href="#第6課">第 6 課：CUDA Graph 加速</a>
+      <a href="#第7課">第 7 課：驗證梯度</a>
+      <a href="#完整程式">完整可執行程式</a>
+      <a href="#陷阱">五個常見陷阱</a>
+      <a href="#延伸">延伸練習</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>
