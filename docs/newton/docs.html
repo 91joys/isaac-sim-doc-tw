@@ -33,6 +33,7 @@
         <a href="visualization.html">視覺化</a>
         <a href="tutorials.html">教學與範例</a>
         <a href="diffsim.html">可微分物理教學</a>
+        <a href="diffsim-ball.html">diffsim_ball 逐行精讀</a>
         <div class="nav-group-title">參考</div>
         <a href="faq.html">FAQ・整合・遷移</a>
     </nav>
@@ -147,7 +148,7 @@ solver = newton.solvers.SolverMuJoCo(model)
 <tr><td>碰撞偵測</td><td>可組態的 broad/narrow phase 管線、碰撞群組與過濾、Hydroelastic 接觸</td><td><a href="collisions.html">碰撞與接觸</a></td></tr>
 <tr><td>粒子・布料・軟體</td><td>VBD、Style3D（布料）、ImplicitMPM（顆粒／彈塑性材料）</td><td><a href="solvers.html">求解器</a></td></tr>
 <tr><td>感測器</td><td>IMU、接觸力、框架變換、光線投射、平鋪相機</td><td><a href="sensors.html">感測器</a></td></tr>
-<tr><td>可微分模擬</td><td><code>requires_grad=True</code> ＋ <code>wp.Tape()</code> 反向傳播梯度</td><td><a href="diffsim.html">可微分物理教學</a></td></tr>
+<tr><td>可微分模擬</td><td><code>requires_grad=True</code> ＋ <code>wp.Tape()</code> 反向傳播梯度</td><td><a href="diffsim.html">可微分物理教學</a>、<a href="diffsim-ball.html">diffsim_ball 逐行精讀</a></td></tr>
 <tr><td>視覺化</td><td>OpenGL／RTX 即時、USD／JSON 離線、Rerun／Viser 網頁</td><td><a href="visualization.html">視覺化</a></td></tr>
 <tr><td>多物理耦合</td><td>已展示單向耦合（機械臂操作布料、四足走非剛性地形）；雙向耦合在路線圖上</td><td><a href="faq.html">FAQ</a></td></tr>
 </tbody>
@@ -161,7 +162,7 @@ solver = newton.solvers.SolverMuJoCo(model)
 <tr><td>Installation</td><td><a href="installation.html">安裝與快速入門</a></td><td><a href="https://newton-physics.github.io/newton/stable/guide/installation.html">連結</a></td></tr>
 <tr><td>Compatibility and Support</td><td><a href="installation.html#相容性">安裝・相容性</a></td><td><a href="https://newton-physics.github.io/newton/stable/guide/compatibility.html">連結</a></td></tr>
 <tr><td>Visualization</td><td><a href="visualization.html">視覺化</a></td><td><a href="https://newton-physics.github.io/newton/stable/guide/visualization.html">連結</a></td></tr>
-<tr><td>Tutorials</td><td><a href="tutorials.html">教學與範例</a>、<a href="diffsim.html">可微分物理教學</a></td><td><a href="https://newton-physics.github.io/newton/stable/guide/tutorials.html">連結</a></td></tr>
+<tr><td>Tutorials</td><td><a href="tutorials.html">教學與範例</a>、<a href="diffsim.html">可微分物理教學</a>、<a href="diffsim-ball.html">diffsim_ball 逐行精讀</a></td><td><a href="https://newton-physics.github.io/newton/stable/guide/tutorials.html">連結</a></td></tr>
 <tr><td>Concepts：Worlds／Articulations／Mass and Inertia／Sites／Conventions</td><td><a href="concepts.html">核心概念</a></td><td><a href="https://newton-physics.github.io/newton/stable/concepts/worlds.html">連結</a></td></tr>
 <tr><td>Concepts：Collisions and Contacts</td><td><a href="collisions.html">碰撞與接觸</a></td><td><a href="https://newton-physics.github.io/newton/stable/concepts/collisions.html">連結</a></td></tr>
 <tr><td>Concepts：Sensors／Actuators</td><td><a href="sensors.html">感測器與致動器</a></td><td><a href="https://newton-physics.github.io/newton/stable/concepts/sensors.html">連結</a></td></tr>

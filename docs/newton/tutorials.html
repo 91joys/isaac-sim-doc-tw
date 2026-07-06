@@ -33,6 +33,7 @@
         <a href="visualization.html">視覺化</a>
         <a href="tutorials.html" class="current">教學與範例</a>
         <a href="diffsim.html">可微分物理教學</a>
+        <a href="diffsim-ball.html">diffsim_ball 逐行精讀</a>
         <div class="nav-group-title">參考</div>
         <a href="faq.html">FAQ・整合・遷移</a>
     </nav>
@@ -82,7 +83,11 @@
 </ol>
 
 <h2 id="本站教學">本站實戰教學：可微分物理<a class="anchor" href="#本站教學" aria-hidden="true">#</a></h2>
-<p>本站另備有中文實戰教學<a href="diffsim.html">《可微分物理實戰教學：讓梯度學會丟球》</a>——七課帶你改編官方 <code>diffsim_ball</code> 範例，用 <code>wp.Tape()</code> 把梯度反向傳播穿過 288 步模擬，以梯度下降優化球的初速度命中目標，含完整可執行程式與常見陷阱。</p>
+<p>本站另備有兩篇中文實戰教學，皆以官方 <code>diffsim_ball</code> 範例為主軸：</p>
+<ul>
+<li><a href="diffsim.html">《可微分物理實戰教學：讓梯度學會丟球》</a>——七課帶你改編官方範例，用 <code>wp.Tape()</code> 把梯度反向傳播穿過 288 步模擬，以梯度下降優化球的初速度命中目標，含完整可執行程式與常見陷阱。</li>
+<li><a href="diffsim-ball.html">《example_diffsim_ball.py 逐行精讀》</a>——對官方原始碼逐段解說，每段都附「數字帶入」實算（時步換算、半隱式歐拉手算一步、接觸力估算、中央差分驗證梯度…），適合想把每一行都吃透的讀者。</li>
+</ul>
 
 <h2 id="範例庫">範例庫（newton/examples）<a class="anchor" href="#範例庫" aria-hidden="true">#</a></h2>
 <p>安裝 <code>newton[examples]</code> 後：</p>
