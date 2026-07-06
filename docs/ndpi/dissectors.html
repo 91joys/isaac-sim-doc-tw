@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>協定解析器 — nDPI 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">nDPI</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">GitHub ↗</a>
+    <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+<nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">編譯與快速上手</a>
+        <div class="nav-group-title">核心觀念</div>
+        <a href="architecture.html">核心架構</a>
+        <a href="detection.html">偵測管線與策略</a>
+        <a href="flow.html">Flow 追蹤與生命週期</a>
+        <a href="protocol.html">協定堆疊與信心等級</a>
+        <a href="risk.html">風險評估系統</a>
+        <div class="nav-group-title">深入原理</div>
+        <a href="dissectors.html" class="current">協定解析器</a>
+        <a href="datastructures.html">資料結構與演算法</a>
+        <div class="nav-group-title">實戰</div>
+        <a href="integration.html">整合到你的應用程式</a>
+        <a href="extend.html">擴充新協定</a>
+        <div class="nav-group-title">參考</div>
+        <a href="resources.html">學習資源</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="dissectors">協定解析器（Protocol Dissectors）<a class="anchor" href="#dissectors" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應 <a href="https://deepwiki.com/ntop/nDPI/3-protocol-dissectors">DeepWiki 3. Protocol Dissectors</a>。解析器是針對單一協定的深度檢測模組，位於 <code>src/lib/protocols/</code>，共 80+ 個。每個解析器負責五件事：辨識協定、萃取中繼資料、子分類、標記風險、跨封包維護狀態。</p>
+</blockquote>
+<hr>
+<h2 id="anatomy">解析器的組成<a class="anchor" href="#anatomy" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>元件</th><th>說明</th><th>例子</th></tr></thead>
+<tbody>
+<tr><td>主搜尋函式</td><td>主要偵測邏輯</td><td><code>ndpi_search_stun()</code>、<code>ndpi_search_dns()</code></td></tr>
+<tr><td>輔助函式</td><td>協定驗證與解析</td><td><code>is_stun()</code>、<code>is_rtp_or_rtcp()</code></td></tr>
+<tr><td>Add Connection</td><td>寫入偵測結果</td><td><code>ndpi_int_stun_add_connection()</code></td></tr>
+<tr><td>延伸解析函式</td><td>後續封包的持續解析</td><td><code>search_dns_again()</code>、<code>stun_search_again()</code></td></tr>
+<tr><td>Keep Extra 函式</td><td>判斷何時停止延伸解析</td><td><code>keep_extra_dissection()</code></td></tr>
+</tbody>
+</table>
+<h2 id="patterns">四種常見實作模式<a class="anchor" href="#patterns" aria-hidden="true">#</a></h2>
+<h3 id="pattern1">模式一：單包特徵驗證<a class="anchor" href="#pattern1" aria-hidden="true">#</a></h3>
+<p>特徵明確、一兩個封包即可判定。例：<strong>RTP</strong> 檢查版本 == 2、payload type、長度欄位——全過就設協定並掛延伸解析，否則 <code>NDPI_EXCLUDE_DISSECTOR</code>。</p>
+<h3 id="pattern2">模式二：多階段解析<a class="anchor" href="#pattern2" aria-hidden="true">#</a></h3>
+<p>需要循序解析結構化資料。例：<strong>Kerberos</strong> 逐層解 ASN.1（sequence → pvno → msg-type → domain/hostname），任一步失敗即排除。</p>
+<h3 id="pattern3">模式三：協定多工分流<a class="anchor" href="#pattern3" aria-hidden="true">#</a></h3>
+<p>多協定共用同一連線時依首位元組分流。例：<strong>STUN</strong> 依 RFC 9443 的範圍：</p>
+<table>
+<thead><tr><th>首位元組</th><th>判定</th></tr></thead>
+<tbody>
+<tr><td>0–3</td><td>STUN</td></tr>
+<tr><td>16–19</td><td>ZRTP</td></tr>
+<tr><td>20–63</td><td>DTLS（轉交 TLS 解析）</td></tr>
+<tr><td>64–79</td><td>TURN Channel Data（解出內層後遞迴）</td></tr>
+<tr><td>128–191</td><td>RTP</td></tr>
+<tr><td>192–223</td><td>RTCP</td></tr>
+</tbody>
+</table>
+<h3 id="pattern4">模式四：有狀態串流重組<a class="anchor" href="#pattern4" aria-hidden="true">#</a></h3>
+<p>TCP 資料跨段時先緩衝再解析。例：Kerberos over TCP 遇到訊息長度大於單一封包時，配置緩衝區累積到完整再處理。</p>
+<h2 id="subclassification">子分類：以 STUN 為例<a class="anchor" href="#subclassification" aria-hidden="true">#</a></h2>
+<p>STUN 被大量 VoIP／視訊應用使用，解析器透過多種線索判斷「上面是誰」：</p>
+<table>
+<thead><tr><th>方法</th><th>線索</th><th>判定應用</th></tr></thead>
+<tbody>
+<tr><td>屬性值</td><td>0x0101、0x0103</td><td>Zoom</td></tr>
+<tr><td>屬性值</td><td>0x4000–0x4007</td><td>WhatsApp Call</td></tr>
+<tr><td>屬性值</td><td>0x8054、0x8095…</td><td>MS Teams</td></tr>
+<tr><td>屬性值</td><td>0xFF03</td><td>Google Call</td></tr>
+<tr><td>Realm 欄位</td><td>*.google.com / *.signal.org / *.facebook* / *.telegram*</td><td>Google Call / Signal / Facebook / Telegram VoIP</td></tr>
+<tr><td>Port</td><td>10000</td><td>Signal VoIP</td></tr>
+<tr><td>LRU 快取</td><td>先前判定過的端點</td><td>沿用快取結果</td></tr>
+</tbody>
+</table>
+<p>最終堆疊為「master（STUN / DTLS / SRTP / RTP / RTCP）＋ app（WhatsApp / Teams / Signal…）」。</p>
+<h2 id="metadata">中繼資料萃取<a class="anchor" href="#metadata" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>協定</th><th>萃取內容</th></tr></thead>
+<tbody>
+<tr><td><strong>DNS</strong></td><td>查詢型別、回應碼（NOERROR / NXDOMAIN…）、最多 N 筆回應 IP 與 TTL、PTR 網域、EDNS(0)、NSID 地理位置；非零回應碼觸發 <code>NDPI_ERROR_CODE_DETECTED</code> 風險</td></tr>
+<tr><td><strong>STUN</strong></td><td>MAPPED / XOR-MAPPED / XOR-PEER / XOR-RELAYED-ADDRESS、RESPONSE-ORIGIN、是否 TURN；XOR-PEER-ADDRESS 進快取用於對端子分類</td></tr>
+<tr><td><strong>Kerberos</strong></td><td>domain、hostname、username、加密型別</td></tr>
+<tr><td><strong>RTP</strong></td><td>payload type、EVS subtype、媒體型態</td></tr>
+</tbody>
+</table>
+<h2 id="caching">解析器的快取策略<a class="anchor" href="#caching" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>FPC DNS 快取</strong>（First Packet Classification）：DNS 回應「api.whatsapp.com → 192.0.2.1」時，把 IP → WhatsApp 存入快取；之後連往該 IP 的新連線<strong>第一個封包</strong>就能分類。</li>
+<li><strong>STUN 快取</strong>：key 為 <code>(IP &lt;&lt; 32) | port</code>（IPv6 先雜湊）；儲存雙向端點、XOR-PEER 對端，並把 client port +1 / +2 一併入快取，涵蓋同一用戶端的相鄰連線。</li>
+<li><strong>BitTorrent 快取</strong>：記錄單端點 key 與雙端點合併 key 的 peer 關係，同一 client 換 port 也能認出。</li>
+</ul>
+<h2 id="quic">最複雜的例子：QUIC 解密<a class="anchor" href="#quic" aria-hidden="true">#</a></h2>
+<p>QUIC 的 Initial 封包雖然加密，但金鑰可從公開資訊（connection ID + 版本固定 salt）推導。nDPI 實際執行 RFC 9001 的推導流程來取出 SNI：</p>
+<pre><code>/* QUIC Initial 金鑰推導（RFC 9001）*/
+initial_secret        = HKDF-Extract(initial_salt, connection_id)
+client_initial_secret = HKDF-Expand-Label(initial_secret, "client in", "", 32)
+key = HKDF-Expand-Label(client_initial_secret, "quic key", "", key_length)
+iv  = HKDF-Expand-Label(client_initial_secret, "quic iv",  "", 12)
+hp  = HKDF-Expand-Label(client_initial_secret, "quic hp",  "", key_length)
+</code></pre>
+<p>流程：移除標頭保護（AES-ECB / ChaCha20 算 mask）→ 推導金鑰 → AEAD（AES-GCM）解密 payload → 解析 CRYPTO frame → 重組 TLS ClientHello → 取出 SNI → 子分類應用。支援 Google QUIC（Q024+）、draft-23+、v1、v2 與 Facebook MVFST。</p>
+<h2 id="monitoring">Monitoring 模式<a class="anchor" href="#monitoring" aria-hidden="true">#</a></h2>
+<p>部分解析器在分類與 metadata 都完成後仍持續觀察流量做統計——STUN（偵測 RTP 媒體流與音視訊型態）、DNS（觀察後續查詢）、BitTorrent（hash 萃取）。狀態轉換：<code>NORMAL → Extra Dissection → MONITORING</code>。</p>
+<h2 id="config">解析器的執行期設定<a class="anchor" href="#config" aria-hidden="true">#</a></h2>
+<p>許多解析器支援 <code>ndpi_set_config()</code> 調校，在功能完整度與效能間取捨（節選）：</p>
+<table>
+<thead><tr><th>協定</th><th>選項</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td>DNS</td><td><code>dns_subclassification_enabled</code></td><td>是否透過 DNS 做應用子分類</td></tr>
+<tr><td>DNS</td><td><code>dns_parse_response_enabled</code></td><td>是否解析 DNS 回應</td></tr>
+<tr><td>STUN</td><td><code>stun_peer_address_enabled</code> 等</td><td>各種位址屬性的萃取開關</td></tr>
+<tr><td>RTP</td><td><code>rtp_search_for_stun</code></td><td>RTP 後是否再找 STUN</td></tr>
+<tr><td>BitTorrent</td><td><code>bittorrent_hash_enabled</code></td><td>是否萃取 torrent hash</td></tr>
+</tbody>
+</table>
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">ntop/nDPI 官方 GitHub</a> 與 <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki</a>（索引 2025-12-05）。內容如與官方最新版不符，請以官方為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#anatomy">解析器的組成</a>
+      <a class="toc-h2" href="#patterns">四種常見實作模式</a>
+      <a class="toc-h3" href="#pattern1">模式一：單包特徵驗證</a>
+      <a class="toc-h3" href="#pattern2">模式二：多階段解析</a>
+      <a class="toc-h3" href="#pattern3">模式三：協定多工分流</a>
+      <a class="toc-h3" href="#pattern4">模式四：有狀態串流重組</a>
+      <a class="toc-h2" href="#subclassification">子分類：以 STUN 為例</a>
+      <a class="toc-h2" href="#metadata">中繼資料萃取</a>
+      <a class="toc-h2" href="#caching">解析器的快取策略</a>
+      <a class="toc-h2" href="#quic">最複雜的例子：QUIC 解密</a>
+      <a class="toc-h2" href="#monitoring">Monitoring 模式</a>
+      <a class="toc-h2" href="#config">解析器的執行期設定</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

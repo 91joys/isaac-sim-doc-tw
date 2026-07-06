@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>協定堆疊與信心等級 — nDPI 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">nDPI</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">GitHub ↗</a>
+    <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+<nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">編譯與快速上手</a>
+        <div class="nav-group-title">核心觀念</div>
+        <a href="architecture.html">核心架構</a>
+        <a href="detection.html">偵測管線與策略</a>
+        <a href="flow.html">Flow 追蹤與生命週期</a>
+        <a href="protocol.html" class="current">協定堆疊與信心等級</a>
+        <a href="risk.html">風險評估系統</a>
+        <div class="nav-group-title">深入原理</div>
+        <a href="dissectors.html">協定解析器</a>
+        <a href="datastructures.html">資料結構與演算法</a>
+        <div class="nav-group-title">實戰</div>
+        <a href="integration.html">整合到你的應用程式</a>
+        <a href="extend.html">擴充新協定</a>
+        <div class="nav-group-title">參考</div>
+        <a href="resources.html">學習資源</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="protocol-model">協定堆疊、分類與信心等級<a class="anchor" href="#protocol-model" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應 <a href="https://deepwiki.com/ntop/nDPI/1-ndpi-overview">DeepWiki 1. nDPI Overview</a> 與 <a href="https://deepwiki.com/ntop/nDPI/2.2-protocol-definition-and-content-matching">2.2 Protocol Definition and Content Matching</a>。本頁說明 nDPI 如何「表達」辨識結果：兩層協定堆疊、應用分類、breed 與信心等級。</p>
+</blockquote>
+<hr>
+<h2 id="stack">兩層協定堆疊<a class="anchor" href="#stack" aria-hidden="true">#</a></h2>
+<p>辨識結果存於 <code>detected_protocol_stack[2]</code>：<code>[0]</code> 是 <strong>master 協定</strong>（傳輸／隧道層），<code>[1]</code> 是 <strong>app 協定</strong>（實際應用）。習慣寫作「Master.App」：</p>
+<div class="stackrow">
+  <div class="stackchip"><span class="m">TLS</span><span class="a">Netflix</span></div>
+  <div class="stackchip"><span class="m">QUIC</span><span class="a">YouTube</span></div>
+  <div class="stackchip"><span class="m">DNS</span><span class="a">Google</span></div>
+  <div class="stackchip"><span class="m">HTTP</span><span class="a">（Unknown）</span></div>
+  <div class="stackchip"><span class="m">STUN</span><span class="a">WhatsApp Call</span></div>
+</div>
+<ul>
+<li><code>TLS.Netflix</code>：TLS 加密的 Netflix 流量；<code>DNS.Facebook</code>：查詢 Facebook 網域的 DNS</li>
+<li>單層協定（純 <code>DNS</code>、<code>SSH</code>、<code>BitTorrent</code>）只有 master，沒有 app 層</li>
+<li><code>TLS.Unknown</code>：加密流量但辨識不出上層應用</li>
+</ul>
+<p>協定 ID 定義在 <code>src/include/ndpi_protocol_ids.h</code>，從 <code>NDPI_PROTOCOL_UNKNOWN</code>（0）起編號。層級關係用 <code>ndpi_set_proto_subprotocols()</code> 宣告（例如 WhatsApp 可跑在 TLS 或 QUIC 之上）。</p>
+<h2 id="confidence">信心等級（Confidence）<a class="anchor" href="#confidence" aria-hidden="true">#</a></h2>
+<p>辨識結果附帶「是怎麼判斷出來的」，數值越高越可靠。應用程式應把 port 比對視為初步結果：</p>
+<table>
+<thead><tr><th>等級</th><th>值</th><th>判斷方式</th></tr></thead>
+<tbody>
+<tr><td><code>NDPI_CONFIDENCE_UNKNOWN</code></td><td>0</td><td>初始狀態，尚未判斷</td></tr>
+<tr><td><code>NDPI_CONFIDENCE_MATCH_BY_PORT</code></td><td>1</td><td>只憑預設 port 猜測（最弱）</td></tr>
+<tr><td><code>NDPI_CONFIDENCE_MATCH_BY_IP</code></td><td>2</td><td>命中已知服務的 IP 範圍</td></tr>
+<tr><td><code>NDPI_CONFIDENCE_DPI_PARTIAL</code></td><td>3</td><td>部分協定證據</td></tr>
+<tr><td><code>NDPI_CONFIDENCE_DPI_PARTIAL_CACHE</code></td><td>4</td><td>快取的部分比對</td></tr>
+<tr><td><code>NDPI_CONFIDENCE_DPI</code></td><td>5</td><td>完整深度封包檢測（最可靠）</td></tr>
+<tr><td><code>NDPI_CONFIDENCE_DPI_CACHE</code></td><td>6</td><td>快取的 DPI 結果</td></tr>
+<tr><td><code>NDPI_CONFIDENCE_NBPF</code></td><td>7</td><td>nBPF 過濾器比對</td></tr>
+</tbody>
+</table>
+<h2 id="categories">17 種應用分類（節選）<a class="anchor" href="#categories" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>分類</th><th>例子</th></tr></thead>
+<tbody>
+<tr><td><code>NDPI_PROTOCOL_CATEGORY_WEB</code></td><td>HTTP、TLS、瀏覽器流量</td></tr>
+<tr><td><code>NDPI_PROTOCOL_CATEGORY_STREAMING</code></td><td>YouTube、Netflix、Spotify</td></tr>
+<tr><td><code>NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK</code></td><td>Facebook、Twitter</td></tr>
+<tr><td><code>NDPI_PROTOCOL_CATEGORY_VOIP</code></td><td>WhatsApp Call、Teams、Zoom</td></tr>
+<tr><td><code>NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT</code></td><td>BitTorrent、FTP</td></tr>
+<tr><td><code>NDPI_PROTOCOL_CATEGORY_GAME</code></td><td>Steam、Xbox Live、PlayStation</td></tr>
+<tr><td><code>NDPI_PROTOCOL_CATEGORY_VPN</code></td><td>OpenVPN、WireGuard</td></tr>
+<tr><td><code>NDPI_PROTOCOL_CATEGORY_MAIL</code></td><td>SMTP、IMAP</td></tr>
+<tr><td><code>NDPI_PROTOCOL_CATEGORY_CLOUD</code></td><td>AWS、Azure、雲端儲存</td></tr>
+</tbody>
+</table>
+<p>分類在 <code>ndpi_set_proto_defaults()</code> 註冊協定時指定，也可用分類檔自訂。</p>
+<h2 id="breed">Breed（安全性評級）<a class="anchor" href="#breed" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>Breed</th><th>意義</th></tr></thead>
+<tbody>
+<tr><td><code>NDPI_PROTOCOL_SAFE</code></td><td>可信任服務</td></tr>
+<tr><td><code>NDPI_PROTOCOL_ACCEPTABLE</code></td><td>一般可接受</td></tr>
+<tr><td><code>NDPI_PROTOCOL_FUN</code></td><td>娛樂類</td></tr>
+<tr><td><code>NDPI_PROTOCOL_UNSAFE</code></td><td>不安全（如明文舊協定）</td></tr>
+<tr><td><code>NDPI_PROTOCOL_POTENTIALLY_DANGEROUS</code></td><td>高風險（如 Tor、惡意寄存服務）</td></tr>
+</tbody>
+</table>
+<h2 id="state-api">v5.0+ 的分類狀態 API<a class="anchor" href="#state-api" aria-hidden="true">#</a></h2>
+<p>新版為分類流程提供明確狀態，主迴圈大幅簡化——持續呼叫 nDPI 直到 <code>NDPI_STATE_CLASSIFIED</code>：</p>
+<pre><code>res = ndpi_detection_process_packet(...);
+if (res.state == NDPI_STATE_CLASSIFIED) {
+    /* 完成：可取得最終分類與所有 metadata，此 flow 不再需要餵封包 */
+} else {
+    /* nDPI 還需要更多封包。
+       若 state 是 NDPI_STATE_PARTIAL，res.proto 是可用但可能更新的初步分類 */
+}
+
+/* 範例（QUIC flow）:
+   pkt 1: proto QUIC          state NDPI_STATE_PARTIAL
+   pkt 2: proto QUIC/YouTube  state NDPI_STATE_CLASSIFIED
+
+   範例（標準 TLS flow）:
+   pkt 1-3: proto Unknown       state NDPI_STATE_INSPECTING
+   pkt 4:   proto TLS/Facebook  state NDPI_STATE_PARTIAL
+   pkt N:   proto TLS/Facebook  state NDPI_STATE_CLASSIFIED */
+</code></pre>
+<blockquote><p><strong>遷移注意：</strong><code>ndpi_extra_dissection_possible()</code> 已移除；<code>ndpi_detection_giveup()</code> 移除了第三個參數（要知道是否為猜測，改讀 <code>flow-&gt;protocol_was_guessed</code>）；部分原型從 <code>ndpi_protocol</code> 改為 <code>ndpi_master_app_protocol</code>。</p></blockquote>
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">ntop/nDPI 官方 GitHub</a> 與 <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki</a>（索引 2025-12-05）。內容如與官方最新版不符，請以官方為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#stack">兩層協定堆疊</a>
+      <a class="toc-h2" href="#confidence">信心等級（Confidence）</a>
+      <a class="toc-h2" href="#categories">17 種應用分類（節選）</a>
+      <a class="toc-h2" href="#breed">Breed（安全性評級）</a>
+      <a class="toc-h2" href="#state-api">v5.0+ 的分類狀態 API</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

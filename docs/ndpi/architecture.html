@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>核心架構 — nDPI 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">nDPI</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">GitHub ↗</a>
+    <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+<nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">編譯與快速上手</a>
+        <div class="nav-group-title">核心觀念</div>
+        <a href="architecture.html" class="current">核心架構</a>
+        <a href="detection.html">偵測管線與策略</a>
+        <a href="flow.html">Flow 追蹤與生命週期</a>
+        <a href="protocol.html">協定堆疊與信心等級</a>
+        <a href="risk.html">風險評估系統</a>
+        <div class="nav-group-title">深入原理</div>
+        <a href="dissectors.html">協定解析器</a>
+        <a href="datastructures.html">資料結構與演算法</a>
+        <div class="nav-group-title">實戰</div>
+        <a href="integration.html">整合到你的應用程式</a>
+        <a href="extend.html">擴充新協定</a>
+        <div class="nav-group-title">參考</div>
+        <a href="resources.html">學習資源</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="architecture">核心架構：三個關鍵資料結構<a class="anchor" href="#architecture" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應 <a href="https://deepwiki.com/ntop/nDPI/2-core-architecture">DeepWiki 2. Core Architecture</a> 與 <a href="https://deepwiki.com/ntop/nDPI/2.1-core-detection-engine">2.1 Core Detection Engine</a>。整個函式庫圍繞三個結構運作：<strong>偵測模組</strong>是全域共享的唯讀情境、<strong>flow 結構</strong>記錄每條連線跨封包的狀態、<strong>packet 結構</strong>存放當前封包解析後的資訊。</p>
+</blockquote>
+<hr>
+<h2 id="detection-module">ndpi_detection_module_struct（全域偵測情境）<a class="anchor" href="#detection-module" aria-hidden="true">#</a></h2>
+<p>每個應用程式實例初始化一次，供所有 flow 共用，內含所有偵測資源：</p>
+<table>
+<thead><tr><th>成員</th><th>型別</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><code>proto_defaults[]</code></td><td><code>ndpi_proto_defaults_t</code></td><td>協定中繼資料：名稱、分類、預設 port、breed</td></tr>
+<tr><td><code>callback_buffer[]</code></td><td><code>call_function_struct</code></td><td>已註冊的協定解析器（dissector）函式表</td></tr>
+<tr><td><code>tcpRoot / udpRoot</code></td><td>二元搜尋樹</td><td>Port → 協定的 O(log n) 查詢</td></tr>
+<tr><td><code>protocols_ptree[]</code></td><td>Patricia 樹 ×6</td><td>IP 範圍比對（IPv4/IPv6 × 協定／風險／風險遮罩）</td></tr>
+<tr><td><code>host_automa</code>、<code>domain_automa</code>…</td><td>Aho-Corasick 自動機 ×5</td><td>主機名稱、網域、TLS 憑證的多樣式字串比對</td></tr>
+<tr><td><code>lru_cache[]</code></td><td>LRU 快取 ×7</td><td>Ookla、BitTorrent、STUN、TLS 憑證等專屬快取</td></tr>
+<tr><td><code>malicious_ja4_hashmap</code> 等</td><td>雜湊表</td><td>威脅情資查詢（惡意 JA4、SHA1 憑證）</td></tr>
+<tr><td><code>cfg</code></td><td>設定旗標</td><td>執行期行為調校</td></tr>
+</tbody>
+</table>
+<h2 id="flow-struct">ndpi_flow_struct（每條連線的狀態）<a class="anchor" href="#flow-struct" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>分類</th><th>關鍵欄位</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td>偵測結果</td><td><code>detected_protocol_stack[2]</code></td><td>兩層協定堆疊：[0] master（如 TLS）、[1] app（如 Facebook）</td></tr>
+<tr><td></td><td><code>confidence</code>、<code>category</code></td><td>信心等級與應用分類</td></tr>
+<tr><td>偵測狀態</td><td><code>detection_completed</code></td><td>偵測完成旗標</td></tr>
+<tr><td></td><td><code>excluded_dissectors_bitmask</code></td><td>已排除（比對失敗）的解析器位圖，避免重複嘗試</td></tr>
+<tr><td></td><td><code>extra_packets_func</code></td><td>偵測完成後的延伸解析回呼</td></tr>
+<tr><td>風險</td><td><code>risk</code>（64-bit）、<code>risk_score</code>、<code>risk_infos[]</code></td><td>風險位圖、加權分數、最多 8 則說明訊息</td></tr>
+<tr><td>L4 狀態</td><td><code>l4.tcp / l4.udp</code>（union）</td><td>TCP 序號、旗標；UDP 專屬狀態</td></tr>
+<tr><td>協定狀態</td><td><code>protos.http / tls_quic / dns / ssh…</code>（union）</td><td>40+ 種協定的解析中間狀態，用 union 省記憶體</td></tr>
+<tr><td>中繼資料</td><td><code>host_server_name</code>、<code>tls_quic.ja3_client</code>…</td><td>萃取出的主機名稱、指紋等</td></tr>
+<tr><td>統計</td><td><code>packet_counter</code>、方向計數、時間戳</td><td>封包數、位元組數、首末封包時間</td></tr>
+</tbody>
+</table>
+<blockquote><p><strong>重要邊界：</strong>nDPI <strong>不管理 flow 的生命週期</strong>。應用程式要自己建立、查表（通常用 5-tuple 雜湊）、逾時回收 flow，並在每次呼叫時把對應的 <code>ndpi_flow_struct</code> 傳給 nDPI。詳見《<a href="flow.html">Flow 追蹤與生命週期</a>》。</p></blockquote>
+<h2 id="packet-struct">ndpi_packet_struct（當前封包）<a class="anchor" href="#packet-struct" aria-hidden="true">#</a></h2>
+<ul>
+<li><code>iph / iphv6</code>：解析後的 IP 標頭指標</li>
+<li><code>tcp / udp</code>：傳輸層標頭指標</li>
+<li><code>payload</code>、<code>payload_packet_len</code>：應用層資料與長度</li>
+<li><code>current_time_ms</code>：時間戳，用於逾時與速率計算</li>
+</ul>
+<h2 id="init-lifecycle">兩階段初始化<a class="anchor" href="#init-lifecycle" aria-hidden="true">#</a></h2>
+<h3 id="phase1">階段一：模組初始化（ndpi_init_detection_module）<a class="anchor" href="#phase1" aria-hidden="true">#</a></h3>
+<ol>
+<li>配置 <code>ndpi_detection_module_struct</code> 並套用預設值</li>
+<li><code>dissectors_init()</code> 透過 <code>ndpi_callback_init()</code> 註冊 80+ 個協定解析器到 <code>callback_buffer[]</code></li>
+<li>為每個協定填好 <code>proto_defaults</code>（名稱、分類、預設 port、breed）</li>
+<li>設定記憶體配置器（可用 <code>ndpi_set_memory_alloction_functions()</code> 自訂）</li>
+</ol>
+<h3 id="phase2">階段二：完成初始化（ndpi_finalize_initialization）<a class="anchor" href="#phase2" aria-hidden="true">#</a></h3>
+<ol>
+<li><code>ac_automata_finalize()</code> 編譯主機名稱／網域／憑證的 Aho-Corasick 自動機</li>
+<li><code>load_default_ports()</code> 把啟用協定的預設 port 灌進 <code>tcpRoot / udpRoot</code></li>
+<li><code>ndpi_enabled_callbacks_init()</code> 依 <code>detection_bitmask</code> 啟用解析器</li>
+<li>初始化各 LRU 快取</li>
+</ol>
+<p>兩階段之間可插入自訂設定：<code>ndpi_load_protocols_file()</code>（自訂協定）、<code>ndpi_load_categories_file()</code>（自訂分類）、<code>ndpi_set_config()</code>（執行期參數）。</p>
+<h3 id="cleanup">清理（ndpi_exit_detection_module）<a class="anchor" href="#cleanup" aria-hidden="true">#</a></h3>
+<p>程式結束時釋放自動機（<code>ac_automata_release</code>）、Patricia 樹、LRU 快取與協定表。</p>
+<h2 id="key-functions">關鍵函式速查<a class="anchor" href="#key-functions" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>函式</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><code>ndpi_init_detection_module()</code></td><td>配置並初始化偵測模組</td></tr>
+<tr><td><code>dissectors_init()</code></td><td>註冊所有協定解析器</td></tr>
+<tr><td><code>ndpi_set_proto_defaults()</code></td><td>定義協定中繼資料（名稱、port、分類）</td></tr>
+<tr><td><code>ndpi_set_config()</code></td><td>設定偵測參數</td></tr>
+<tr><td><code>ndpi_finalize_initialization()</code></td><td>建立搜尋結構並驗證設定</td></tr>
+<tr><td><code>ndpi_detection_process_packet()</code></td><td>偵測主進入點（見《<a href="detection.html">偵測管線</a>》）</td></tr>
+<tr><td><code>ndpi_detection_giveup()</code></td><td>放棄偵測，做最後啟發式猜測</td></tr>
+</tbody>
+</table>
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">ntop/nDPI 官方 GitHub</a> 與 <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki</a>（索引 2025-12-05）。內容如與官方最新版不符，請以官方為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#detection-module">ndpi_detection_module_struct（全域偵測情境）</a>
+      <a class="toc-h2" href="#flow-struct">ndpi_flow_struct（每條連線的狀態）</a>
+      <a class="toc-h2" href="#packet-struct">ndpi_packet_struct（當前封包）</a>
+      <a class="toc-h2" href="#init-lifecycle">兩階段初始化</a>
+      <a class="toc-h3" href="#phase1">階段一：模組初始化（ndpi_init_detection_module）</a>
+      <a class="toc-h3" href="#phase2">階段二：完成初始化（ndpi_finalize_initialization）</a>
+      <a class="toc-h3" href="#cleanup">清理（ndpi_exit_detection_module）</a>
+      <a class="toc-h2" href="#key-functions">關鍵函式速查</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

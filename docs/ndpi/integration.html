@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>整合到你的應用程式 — nDPI 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">nDPI</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">GitHub ↗</a>
+    <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+<nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">編譯與快速上手</a>
+        <div class="nav-group-title">核心觀念</div>
+        <a href="architecture.html">核心架構</a>
+        <a href="detection.html">偵測管線與策略</a>
+        <a href="flow.html">Flow 追蹤與生命週期</a>
+        <a href="protocol.html">協定堆疊與信心等級</a>
+        <a href="risk.html">風險評估系統</a>
+        <div class="nav-group-title">深入原理</div>
+        <a href="dissectors.html">協定解析器</a>
+        <a href="datastructures.html">資料結構與演算法</a>
+        <div class="nav-group-title">實戰</div>
+        <a href="integration.html" class="current">整合到你的應用程式</a>
+        <a href="extend.html">擴充新協定</a>
+        <div class="nav-group-title">參考</div>
+        <a href="resources.html">學習資源</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="integration">整合到你的應用程式<a class="anchor" href="#integration" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應 <a href="https://deepwiki.com/ntop/nDPI/5.1-ndpireader-application">DeepWiki 5.1 ndpiReader Application</a> 與 <a href="https://deepwiki.com/ntop/nDPI/6-external-integrations">6. External Integrations</a>。本頁提供整合骨架程式碼，細節請對照 <code>example/ndpiReader.c</code> 與 <code>example/reader_util.c</code>。</p>
+</blockquote>
+<hr>
+<h2 id="skeleton">整合骨架程式碼<a class="anchor" href="#skeleton" aria-hidden="true">#</a></h2>
+<pre><code>/* ① 初始化（程式啟動時做一次）*/
+struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
+ndpi_set_config(ndpi_str, NULL, "...", "...");   /* 選用：載入自訂規則 */
+ndpi_finalize_initialization(ndpi_str);          /* 建好比對結構 */
+
+/* ② 每條新連線：配置 flow 狀態（flow 表由「你的程式」管理）*/
+struct ndpi_flow_struct *flow = ndpi_flow_malloc(SIZEOF_FLOW_STRUCT);
+memset(flow, 0, SIZEOF_FLOW_STRUCT);
+
+/* ③ 每個封包：交給 nDPI，直到分類完成 */
+ndpi_protocol res = ndpi_detection_process_packet(
+    ndpi_str, flow, ip_packet, ip_len, time_ms, &amp;input_info);
+
+if (res.state == NDPI_STATE_CLASSIFIED) {
+    /* 分類完成：可讀取最終協定與所有 metadata */
+    char buf[64];
+    printf("%s\n", ndpi_protocol2name(ndpi_str, res, buf, sizeof(buf)));
+} else {
+    /* nDPI 還需要更多封包；
+       NDPI_STATE_PARTIAL 時 res.proto 是可用的初步結果 */
+}
+
+/* ④ flow 逾時仍未分類：放棄偵測，做最後猜測 */
+ndpi_protocol final = ndpi_detection_giveup(ndpi_str, flow);
+
+/* ⑤ 回收 flow */
+ndpi_free_flow_data(flow);
+ndpi_flow_free(flow);
+
+/* ⑥ 程式結束 */
+ndpi_exit_detection_module(ndpi_str);
+</code></pre>
+<h2 id="key-points">整合關鍵點<a class="anchor" href="#key-points" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>整合點</th><th>函式／結構</th><th>備註</th></tr></thead>
+<tbody>
+<tr><td>模組初始化</td><td><code>ndpi_init_detection_module()</code></td><td>建立偵測情境（一次）</td></tr>
+<tr><td>封包處理</td><td><code>ndpi_detection_process_packet()</code></td><td>核心偵測 API（逐包）</td></tr>
+<tr><td>Flow 管理</td><td><code>ndpi_flow_struct</code></td><td>由應用程式建立／查表／回收</td></tr>
+<tr><td>設定</td><td><code>ndpi_set_config()</code></td><td>協定專屬調校</td></tr>
+<tr><td>取結果</td><td><code>ndpi_get_flow_*()</code> 系列</td><td>萃取偵測結果與 metadata</td></tr>
+</tbody>
+</table>
+<blockquote><p><strong>執行緒安全：</strong>偵測模組 finalize 後為唯讀、可跨執行緒共享；flow 結構不可在無同步下共用。<strong>記憶體：</strong>自訂配置器要在任何 nDPI API 使用之前安裝。</p></blockquote>
+<h2 id="ndpireader-arch">ndpiReader 的架構借鏡<a class="anchor" href="#ndpireader-arch" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>多執行緒</strong>：每個 reader thread 有獨立的 <code>ndpi_workflow</code>、pcap handle、flow 表與統計；主執行緒最後彙整。</li>
+<li><strong>Flow 表</strong>：uthash 雜湊表 + 多個獨立 root（<code>NUM_ROOTS</code>）分散競爭。</li>
+<li><strong>閒置掃描</strong>：定期走訪 flow 表，逾時的 flow 先 <code>ndpi_detection_giveup()</code> 再輸出與回收。</li>
+<li><strong>工作流函式</strong>：<code>ndpi_workflow_init()</code> → <code>ndpi_workflow_process_packet()</code>（查表／建 flow ＋ 呼叫 nDPI）→ <code>ndpi_idle_scan_walker()</code> → <code>ndpi_workflow_free()</code>。</li>
+</ul>
+<h2 id="outputs">輸出格式<a class="anchor" href="#outputs" aria-hidden="true">#</a></h2>
+<p>ndpiReader 支援 console、CSV、JSON（<code>ndpi_serializer</code>，另支援 TLV）、流量指紋輸出，以及 Wireshark extcap 整合（把協定與風險寫進封包 trailer，配合 <code>ndpi.lua</code> 過濾）。<code>ndpi_serializer</code> 也可直接在你的程式中使用，序列化協定、風險與 metadata。</p>
+<h2 id="ecosystem">語言綁定與生態系<a class="anchor" href="#ecosystem" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>專案</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td>Python binding</td><td>官方 <code>python/</code> 目錄提供綁定</td></tr>
+<tr><td><a href="https://github.com/aouinizied/nfstream">nfstream</a></td><td>基於 nDPI 的 Python 流量分析框架</td></tr>
+<tr><td><a href="https://github.com/utoni/nDPId">nDPId</a></td><td>輕量 daemon，把 nDPI 結果以 JSON 事件送出</td></tr>
+<tr><td><a href="https://github.com/ntop/ntopng">ntopng</a> / nProbe cento</td><td>ntop 官方產品，用 nDPI 做流量辨識與選擇性封鎖</td></tr>
+<tr><td>Wireshark 外掛</td><td><code>wireshark/ndpi.lua</code>：協定與 57 種風險變成可過濾欄位</td></tr>
+</tbody>
+</table>
+<h2 id="blocking">用 nDPI 封鎖流量？<a class="anchor" href="#blocking" aria-hidden="true">#</a></h2>
+<p>nDPI 本身只是函式庫，不做封鎖；把它嵌進你的網路應用（inline 位置）即可依分類結果選擇性阻擋。官方範例是 ntopng 與 nProbe cento。</p>
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">ntop/nDPI 官方 GitHub</a> 與 <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki</a>（索引 2025-12-05）。內容如與官方最新版不符，請以官方為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#skeleton">整合骨架程式碼</a>
+      <a class="toc-h2" href="#key-points">整合關鍵點</a>
+      <a class="toc-h2" href="#ndpireader-arch">ndpiReader 的架構借鏡</a>
+      <a class="toc-h2" href="#outputs">輸出格式</a>
+      <a class="toc-h2" href="#ecosystem">語言綁定與生態系</a>
+      <a class="toc-h2" href="#blocking">用 nDPI 封鎖流量？</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

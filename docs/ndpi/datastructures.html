@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>資料結構與演算法 — nDPI 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">nDPI</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">GitHub ↗</a>
+    <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+<nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">編譯與快速上手</a>
+        <div class="nav-group-title">核心觀念</div>
+        <a href="architecture.html">核心架構</a>
+        <a href="detection.html">偵測管線與策略</a>
+        <a href="flow.html">Flow 追蹤與生命週期</a>
+        <a href="protocol.html">協定堆疊與信心等級</a>
+        <a href="risk.html">風險評估系統</a>
+        <div class="nav-group-title">深入原理</div>
+        <a href="dissectors.html">協定解析器</a>
+        <a href="datastructures.html" class="current">資料結構與演算法</a>
+        <div class="nav-group-title">實戰</div>
+        <a href="integration.html">整合到你的應用程式</a>
+        <a href="extend.html">擴充新協定</a>
+        <div class="nav-group-title">參考</div>
+        <a href="resources.html">學習資源</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="datastructures">資料結構與演算法<a class="anchor" href="#datastructures" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應 <a href="https://deepwiki.com/ntop/nDPI/4-data-structures-and-algorithms">DeepWiki 4. Data Structures and Algorithms</a>（含 4.1 Pattern Matching Engines、4.2 Caching）。nDPI 的高效能來自為不同比對場景挑選正確的資料結構。</p>
+</blockquote>
+<hr>
+<h2 id="landscape">總覽：誰負責什麼<a class="anchor" href="#landscape" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>結構</th><th>用途</th><th>搜尋複雜度</th><th>記憶體</th></tr></thead>
+<tbody>
+<tr><td>Patricia 樹（<code>ndpi_patricia_tree_t</code>）</td><td>IP 前綴（CIDR）比對</td><td>O(k)，k = key 長度</td><td>精簡（路徑壓縮）</td></tr>
+<tr><td>Aho-Corasick 自動機（<code>AC_AUTOMATA_t</code>）</td><td>多樣式字串比對（主機名稱／網域／憑證）</td><td>O(n + z)，n = 文字長、z = 命中數</td><td>較高</td></tr>
+<tr><td>雜湊表（uthash / <code>ndpi_str_hash</code>）</td><td>精確 key 查詢（惡意 JA4、SHA1 憑證、TCP 指紋）</td><td>平均 O(1)</td><td>中等</td></tr>
+<tr><td>LRU 快取（<code>ndpi_lru_cache</code> ×7）</td><td>近期流量結果重用</td><td>O(1)</td><td>有界</td></tr>
+<tr><td>二元搜尋樹（<code>tcpRoot / udpRoot</code>）</td><td>預設 port 查詢</td><td>O(log n)</td><td>小</td></tr>
+<tr><td>位圖（Roaring / Binary / Fuse）</td><td>協定啟用位圖、風險位圖、大型 IP 集合</td><td>O(1) 位元測試</td><td>高壓縮</td></tr>
+</tbody>
+</table>
+<h2 id="patricia">Patricia 樹：IP 比對<a class="anchor" href="#patricia" aria-hidden="true">#</a></h2>
+<p>六棵樹分工：</p>
+<table>
+<thead><tr><th>樹</th><th>用途</th><th>來源</th></tr></thead>
+<tbody>
+<tr><td><code>NDPI_PTREE_PROTOCOLS</code></td><td>IPv4 協定範圍（AWS、Cloudflare…）</td><td>內建於 <code>ndpi_content_match.c.inc</code></td></tr>
+<tr><td><code>NDPI_PTREE_PROTOCOLS6</code></td><td>IPv6 協定範圍</td><td>內建</td></tr>
+<tr><td><code>NDPI_PTREE_RISK / RISK6</code></td><td>高風險網段</td><td>設定檔載入</td></tr>
+<tr><td><code>NDPI_PTREE_RISK_MASK / RISK_MASK6</code></td><td>風險遮罩（哪些風險適用於哪些網段）</td><td>設定檔載入</td></tr>
+</tbody>
+</table>
+<p>查詢走 <code>ndpi_network_ptree_match()</code>；實作採<strong>路徑壓縮</strong>減少節點並提升快取友善度。</p>
+<h2 id="aho-corasick">Aho-Corasick：字串比對<a class="anchor" href="#aho-corasick" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>自動機</th><th>樣式</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><code>host_automa</code></td><td>主機名稱字串</td><td>比對確切主機（www.google.com）</td></tr>
+<tr><td><code>domain_automa</code></td><td>網域樣式</td><td>後綴比對（*.netflix.com）</td></tr>
+<tr><td><code>tls_cert_subject_automa</code></td><td>憑證樣式</td><td>比對 TLS 憑證主體</td></tr>
+<tr><td><code>risky_domain_automa</code></td><td>風險樣式</td><td>辨識高風險網域</td></tr>
+</tbody>
+</table>
+<p>樣式在初始化時以 <code>ndpi_add_host_url_subprotocol()</code> 加入、finalize 時 <code>ac_automata_finalize()</code> 編譯；查詢走 <code>ndpi_match_string_subprotocol()</code>。實作最佳化：連續字元的<strong>範圍壓縮</strong>、character bitmap 加速狀態轉移、單邊優化（one_alpha）。</p>
+<h2 id="lru">LRU 快取：七種專屬快取<a class="anchor" href="#lru" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>快取</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><code>NDPI_LRUCACHE_OOKLA</code></td><td>Ookla 測速端點</td></tr>
+<tr><td><code>NDPI_LRUCACHE_BITTORRENT</code></td><td>BitTorrent peer 位址</td></tr>
+<tr><td><code>NDPI_LRUCACHE_STUN</code></td><td>STUN 端點 → 應用對應</td></tr>
+<tr><td><code>NDPI_LRUCACHE_TLS_CERT</code></td><td>TLS 憑證雜湊</td></tr>
+<tr><td><code>NDPI_LRUCACHE_MINING</code></td><td>挖礦礦池位址</td></tr>
+<tr><td><code>NDPI_LRUCACHE_MSTEAMS</code></td><td>Microsoft Teams 流量</td></tr>
+<tr><td><code>NDPI_LRUCACHE_FPC_DNS</code></td><td>First Packet Classification 的 DNS→IP 對應</td></tr>
+</tbody>
+</table>
+<pre><code>/* 通用介面 */
+ndpi_lru_add_to_cache(cache, key, value, now);
+ndpi_lru_find_cache(cache, key, &amp;value, remove, now);
+</code></pre>
+<p>TTL 可設定；ndpiReader 的 <code>-A</code> 內部統計會列出各快取的命中率。</p>
+<h2 id="bitmaps">三種位圖實作<a class="anchor" href="#bitmaps" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>Roaring Bitmap</strong>（CRoaring）：稀疏大集合、高壓縮——大型 IP 集合、協定分類的壓縮儲存。</li>
+<li><strong>Binary Bitmap</strong>（排序陣列）：小而密的集合。</li>
+<li><strong>Fuse Filter</strong>（機率型）：只回答「在不在集合裡」的成員測試，壓縮比最高。</li>
+</ul>
+<p>Flow 的風險位圖則是單純的 <code>u_int64_t</code>，用 <code>NDPI_SET_BIT / NDPI_ISSET_BIT / NDPI_CLR_BIT</code> 操作。</p>
+<h2 id="analytics">統計分析工具<a class="anchor" href="#analytics" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>結構</th><th>能力</th></tr></thead>
+<tbody>
+<tr><td><code>ndpi_analyze_struct</code></td><td>資料序列的均值、變異數／標準差（Welford 線上演算法）、極值、jitter</td></tr>
+<tr><td><code>ndpi_entropy</code></td><td>雙向位元組分布 → Shannon 熵（可判斷加密／壓縮流量）</td></tr>
+<tr><td><code>ndpi_bin</code></td><td>直方圖式資料分箱（如封包長度分布）</td></tr>
+<tr><td><code>ndpi_domain_classify</code></td><td>網域名稱分類器</td></tr>
+</tbody>
+</table>
+<p>這些是行為分析與異常偵測（DGA、混淆流量、異常模型）的基礎。</p>
+<h2 id="memory-api">記憶體 API<a class="anchor" href="#memory-api" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>函式</th><th>用途</th><th>是否計入統計</th></tr></thead>
+<tbody>
+<tr><td><code>ndpi_malloc() / ndpi_calloc() / ndpi_realloc()</code></td><td>一般配置</td><td>是（<code>tot_ndpi_memory</code>）</td></tr>
+<tr><td><code>ndpi_flow_malloc()</code></td><td>Flow 專屬配置</td><td>否（應用程式管理）</td></tr>
+<tr><td><code>ndpi_aligned_malloc()</code></td><td>SIMD 對齊配置</td><td>是</td></tr>
+<tr><td><code>ndpi_strdup()</code></td><td>字串複製</td><td>是</td></tr>
+</tbody>
+</table>
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">ntop/nDPI 官方 GitHub</a> 與 <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki</a>（索引 2025-12-05）。內容如與官方最新版不符，請以官方為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#landscape">總覽：誰負責什麼</a>
+      <a class="toc-h2" href="#patricia">Patricia 樹：IP 比對</a>
+      <a class="toc-h2" href="#aho-corasick">Aho-Corasick：字串比對</a>
+      <a class="toc-h2" href="#lru">LRU 快取：七種專屬快取</a>
+      <a class="toc-h2" href="#bitmaps">三種位圖實作</a>
+      <a class="toc-h2" href="#analytics">統計分析工具</a>
+      <a class="toc-h2" href="#memory-api">記憶體 API</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

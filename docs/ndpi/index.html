@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>nDPI 中文文檔</title>
+  <meta name="description" content="nDPI 開源深度封包檢測函式庫中文文檔：核心架構、偵測管線、Flow 追蹤、風險評估與擴充新協定的完整中文導覽">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">nDPI</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html" class="active">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">GitHub ↗</a>
+    <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki ↗</a>
+  </nav>
+</header>
+
+<main class="content-full">
+  <section class="hero">
+    <h1><span class="hl">nDPI</span> 深度封包檢測中文文檔</h1>
+    <p class="sub">ntop 開源 LGPLv3 深度封包檢測函式庫——辨識 300+ 協定、標記 57 種安全風險、萃取中繼資料與流量指紋。本站整理官方 GitHub 與 DeepWiki 為循序漸進的中文學習路徑。</p>
+    <div class="badges">
+      <span class="badge">nDPI 5.0</span>
+      <span class="badge">300+ 協定</span>
+      <span class="badge">57 種風險</span>
+      <span class="badge">80+ 解析器</span>
+      <span class="badge">繁體中文</span>
+    </div>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="docs.html">從總覽開始</a>
+      <a class="btn btn-ghost" href="installation.html">編譯與快速上手</a>
+    </div>
+  </section>
+
+  <div class="cards">
+    <a class="card" href="docs.html">
+      <div class="icon">📘</div>
+      <h3>總覽文檔</h3>
+      <p>什麼是 nDPI、五大核心能力、典型整合工作流程、nDPI 管什麼不管什麼，與全站章節對照表。</p>
+      <span class="go">前往閱讀 →</span>
+    </a>
+    <a class="card" href="installation.html">
+      <div class="icon">🛠️</div>
+      <h3>編譯與快速上手</h3>
+      <p>各平台前置套件、編譯選項與測試，用 ndpiReader 立刻分析第一個 PCAP。</p>
+      <span class="go">開始動手 →</span>
+    </a>
+    <a class="card" href="architecture.html">
+      <div class="icon">🏗️</div>
+      <h3>核心架構</h3>
+      <p>三個關鍵資料結構的分工：全域偵測模組、每條連線的 flow 狀態、當前封包，與兩階段初始化。</p>
+      <span class="go">前往閱讀 →</span>
+    </a>
+    <a class="card" href="detection.html">
+      <div class="icon">🔬</div>
+      <h3>偵測管線與策略</h3>
+      <p>「先快後深」五層策略：LRU 快取 → Port → IP → 字串比對 → 深度封包檢測，與放棄偵測機制。</p>
+      <span class="go">前往閱讀 →</span>
+    </a>
+    <a class="card" href="risk.html">
+      <div class="icon">🛡️</div>
+      <h3>風險評估系統</h3>
+      <p>57 種安全風險的嚴重度計分、責任歸屬、例外設定，與 Wireshark 過濾整合。</p>
+      <span class="go">前往閱讀 →</span>
+    </a>
+    <a class="card" href="extend.html">
+      <div class="icon">🧩</div>
+      <h3>擴充新協定</h3>
+      <p>官方 12 步驟、解析器範本、多階段偵測、LRU 快取與 PCAP 迴歸測試。</p>
+      <span class="go">開始實戰 →</span>
+    </a>
+  </div>
+
+  <section class="section" id="sections">
+    <h2>全部章節</h2>
+    <p>依學習順序組織的中文專題頁，每頁附原文連結對照。</p>
+    <div class="feature-grid">
+      <a class="card" href="docs.html">
+        <div class="icon">📘</div>
+        <h3>1. 總覽文檔</h3>
+        <p>nDPI 是什麼、能做什麼、怎麼跟你的程式分工。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="installation.html">
+        <div class="icon">🛠️</div>
+        <h3>2. 編譯與快速上手</h3>
+        <p>Linux／macOS／FreeBSD／Windows 編譯與 ndpiReader 用法。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="architecture.html">
+        <div class="icon">🏗️</div>
+        <h3>3. 核心架構</h3>
+        <p>偵測模組、flow、packet 三大結構與初始化流程。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="detection.html">
+        <div class="icon">🔬</div>
+        <h3>4. 偵測管線與策略</h3>
+        <p>五層偵測策略、解析器挑選與執行、效能設計。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="flow.html">
+        <div class="icon">🔄</div>
+        <h3>5. Flow 追蹤與生命週期</h3>
+        <p>5-tuple 雜湊、生命週期五階段、延伸解析與記憶體管理。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="protocol.html">
+        <div class="icon">🧬</div>
+        <h3>6. 協定堆疊與信心等級</h3>
+        <p>Master.App 兩層堆疊、17 種分類、breed 與 8 級信心。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="risk.html">
+        <div class="icon">🛡️</div>
+        <h3>7. 風險評估系統</h3>
+        <p>57 種風險的組成、計分演算法與各協定檢查點。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="dissectors.html">
+        <div class="icon">🔎</div>
+        <h3>8. 協定解析器</h3>
+        <p>四種實作模式、STUN 子分類、QUIC 解密與快取策略。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="datastructures.html">
+        <div class="icon">🌳</div>
+        <h3>9. 資料結構與演算法</h3>
+        <p>Patricia 樹、Aho-Corasick、LRU 快取與三種位圖。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="integration.html">
+        <div class="icon">🔗</div>
+        <h3>10. 整合到你的應用程式</h3>
+        <p>整合骨架程式碼、ndpiReader 架構借鏡與語言綁定。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="extend.html">
+        <div class="icon">🧩</div>
+        <h3>11. 擴充新協定</h3>
+        <p>12 步驟、dissector 範本、測試驗證與最佳實務。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="resources.html">
+        <div class="icon">📚</div>
+        <h3>12. 學習資源</h3>
+        <p>官方文件、影片簡報、相關專案與建議學習路徑。</p>
+        <span class="go">前往 →</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>建議學習路徑</h2>
+    <ol>
+      <li><a href="installation.html">編譯與快速上手</a>：把 nDPI 編起來，拿自己的 PCAP 跑 <code>ndpiReader -v 2</code> 看輸出。</li>
+      <li><a href="architecture.html">核心架構</a>＋<a href="detection.html">偵測管線</a>：建立「三大結構、五層策略」的心智模型。</li>
+      <li><a href="flow.html">Flow 追蹤</a>＋<a href="protocol.html">協定堆疊</a>＋<a href="risk.html">風險評估</a>：理解偵測結果怎麼表達、狀態怎麼維護。</li>
+      <li><a href="integration.html">整合</a>：照骨架程式碼把 nDPI 嵌進自己的程式。</li>
+      <li>進階：<a href="dissectors.html">協定解析器</a> → <a href="datastructures.html">資料結構</a> → <a href="extend.html">擴充新協定</a>（寫一個自己的 dissector）。</li>
+    </ol>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>本站內容整理自 <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">ntop/nDPI 官方 GitHub</a> 與 <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki</a>（索引 2025-12-05）。內容如與官方最新版不符，請以官方為準。<br>nDPI® 為 ntop 之註冊商標；本站為非官方學習資源。</p>
+</footer>
+</body>
+</html>

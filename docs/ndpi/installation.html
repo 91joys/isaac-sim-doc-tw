@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>編譯與快速上手 — nDPI 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">nDPI</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">GitHub ↗</a>
+    <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+<nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html" class="current">編譯與快速上手</a>
+        <div class="nav-group-title">核心觀念</div>
+        <a href="architecture.html">核心架構</a>
+        <a href="detection.html">偵測管線與策略</a>
+        <a href="flow.html">Flow 追蹤與生命週期</a>
+        <a href="protocol.html">協定堆疊與信心等級</a>
+        <a href="risk.html">風險評估系統</a>
+        <div class="nav-group-title">深入原理</div>
+        <a href="dissectors.html">協定解析器</a>
+        <a href="datastructures.html">資料結構與演算法</a>
+        <div class="nav-group-title">實戰</div>
+        <a href="integration.html">整合到你的應用程式</a>
+        <a href="extend.html">擴充新協定</a>
+        <div class="nav-group-title">參考</div>
+        <a href="resources.html">學習資源</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="installation">編譯與快速上手<a class="anchor" href="#installation" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://github.com/ntop/nDPI#how-to-compile-ndpi">README：How To Compile nDPI</a> 章節。本頁涵蓋各平台前置套件、編譯選項，以及用 <code>ndpiReader</code> 立刻分析第一個 PCAP。</p>
+</blockquote>
+<hr>
+<h2 id="prerequisites">各平台前置套件<a class="anchor" href="#prerequisites" aria-hidden="true">#</a></h2>
+<p>最低需求：GNU 工具鏈（autoconf、automake、libtool、pkg-config、gettext、flex、bison）＋ gcc 或 Clang。</p>
+<table>
+<thead><tr><th>平台</th><th>安裝指令</th></tr></thead>
+<tbody>
+<tr><td>Debian / Ubuntu</td><td><code>sudo apt-get install build-essential git gettext flex bison libtool autoconf automake pkg-config libpcap-dev libjson-c-dev libnuma-dev libpcre2-dev libmaxminddb-dev librrd-dev</code></td></tr>
+<tr><td>Arch Linux</td><td><code>sudo pacman -S gcc git gettext flex bison libtool autoconf automake pkg-config libpcap json-c numactl pcre2 libmaxminddb rrdtool</code></td></tr>
+<tr><td>FreeBSD</td><td><code>sudo pkg install gcc git gettext flex bison libtool autoconf automake devel/pkgconf gmake libpcap json-c pcre2 libmaxminddb rrdtool</code>（編譯請用 <code>gmake</code>）</td></tr>
+<tr><td>macOS</td><td><code>brew install coreutils gcc git gettext flex bison libtool autoconf automake pkg-config libpcap json-c pcre2 libmaxminddb rrdtool</code></td></tr>
+<tr><td>Windows</td><td>三種方式：MSYS2、Mingw-w64、Visual Studio（<code>windows/nDPI.sln</code>）。皆需安裝 <a href="https://npcap.com/#download">npcap</a> 並啟用 WinPcap 相容模式</td></tr>
+</tbody>
+</table>
+<h2 id="compile">編譯<a class="anchor" href="#compile" aria-hidden="true">#</a></h2>
+<pre><code># 基本編譯
+./autogen.sh &amp;&amp; ./configure
+make
+
+# croaring.c 編譯出錯時的替代方案
+./autogen.sh &amp;&amp; ./configure --enable-old-croaring
+make
+
+# 只編函式庫（不含工具與測試）
+./autogen.sh &amp;&amp; ./configure --with-only-libndpi
+make
+
+# out-of-tree 建置（原始碼樹保持乾淨）
+./autogen.sh
+mkdir build &amp;&amp; cd build
+../configure &amp;&amp; make
+</code></pre>
+<blockquote><p><strong>注意：</strong><code>autogen.sh</code> 不會自動執行 <code>configure</code>，兩步要分開跑（<code>./autogen.sh &amp;&amp; ./configure --$OPTIONS</code>）。</p></blockquote>
+<h2 id="tests">執行測試<a class="anchor" href="#tests" aria-hidden="true">#</a></h2>
+<pre><code>./tests/do.sh        # PCAP 迴歸測試（比對輸出差異）
+./tests/do-unit.sh   # 單元測試
+./tests/do-dga.sh    # DGA 網域偵測測試
+
+# 或一次全跑
+make check
+</code></pre>
+<h2 id="ndpireader">用 ndpiReader 立刻體驗<a class="anchor" href="#ndpireader" aria-hidden="true">#</a></h2>
+<p><code>ndpiReader</code> 是官方參考實作：既是命令列分析工具，也是整合 nDPI 的最佳範例程式（原始碼在 <code>example/</code>）。它是多執行緒架構，可分析 PCAP 檔或即時網卡流量。</p>
+<pre><code># 分析 PCAP 檔
+./example/ndpiReader -i capture.pcap
+
+# 即時監聽網卡
+./example/ndpiReader -i eth0
+
+# 詳細輸出（含每條 flow 的協定、信心等級與風險）
+./example/ndpiReader -i capture.pcap -v 2
+
+# 輸出 CSV
+./example/ndpiReader -i capture.pcap -C out.csv
+</code></pre>
+<h3 id="cli-options">常用命令列選項<a class="anchor" href="#cli-options" aria-hidden="true">#</a></h3>
+<table>
+<thead><tr><th>類別</th><th>參數</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td>輸入來源</td><td><code>-i</code></td><td>PCAP 檔、播放清單或網路介面</td></tr>
+<tr><td>過濾</td><td><code>-f</code></td><td>BPF 封包過濾條件</td></tr>
+<tr><td>多執行緒</td><td><code>-n</code></td><td>平行處理的執行緒數</td></tr>
+<tr><td>輸出格式</td><td><code>-C</code> / <code>-k</code> / <code>-K</code></td><td>CSV、JSON 序列化與格式選項</td></tr>
+<tr><td>分析功能</td><td><code>-P</code> / <code>-F</code> / <code>-A</code></td><td>Payload 分析、流量統計、內部統計</td></tr>
+<tr><td>協定控制</td><td><code>-p</code> / <code>-B</code> / <code>-u</code></td><td>自訂協定檔、停用協定、除錯協定</td></tr>
+</tbody>
+</table>
+<h2 id="docs-build">建置官方文件（選用）<a class="anchor" href="#docs-build" aria-hidden="true">#</a></h2>
+<pre><code>pip install --upgrade pip
+pip install -r doc/requirements.txt
+make doc
+
+# 用內建 Python 網頁伺服器瀏覽
+make doc-view
+</code></pre>
+<h2 id="next">下一步<a class="anchor" href="#next" aria-hidden="true">#</a></h2>
+<ol>
+<li>拿自己的 PCAP 跑 <code>ndpiReader -v 2</code>，觀察協定堆疊、信心等級與風險輸出。</li>
+<li>讀《<a href="architecture.html">核心架構</a>》建立三大結構的心智模型。</li>
+<li>照《<a href="integration.html">整合到你的應用程式</a>》的骨架程式碼把 nDPI 嵌進自己的程式。</li>
+</ol>
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">ntop/nDPI 官方 GitHub</a> 與 <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki</a>（索引 2025-12-05）。內容如與官方最新版不符，請以官方為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#prerequisites">各平台前置套件</a>
+      <a class="toc-h2" href="#compile">編譯</a>
+      <a class="toc-h2" href="#tests">執行測試</a>
+      <a class="toc-h2" href="#ndpireader">用 ndpiReader 立刻體驗</a>
+      <a class="toc-h3" href="#cli-options">常用命令列選項</a>
+      <a class="toc-h2" href="#docs-build">建置官方文件（選用）</a>
+      <a class="toc-h2" href="#next">下一步</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

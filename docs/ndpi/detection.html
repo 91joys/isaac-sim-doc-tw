@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>偵測管線與策略 — nDPI 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">nDPI</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">GitHub ↗</a>
+    <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+<nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">編譯與快速上手</a>
+        <div class="nav-group-title">核心觀念</div>
+        <a href="architecture.html">核心架構</a>
+        <a href="detection.html" class="current">偵測管線與策略</a>
+        <a href="flow.html">Flow 追蹤與生命週期</a>
+        <a href="protocol.html">協定堆疊與信心等級</a>
+        <a href="risk.html">風險評估系統</a>
+        <div class="nav-group-title">深入原理</div>
+        <a href="dissectors.html">協定解析器</a>
+        <a href="datastructures.html">資料結構與演算法</a>
+        <div class="nav-group-title">實戰</div>
+        <a href="integration.html">整合到你的應用程式</a>
+        <a href="extend.html">擴充新協定</a>
+        <div class="nav-group-title">參考</div>
+        <a href="resources.html">學習資源</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="detection">偵測管線與五種策略<a class="anchor" href="#detection" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應 <a href="https://deepwiki.com/ntop/nDPI/2.1-core-detection-engine">DeepWiki 2.1 Core Detection Engine</a> 與 <a href="https://deepwiki.com/ntop/nDPI/2.2-protocol-definition-and-content-matching">2.2 Protocol Definition and Content Matching</a>。主要進入點是 <code>ndpi_detection_process_packet()</code>：每個封包依「先快後深」的順序，經過層層遞進的偵測策略。</p>
+</blockquote>
+<hr>
+<h2 id="cascade">先快後深的五層策略<a class="anchor" href="#cascade" aria-hidden="true">#</a></h2>
+<div class="pipe">
+  <div class="stage"><b>1. LRU 快取查詢 — O(1)</b><span>7 種專屬快取（Ookla、BitTorrent、STUN、TLS 憑證、Mining、MS Teams、FPC DNS）—— 命中直接返回</span></div>
+  <div class="down">↓ 未命中</div>
+  <div class="stage"><b>2. Port 比對 — O(log n)</b><span>查 tcpRoot / udpRoot 二元樹，只給出低信心的「猜測」（guessed_protocol_id）</span></div>
+  <div class="down">↓</div>
+  <div class="stage"><b>3. IP 比對 — O(k)</b><span>查 Patricia 樹比對 CIDR 範圍（如 AWS、Cloudflare、TeamViewer 的已知網段）</span></div>
+  <div class="down">↓</div>
+  <div class="stage"><b>4. 字串比對 — O(n+z)</b><span>Aho-Corasick 自動機比對 SNI / Host 等主機名稱樣式（如 *.netflix.com）</span></div>
+  <div class="down">↓ 仍無法確認</div>
+  <div class="stage deep"><b>5. 協定解析器（DPI）</b><span>逐一呼叫候選 dissector 深度解析；失敗的加入 excluded 位圖不再重試</span></div>
+  <div class="down">↓</div>
+  <div class="stage warm"><b>結果確定</b><span>ndpi_int_change_protocol() 寫入協定堆疊、設定信心等級、更新風險位圖</span></div>
+</div>
+<h2 id="packet-steps">單一封包的處理流程<a class="anchor" href="#packet-steps" aria-hidden="true">#</a></h2>
+<ol>
+<li><strong>解析封包標頭</strong>：<code>ndpi_detection_parse_packet()</code> 拆出 L3（IPv4/IPv6）與 L4（TCP/UDP/ICMP）；支援 GTP、CAPWAP、TZSP、VXLAN、GRE 等隧道協定的解封裝——偵測到隧道時<strong>遞迴處理內層封包</strong>。</li>
+<li><strong>檢查 flow 狀態</strong>：若 <code>detection_completed</code> 已設，跳到延伸處理。</li>
+<li><strong>執行偵測</strong>：依上方五層策略進行（<code>check_ndpi_flow_func()</code> 挑選並呼叫解析器）。</li>
+<li><strong>寫入結果</strong>：<code>ndpi_int_change_protocol()</code> 設定 <code>detected_protocol_stack[]</code> 與信心等級，必要時設 <code>detection_completed</code>。</li>
+<li><strong>延伸處理</strong>：若 <code>extra_packets_func</code> 有設，持續萃取中繼資料（TLS 憑證、HTTP 標頭、DNS 回應…）。</li>
+</ol>
+<h2 id="dissector-exec">解析器的挑選與執行<a class="anchor" href="#dissector-exec" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>註冊</strong>：初始化時 <code>ndpi_callback_init()</code> 把所有解析器塞進 <code>callback_buffer[]</code>；每個項目帶函式指標與 selection bitmask（TCP／UDP／IPv4v6）。</li>
+<li><strong>啟用</strong>：<code>ndpi_enabled_callbacks_init()</code> 依 <code>detection_bitmask</code> 建立啟用清單；自訂協定一律啟用。</li>
+<li><strong>執行</strong>：走訪啟用的解析器，跳過 flow 的 <code>excluded_dissectors_bitmask</code> 內已失敗者；解析器成功時呼叫 <code>ndpi_set_detected_protocol()</code>。</li>
+<li><strong>排除</strong>：解析器判定「絕對不是我」時呼叫 <code>NDPI_EXCLUDE_PROTO()</code>，之後的封包不再重試該解析器。</li>
+</ul>
+<h2 id="giveup">放棄偵測（give up）<a class="anchor" href="#giveup" aria-hidden="true">#</a></h2>
+<p>處理了合理數量的封包仍無法辨識時，應用程式應呼叫：</p>
+<pre><code>ndpi_protocol result = ndpi_detection_giveup(ndpi_struct, flow);
+</code></pre>
+<p>它會做最後的啟發式判斷（port 猜測、IP 猜測），真的沒轍才回傳 <code>NDPI_PROTOCOL_UNKNOWN</code>，並可能標記 <code>NDPI_UNDETECTED_PROTOCOL</code> 風險。想知道結果是否來自猜測，可讀 <code>flow-&gt;protocol_was_guessed</code>。</p>
+<h2 id="performance">效能設計重點<a class="anchor" href="#performance" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>早停</strong>：一旦高信心辨識就不再往下跑。</li>
+<li><strong>排除記錄</strong>：失敗的 dissector 記在 flow 位圖裡，之後直接跳過。</li>
+<li><strong>快取重用</strong>：相似流量直接吃前次結果（confidence 標記為 <code>DPI_CACHE</code>）。</li>
+<li><strong>選擇性啟用</strong>：只啟用設定需要的解析器。</li>
+</ul>
+<h2 id="custom-rules">自訂規則<a class="anchor" href="#custom-rules" aria-hidden="true">#</a></h2>
+<p>除了內建樣式，nDPI 支援用外部規則檔擴充偵測：可組合 port 範圍、payload 內容樣式與行為特徵來定義部署專屬的協定（<code>ndpiReader -p 規則檔</code> 或 <code>ndpi_load_protocols_file()</code>）。搭配 <code>ndpi_add_host_ip_subprotocol()</code>、<code>ndpi_add_host_url_subprotocol()</code> 也能在程式內動態加規則——見《<a href="extend.html">擴充新協定</a>》。</p>
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">ntop/nDPI 官方 GitHub</a> 與 <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki</a>（索引 2025-12-05）。內容如與官方最新版不符，請以官方為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#cascade">先快後深的五層策略</a>
+      <a class="toc-h2" href="#packet-steps">單一封包的處理流程</a>
+      <a class="toc-h2" href="#dissector-exec">解析器的挑選與執行</a>
+      <a class="toc-h2" href="#giveup">放棄偵測（give up）</a>
+      <a class="toc-h2" href="#performance">效能設計重點</a>
+      <a class="toc-h2" href="#custom-rules">自訂規則</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

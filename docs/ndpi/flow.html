@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flow 追蹤與生命週期 — nDPI 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">nDPI</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">GitHub ↗</a>
+    <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+<nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">編譯與快速上手</a>
+        <div class="nav-group-title">核心觀念</div>
+        <a href="architecture.html">核心架構</a>
+        <a href="detection.html">偵測管線與策略</a>
+        <a href="flow.html" class="current">Flow 追蹤與生命週期</a>
+        <a href="protocol.html">協定堆疊與信心等級</a>
+        <a href="risk.html">風險評估系統</a>
+        <div class="nav-group-title">深入原理</div>
+        <a href="dissectors.html">協定解析器</a>
+        <a href="datastructures.html">資料結構與演算法</a>
+        <div class="nav-group-title">實戰</div>
+        <a href="integration.html">整合到你的應用程式</a>
+        <a href="extend.html">擴充新協定</a>
+        <div class="nav-group-title">參考</div>
+        <a href="resources.html">學習資源</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="flow">Flow 追蹤與生命週期<a class="anchor" href="#flow" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應 <a href="https://deepwiki.com/ntop/nDPI/2.3-flow-tracking-and-management">DeepWiki 2.3 Flow Tracking and Management</a>。nDPI 的偵測是「有狀態」的：狀態存在你提供的 flow 結構裡，而 flow 表的管理（建立、查詢、回收）是應用程式的責任。</p>
+</blockquote>
+<hr>
+<h2 id="five-tuple">用 5-tuple 識別連線<a class="anchor" href="#five-tuple" aria-hidden="true">#</a></h2>
+<p>Flow 由「來源 IP、目的 IP、來源 port、目的 port、L4 協定」（可加 VLAN ID）雜湊識別。雜湊是<strong>雙向一致</strong>的——先排序端點再計算，同一條連線不論封包方向都對到同一筆：</p>
+<pre><code># 雙向一致雜湊的概念
+if (src_ip &lt; dst_ip) or (src_ip == dst_ip and src_port &lt; dst_port):
+    hash(src_ip, src_port, dst_ip, dst_port, protocol)
+else:
+    hash(dst_ip, dst_port, src_ip, src_port, protocol)
+</code></pre>
+<p>ndpiReader 用 uthash 雜湊表管理 flow（<code>HASH_ADD / HASH_FIND / HASH_DEL / HASH_ITER</code>），並以多個獨立 root 表（<code>NUM_ROOTS</code>）搭配 per-root mutex 分散多執行緒競爭。</p>
+<h2 id="lifecycle">生命週期五階段<a class="anchor" href="#lifecycle" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>階段</th><th>狀態</th><th>發生的事</th></tr></thead>
+<tbody>
+<tr><td>建立</td><td><code>packet_counter = 0</code></td><td>第一個封包到達，配置 flow 結構、初始化計數器與時間戳</td></tr>
+<tr><td>偵測中</td><td><code>detection_completed = 0</code></td><td>逐包呼叫解析器、累積證據</td></tr>
+<tr><td>已辨識</td><td><code>detection_completed = 1</code></td><td>寫入協定堆疊、評估風險</td></tr>
+<tr><td>持續追蹤</td><td>協定已知</td><td>視設定繼續萃取中繼資料（extra dissection / monitoring）</td></tr>
+<tr><td>回收</td><td>閒置逾時</td><td>預設 30 秒（MAX_IDLE_TIME）無封包即逾時；先 giveup 再釋放</td></tr>
+</tbody>
+</table>
+<h3 id="state-flags">偵測狀態旗標<a class="anchor" href="#state-flags" aria-hidden="true">#</a></h3>
+<table>
+<thead><tr><th>旗標</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><code>detection_completed</code></td><td>協定偵測完成</td></tr>
+<tr><td><code>check_extra_packets</code> / <code>max_extra_packets_to_check</code></td><td>延伸解析的封包額度</td></tr>
+<tr><td><code>fail_with_unknown</code></td><td>禁止回退為 UNKNOWN</td></tr>
+<tr><td><code>protocol_id_already_guessed</code></td><td>已做過初步（port/IP）猜測</td></tr>
+</tbody>
+</table>
+<h2 id="extra-dissection">延伸封包解析（Extra Dissection）<a class="anchor" href="#extra-dissection" aria-hidden="true">#</a></h2>
+<p>許多協定需要多個封包才能完成分類或抽完中繼資料。解析器在初步辨識後掛上回呼函式，讓後續封包繼續被分析，而不必跑完整的 dissector 流程：</p>
+<pre><code>/* 在 dissector 裡（例如 TLS）設定延伸解析 */
+flow-&gt;max_extra_packets_to_check = 10;        /* 最多再看 10 個封包 */
+flow-&gt;extra_packets_func = search_tls_again;  /* 回傳 1 續看、0 結束 */
+</code></pre>
+<table>
+<thead><tr><th>協定</th><th>延伸解析目的</th></tr></thead>
+<tbody>
+<tr><td>TLS</td><td>等 ClientHello + ServerHello + 憑證鏈；JA3/JA4 指紋；混淆 TLS 偵測</td></tr>
+<tr><td>HTTP</td><td>標頭跨封包；WebSocket 升級偵測</td></tr>
+<tr><td>DNS</td><td>query 與 response 配對；快取解析出的 IP（FPC）</td></tr>
+<tr><td>STUN / RTP</td><td>進入 monitoring 模式，持續觀察媒體流型態與統計</td></tr>
+</tbody>
+</table>
+<p>TLS 也示範了「何時該停」的判斷：憑證與 ClientHello 都處理完、或雙向都已是 Application Data 時可跳過延伸解析；仍需子分類、metadata 或啟發式分析時才繼續。</p>
+<h2 id="direction">封包方向追蹤<a class="anchor" href="#direction" aria-hidden="true">#</a></h2>
+<p>應用程式可透過 <code>ndpi_flow_input_info</code> 告訴 nDPI 封包方向（<code>NDPI_IN_PKT_DIR_C_TO_S</code> / <code>S_TO_C</code> / <code>UNKNOWN</code>）。未知時 nDPI 依 TCP SYN（發起者為 client）、port 大小（低 port 通常是 server）、首包方向推斷。解析器內用 <code>current_pkt_from_client_to_server()</code> 等輔助函式判斷。</p>
+<h2 id="memory">記憶體管理<a class="anchor" href="#memory" aria-hidden="true">#</a></h2>
+<p>兩層配置策略：</p>
+<ul>
+<li><strong>一般配置</strong>：<code>ndpi_malloc / ndpi_free</code>（計入 <code>tot_ndpi_memory</code> 總量統計）</li>
+<li><strong>Flow 配置</strong>：<code>ndpi_flow_malloc / ndpi_flow_free</code>（由應用程式管理）</li>
+</ul>
+<p>全部可用 <code>ndpi_set_memory_alloction_functions()</code> 換成自訂配置器——用於記憶體追蹤、jemalloc / tcmalloc、記憶體池或除錯。</p>
+<pre><code>/* 回收一條 flow 的正確順序 */
+ndpi_free_flow_data(flow);   /* 先釋放 flow 內部動態成員（hostname、憑證…）*/
+ndpi_flow_free(flow);        /* 再釋放 flow 本體 */
+</code></pre>
+<blockquote><p><strong>踩雷提醒：</strong>自訂配置器要在<strong>任何 nDPI API 使用之前</strong>安裝。ndpiReader 曾因太晚裝 hook，導致部分記憶體用 libc 配置、卻用自訂函式釋放的未定義行為（PR #3164）。</p></blockquote>
+<h2 id="idle-scan">閒置掃描（以 ndpiReader 為例）<a class="anchor" href="#idle-scan" aria-hidden="true">#</a></h2>
+<ol>
+<li>每隔 <code>IDLE_SCAN_PERIOD</code> 由 <code>ndpi_idle_scan_walker()</code> 走訪 flow 表</li>
+<li>逾時的 flow 若偵測未完成，先呼叫 <code>ndpi_detection_giveup()</code> 取得最終猜測</li>
+<li><code>process_ndpi_collected_info()</code> 萃取最後的 metadata 並輸出</li>
+<li>釋放 flow 記憶體、從雜湊表移除</li>
+</ol>
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">ntop/nDPI 官方 GitHub</a> 與 <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki</a>（索引 2025-12-05）。內容如與官方最新版不符，請以官方為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#five-tuple">用 5-tuple 識別連線</a>
+      <a class="toc-h2" href="#lifecycle">生命週期五階段</a>
+      <a class="toc-h3" href="#state-flags">偵測狀態旗標</a>
+      <a class="toc-h2" href="#extra-dissection">延伸封包解析（Extra Dissection）</a>
+      <a class="toc-h2" href="#direction">封包方向追蹤</a>
+      <a class="toc-h2" href="#memory">記憶體管理</a>
+      <a class="toc-h2" href="#idle-scan">閒置掃描（以 ndpiReader 為例）</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

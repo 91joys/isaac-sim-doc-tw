@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>風險評估系統 — nDPI 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">nDPI</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">GitHub ↗</a>
+    <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+<nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">編譯與快速上手</a>
+        <div class="nav-group-title">核心觀念</div>
+        <a href="architecture.html">核心架構</a>
+        <a href="detection.html">偵測管線與策略</a>
+        <a href="flow.html">Flow 追蹤與生命週期</a>
+        <a href="protocol.html">協定堆疊與信心等級</a>
+        <a href="risk.html" class="current">風險評估系統</a>
+        <div class="nav-group-title">深入原理</div>
+        <a href="dissectors.html">協定解析器</a>
+        <a href="datastructures.html">資料結構與演算法</a>
+        <div class="nav-group-title">實戰</div>
+        <a href="integration.html">整合到你的應用程式</a>
+        <a href="extend.html">擴充新協定</a>
+        <div class="nav-group-title">參考</div>
+        <a href="resources.html">學習資源</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="risk">風險評估系統（Flow Risk）<a class="anchor" href="#risk" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應 <a href="https://deepwiki.com/ntop/nDPI/2.4-risk-assessment-and-security-analysis">DeepWiki 2.4 Risk Assessment and Security Analysis</a> 與官方 <a href="https://github.com/ntop/nDPI/blob/dev/doc/flow_risks.rst">doc/flow_risks.rst</a>。nDPI 在辨識協定的同時，標記 <strong>57 種安全與政策風險</strong>，存在每條 flow 的 64-bit 位圖中。</p>
+</blockquote>
+<hr>
+<h2 id="risk-anatomy">風險的組成<a class="anchor" href="#risk-anatomy" aria-hidden="true">#</a></h2>
+<p>每種風險在 <code>ndpi_known_risks[]</code> 中定義四項屬性：</p>
+<pre><code>typedef struct {
+  ndpi_risk_enum risk;                      /* 風險識別碼（0-56）*/
+  ndpi_risk_severity severity;              /* LOW/MEDIUM/HIGH/SEVERE/CRITICAL/EMERGENCY */
+  risk_percentage default_client_risk_pctg; /* 用戶端責任比例（0-100%）*/
+  ndpi_risk_accountability accountability;  /* CLIENT / SERVER / BOTH */
+} ndpi_risk_info;
+</code></pre>
+<p>Flow 端儲存三樣東西：<code>flow-&gt;risk</code>（64-bit 位圖，一 bit 一風險）、<code>flow-&gt;risk_score</code>（加權分數）、<code>flow-&gt;risk_infos[]</code>（最多 8 則說明訊息）。</p>
+<h2 id="severity">嚴重度與計分<a class="anchor" href="#severity" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>嚴重度</th><th>分數</th><th>意義</th></tr></thead>
+<tbody>
+<tr><td><span class="sev sev-low">LOW</span></td><td>10</td><td>次要問題（用 IP 直連、明文協定）</td></tr>
+<tr><td><span class="sev sev-med">MEDIUM</span></td><td>50</td><td>中度疑慮（非標準 port 跑已知協定）</td></tr>
+<tr><td><span class="sev sev-high">HIGH</span></td><td>100</td><td>顯著問題（弱加密、自簽憑證、DGA 網域）</td></tr>
+<tr><td><span class="sev sev-severe">SEVERE</span></td><td>150</td><td>嚴重威脅（XSS、SQL injection、接觸惡意主機）</td></tr>
+<tr><td>CRITICAL / EMERGENCY</td><td>200 / 250</td><td>保留未來使用</td></tr>
+</tbody>
+</table>
+<p><strong>總分算法</strong>：走訪 <code>flow-&gt;risk</code> 每個被設起的 bit → 取其嚴重度分數 → 依 client % 拆成用戶端與伺服器端兩份 → 各自加總。責任歸屬（accountability）標示是誰觸發：XSS 是 client、過期憑證是 server、不安全協定是雙方。</p>
+<h2 id="examples">常見風險範例<a class="anchor" href="#examples" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>風險</th><th>嚴重度</th><th>觸發情境</th><th>偵測位置</th></tr></thead>
+<tbody>
+<tr><td><code>NDPI_URL_POSSIBLE_XSS</code></td><td><span class="sev sev-severe">SEVERE</span></td><td>URL 內含 script 注入（libinjection 判定）</td><td>HTTP 解析器</td></tr>
+<tr><td><code>NDPI_URL_POSSIBLE_SQL_INJECTION</code></td><td><span class="sev sev-severe">SEVERE</span></td><td>URL 內含 SQL 注入樣式</td><td>HTTP 解析器</td></tr>
+<tr><td><code>NDPI_MALWARE_HOST_CONTACTED</code></td><td><span class="sev sev-severe">SEVERE</span></td><td>連到已知惡意主機</td><td>IP／網域清單</td></tr>
+<tr><td><code>NDPI_TLS_SELFSIGNED_CERTIFICATE</code></td><td><span class="sev sev-high">HIGH</span></td><td>TLS 憑證自簽（責任在 server）</td><td>TLS 解析器</td></tr>
+<tr><td><code>NDPI_MALICIOUS_FINGERPRINT</code></td><td><span class="sev sev-high">HIGH</span></td><td>JA4 等指紋命中已知惡意特徵</td><td>指紋雜湊表</td></tr>
+<tr><td><code>NDPI_SUSPICIOUS_DGA_DOMAIN</code></td><td><span class="sev sev-high">HIGH</span></td><td>網域疑似演算法產生（DGA）</td><td>DNS／TLS 解析器</td></tr>
+<tr><td><code>NDPI_KNOWN_PROTOCOL_ON_NON_STANDARD_PORT</code></td><td><span class="sev sev-med">MEDIUM</span></td><td>已知協定跑在非預期 port</td><td>行為分析</td></tr>
+<tr><td><code>NDPI_CLEAR_TEXT_CREDENTIALS</code></td><td><span class="sev sev-med">MEDIUM</span></td><td>FTP / Telnet 等明文傳送帳密</td><td>各解析器</td></tr>
+<tr><td><code>NDPI_NUMERIC_IP_HOST</code></td><td><span class="sev sev-low">LOW</span></td><td>用 IP 而非主機名稱連線</td><td>HTTP／TLS 解析器</td></tr>
+</tbody>
+</table>
+<h2 id="per-protocol">各協定的風險檢查點<a class="anchor" href="#per-protocol" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>協定</th><th>檢查項目</th></tr></thead>
+<tbody>
+<tr><td><strong>TLS / DTLS</strong></td><td>自簽／過期／即將過期／效期過長憑證、惡意 SHA1 指紋、過舊版本（&lt; TLS 1.2）、弱加密套件、缺 SNI、ALPN 與 SNI 不一致</td></tr>
+<tr><td><strong>HTTP</strong></td><td>URL 注入（XSS / SQL / RCE）、可疑 User-Agent、爬蟲、二進位執行檔傳輸、可疑 Content-Type、過舊伺服器版本、可疑標頭</td></tr>
+<tr><td><strong>DNS</strong></td><td>DGA 網域、Punycode IDN、非法字元、大封包（UDP &gt; 512 bytes 無 EDNS）、分片、可疑紀錄型別、過長首標籤（疑似資料外洩）</td></tr>
+<tr><td><strong>SSH</strong></td><td>過舊的用戶端／伺服器版本或弱演算法</td></tr>
+</tbody>
+</table>
+<h2 id="api">在程式中使用風險<a class="anchor" href="#api" aria-hidden="true">#</a></h2>
+<pre><code>/* 解析器內標記風險 */
+ndpi_set_risk(ndpi_struct, flow, NDPI_TLS_WEAK_CIPHER, "Weak cipher detected");
+
+/* 檢查特定風險 */
+if (NDPI_ISSET_BIT(flow-&gt;risk, NDPI_MALWARE_HOST_CONTACTED)) {
+    /* 處理惡意主機事件 */
+}
+
+/* 走訪全部風險 */
+for (int i = 0; i &lt; NDPI_MAX_RISK; i++)
+    if (NDPI_ISSET_BIT(flow-&gt;risk, i))
+        printf("%s\n", ndpi_risk2str(i));
+
+/* 依分數過濾高風險流量 */
+if (flow-&gt;risk_score &gt; threshold) { /* 告警 */ }
+</code></pre>
+<h2 id="exceptions">風險例外（抑制誤報）<a class="anchor" href="#exceptions" aria-hidden="true">#</a></h2>
+<p>可依<strong>主機名稱樣式、IP 範圍、憑證 DN</strong> 設定例外規則；風險被標記後會經過 <code>ndpi_check_flow_risk_exceptions()</code>，命中例外即清掉該 bit——例如內部 CA 的自簽憑證不再告警。各協定的風險偵測也能獨立調整（停用特定檢查、調整門檻）。</p>
+<h2 id="wireshark">Wireshark 整合<a class="anchor" href="#wireshark" aria-hidden="true">#</a></h2>
+<p>Wireshark 外掛（<code>wireshark/ndpi.lua</code>）把 nDPI 的 64-bit 風險位圖展開成 57 個布林欄位與分數欄位，可直接用顯示過濾器：</p>
+<pre><code>ndpi.flow_risk.malware_host_contacted
+ndpi.flow_risk.tls_selfsigned_certificate
+ndpi.flow_score &gt; 100
+</code></pre>
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">ntop/nDPI 官方 GitHub</a> 與 <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki</a>（索引 2025-12-05）。內容如與官方最新版不符，請以官方為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#risk-anatomy">風險的組成</a>
+      <a class="toc-h2" href="#severity">嚴重度與計分</a>
+      <a class="toc-h2" href="#examples">常見風險範例</a>
+      <a class="toc-h2" href="#per-protocol">各協定的風險檢查點</a>
+      <a class="toc-h2" href="#api">在程式中使用風險</a>
+      <a class="toc-h2" href="#exceptions">風險例外（抑制誤報）</a>
+      <a class="toc-h2" href="#wireshark">Wireshark 整合</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

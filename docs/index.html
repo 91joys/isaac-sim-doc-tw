@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>中文文檔大全</title>
-  <meta name="description" content="機器人模擬中文文檔大全：NVIDIA Isaac Sim 與 Newton Physics 官方文檔的完整中文整理">
+  <meta name="description" content="中文文檔大全：NVIDIA Isaac Sim、Newton Physics 與 nDPI 官方文檔的完整中文整理">
   <style>
     * { box-sizing: border-box; }
     body {
@@ -55,10 +55,12 @@
     .site-card:hover { transform: translateY(-4px); box-shadow: 0 16px 44px rgba(10,16,22,0.2); }
     .site-card.isaac { border-top-color: #76b900; }
     .site-card.newton { border-top-color: #1e88e5; }
+    .site-card.ndpi { border-top-color: #14a89e; }
     .site-card .logo { font-size: 2.2rem; margin-bottom: 10px; }
     .site-card h2 { margin: 0 0 4px; font-size: 1.5rem; }
     .site-card h2 .hl-isaac { color: #5a8f00; }
     .site-card h2 .hl-newton { color: #1565c0; }
+    .site-card h2 .hl-ndpi { color: #0b7a72; }
     .site-card .tagline { color: #57606a; font-size: 0.95rem; margin: 0 0 16px; }
     .site-card ul {
       margin: 0 0 18px;
@@ -79,6 +81,7 @@
     }
     .site-card.isaac li::before { color: #76b900; }
     .site-card.newton li::before { color: #1e88e5; }
+    .site-card.ndpi li::before { color: #14a89e; }
     .enter {
       display: inline-block;
       align-self: flex-start;
@@ -90,6 +93,7 @@
     }
     .site-card.isaac .enter { background: #76b900; color: #10151a; }
     .site-card.newton .enter { background: #1e88e5; }
+    .site-card.ndpi .enter { background: #0b7a72; }
     .section {
       max-width: 1020px;
       margin: 56px auto;
@@ -131,11 +135,12 @@
 
 <section class="hero">
   <h1>中文文檔大全</h1>
-  <p class="sub">機器人模擬技術文檔的繁體中文整理站——選擇下方文檔庫開始閱讀，每站皆附官方原文連結對照。</p>
+  <p class="sub">技術文檔的繁體中文整理站——選擇下方文檔庫開始閱讀，每站皆附官方原文連結對照。</p>
   <div class="badges">
     <span class="badge">繁體中文</span>
     <span class="badge">Isaac Sim 6.0.1</span>
     <span class="badge">Newton Physics 1.3.0</span>
+    <span class="badge">nDPI 5.0</span>
     <span class="badge">非官方學習資源</span>
   </div>
 </section>
@@ -166,10 +171,23 @@
     </ul>
     <span class="enter">進入 Newton 文檔 →</span>
   </a>
+
+  <a class="site-card ndpi" href="ndpi/index.html">
+    <div class="logo">📡</div>
+    <h2><span class="hl-ndpi">nDPI</span> 中文文檔</h2>
+    <p class="tagline">ntop 開源深度封包檢測（DPI）函式庫——辨識 300+ 網路協定、標記 57 種安全風險、萃取流量指紋。</p>
+    <ul>
+      <li>總覽文檔：核心能力、整合工作流程與章節對照</li>
+      <li>核心觀念五章：架構、偵測管線、Flow、協定堆疊、風險</li>
+      <li>深入原理：協定解析器、資料結構與演算法</li>
+      <li>實戰：整合骨架程式碼與擴充新協定 12 步驟</li>
+    </ul>
+    <span class="enter">進入 nDPI 文檔 →</span>
+  </a>
 </div>
 
 <section class="section">
-  <h2>兩套文檔的關係</h2>
+  <h2>Isaac Sim 與 Newton 的關係</h2>
   <p>Isaac Sim 是完整的機器人「模擬器應用」，Newton 是專注於物理計算的「物理引擎」。Isaac Sim 6.0 起支援以 Newton 作為可切換的物理後端，Isaac Lab 亦提供實驗性 Newton 整合——兩者互補而非取代。</p>
   <table class="compare">
     <thead>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>學習資源 — nDPI 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">nDPI</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">GitHub ↗</a>
+    <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+<nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">編譯與快速上手</a>
+        <div class="nav-group-title">核心觀念</div>
+        <a href="architecture.html">核心架構</a>
+        <a href="detection.html">偵測管線與策略</a>
+        <a href="flow.html">Flow 追蹤與生命週期</a>
+        <a href="protocol.html">協定堆疊與信心等級</a>
+        <a href="risk.html">風險評估系統</a>
+        <div class="nav-group-title">深入原理</div>
+        <a href="dissectors.html">協定解析器</a>
+        <a href="datastructures.html">資料結構與演算法</a>
+        <div class="nav-group-title">實戰</div>
+        <a href="integration.html">整合到你的應用程式</a>
+        <a href="extend.html">擴充新協定</a>
+        <div class="nav-group-title">參考</div>
+        <a href="resources.html" class="current">學習資源</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="resources">學習資源<a class="anchor" href="#resources" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>官方文件、影片簡報與建議學習路徑的整理。</p>
+</blockquote>
+<hr>
+<h2 id="official">官方文件與原始碼<a class="anchor" href="#official" aria-hidden="true">#</a></h2>
+<ul>
+<li><a href="https://github.com/ntop/nDPI">GitHub：ntop/nDPI</a>——dev 分支，4.5k stars，最新穩定版 5.0（2025-11）</li>
+<li><a href="https://deepwiki.com/ntop/nDPI">DeepWiki：ntop/nDPI</a>——本站主要依據，含完整章節式導覽與程式行號對照</li>
+<li><a href="https://github.com/ntop/nDPI/blob/dev/doc/FAQ.rst">官方 FAQ</a>｜<a href="https://github.com/ntop/nDPI/blob/dev/doc/protocols.rst">支援協定清單</a>｜<a href="https://github.com/ntop/nDPI/blob/dev/doc/flow_risks.rst">風險清單</a></li>
+<li>論文：Deri, Luca, et al. <a href="http://luca.ntop.org/nDPI.pdf">nDPI: Open-source high-speed deep packet inspection</a>（IWCMC 2014）</li>
+</ul>
+<h2 id="videos">影片與簡報<a class="anchor" href="#videos" aria-hidden="true">#</a></h2>
+<ul>
+<li><a href="https://www.youtube.com/watch?v=NndEp7__Y1A">The Ultimate Guide to nDPI</a>（2025）</li>
+<li><a href="https://packetfest.ntop.org/slides/Nardi.pdf">Using nDPI to solve real life problems：從 First Packet Classification 到混淆流量偵測</a>（PacketFest 2025）</li>
+<li><a href="https://fosdem.org/2025/schedule/event/fosdem-2025-5461-passive-network-traffic-fingerprinting/">Passive Network Traffic Fingerprinting</a>（FOSDEM 2025）</li>
+<li><a href="https://fosdem.org/2022/schedule/event/using_ndpi_to_efficiently_classify_network_traffic/">Network Traffic Classification for Cybersecurity and Monitoring</a>（FOSDEM 2022）</li>
+<li><a href="https://archive.fosdem.org/2021/schedule/event/nemondpi/">Using nDPI for Monitoring and Security</a>（FOSDEM 2021）</li>
+<li><a href="https://www.ntop.org/wp-content/uploads/2017/06/nDPI_Sharkfest_2017.pdf">Knowing the Unknown</a>（SharkFest 2017）</li>
+</ul>
+<h2 id="related">相關專案<a class="anchor" href="#related" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>專案</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td><a href="https://github.com/aouinizied/nfstream">nfstream</a></td><td>基於 nDPI 的 Python 流量分析框架</td></tr>
+<tr><td><a href="https://github.com/utoni/nDPId">nDPId</a></td><td>輕量 daemon，把 nDPI 結果以 JSON 事件送出</td></tr>
+<tr><td><a href="https://github.com/ntop/ntopng">ntopng</a></td><td>ntop 的網路流量監控平台</td></tr>
+<tr><td><a href="https://www.ntop.org/products/netflow/nprobe-cento/">nProbe cento</a></td><td>高速 NetFlow 探針，可依 nDPI 分類選擇性封鎖</td></tr>
+</tbody>
+</table>
+<h2 id="path">建議學習路徑<a class="anchor" href="#path" aria-hidden="true">#</a></h2>
+<ol>
+<li><strong>動手跑</strong>：照《<a href="installation.html">編譯與快速上手</a>》編譯後，拿自己的 PCAP 餵 <code>ndpiReader -v 2</code>，觀察協定堆疊、信心等級與風險輸出（對照《<a href="protocol.html">協定堆疊</a>》《<a href="risk.html">風險評估</a>》）。</li>
+<li><strong>建立心智模型</strong>：讀《<a href="architecture.html">核心架構</a>》與《<a href="detection.html">偵測管線</a>》，理解三大結構與五層策略。</li>
+<li><strong>讀範例</strong>：精讀 <code>example/reader_util.c</code> 的 <code>ndpi_workflow_process_packet()</code>，理解 flow 表管理（對照《<a href="flow.html">Flow 追蹤</a>》《<a href="integration.html">整合</a>》）。</li>
+<li><strong>挑一個解析器</strong>：從簡單的（<code>snmp_proto.c</code>）到複雜的（<code>stun.c</code>、<code>quic.c</code>）循序閱讀（對照《<a href="dissectors.html">協定解析器</a>》）。</li>
+<li><strong>寫一個玩具協定</strong>：照《<a href="extend.html">擴充新協定</a>》的 12 步驟加一個自己的協定，跑通 <code>make check</code>。</li>
+</ol>
+<h2 id="disclaimer">使用聲明<a class="anchor" href="#disclaimer" aria-hidden="true">#</a></h2>
+<blockquote><p>官方提醒：協定偵測無法保證 100% 準確；監聽、擷取與檢測網路流量前，請確認已取得適當授權並尊重使用者隱私。nDPI® 為美國與歐盟註冊商標。</p></blockquote>
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">ntop/nDPI 官方 GitHub</a> 與 <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki</a>（索引 2025-12-05）。內容如與官方最新版不符，請以官方為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#official">官方文件與原始碼</a>
+      <a class="toc-h2" href="#videos">影片與簡報</a>
+      <a class="toc-h2" href="#related">相關專案</a>
+      <a class="toc-h2" href="#path">建議學習路徑</a>
+      <a class="toc-h2" href="#disclaimer">使用聲明</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

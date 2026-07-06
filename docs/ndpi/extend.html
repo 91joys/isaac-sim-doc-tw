@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>擴充新協定 — nDPI 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">nDPI</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">GitHub ↗</a>
+    <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+<nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">編譯與快速上手</a>
+        <div class="nav-group-title">核心觀念</div>
+        <a href="architecture.html">核心架構</a>
+        <a href="detection.html">偵測管線與策略</a>
+        <a href="flow.html">Flow 追蹤與生命週期</a>
+        <a href="protocol.html">協定堆疊與信心等級</a>
+        <a href="risk.html">風險評估系統</a>
+        <div class="nav-group-title">深入原理</div>
+        <a href="dissectors.html">協定解析器</a>
+        <a href="datastructures.html">資料結構與演算法</a>
+        <div class="nav-group-title">實戰</div>
+        <a href="integration.html">整合到你的應用程式</a>
+        <a href="extend.html" class="current">擴充新協定</a>
+        <div class="nav-group-title">參考</div>
+        <a href="resources.html">學習資源</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="extend">擴充新協定（寫一個 Dissector）<a class="anchor" href="#extend" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應 <a href="https://deepwiki.com/ntop/nDPI/7.4-extending-ndpi-with-new-protocols">DeepWiki 7.4 Extending nDPI with New Protocols</a> 與官方 <a href="https://github.com/ntop/nDPI#how-to-add-a-new-protocol-dissector">README：How To Add A New Protocol Dissector</a>。</p>
+</blockquote>
+<hr>
+<h2 id="twelve-steps">官方的 12 個步驟<a class="anchor" href="#twelve-steps" aria-hidden="true">#</a></h2>
+<ol>
+<li>在 <code>src/include/ndpi_protocol_ids.h</code> 加入新協定與唯一 ID</li>
+<li>在 <code>src/lib/protocols/</code> 建立新的解析器 .c 檔</li>
+<li>需要跨封包保存的狀態變數，放進 <code>ndpi_typedefs.h</code>：<code>ndpi_flow_tcp_struct</code>（限 TCP）、<code>ndpi_flow_udp_struct</code>（限 UDP）或 <code>ndpi_flow_struct</code>（兩者皆可）</li>
+<li>在 <code>src/include/ndpi_private.h</code> 加入搜尋函式的進入點</li>
+<li>從 <code>src/include/ndpi_define.h</code> <strong>選用</strong>一個 selection bitmask（不要改動既有定義）</li>
+<li>在 <code>ndpi_main.c</code> 的 <code>ndpi_init_protocol_defaults</code> 設定協定預設 port</li>
+<li>準備 nBPF 支援：與 nDPI 同層目錄 clone <code>PF_RING</code>，編譯 <code>userland/nbpf</code></li>
+<li><code>./autogen.sh &amp;&amp; ./configure --with-pcre2</code>（nBPF 與 PCRE2 平常可選，但跑完整測試需要）</li>
+<li><code>make</code></li>
+<li><code>make check</code></li>
+<li>更新文件：把新協定加進 <code>doc/protocols.rst</code></li>
+<li>更新 Visual Studio 設定：把新 .c 檔加進 <code>windows/nDPI.vcxproj</code></li>
+</ol>
+<h2 id="registration">協定註冊<a class="anchor" href="#registration" aria-hidden="true">#</a></h2>
+<pre><code>/* 註冊協定中繼資料 */
+int ndpi_set_proto_defaults(
+    struct ndpi_detection_module_struct *ndpi_str,
+    u_int8_t is_cleartext,       /* 1 = 明文協定 */
+    u_int8_t is_app_protocol,    /* 1 = 應用層（HTTP、DNS）、0 = 傳輸層（TLS）*/
+    ndpi_protocol_breed_t breed, /* SAFE / ACCEPTABLE / ... */
+    u_int16_t protoId,           /* 來自 ndpi_protocol_ids.h */
+    char *protoName,
+    ndpi_protocol_category_t protoCategory,
+    ndpi_protocol_qoe_category_t qoeCategory,
+    ndpi_port_range *tcpDefPorts, ndpi_port_range *udpDefPorts,
+    u_int8_t is_custom_protocol);
+
+/* 預設 port：最多 5 個，或用範圍 */
+ndpi_build_default_ports(ports, 80, 8080, 0, 0, 0);
+ndpi_build_default_ports_range(ports, 6881, 6889, 0, 0, 0, 0, 0, 0, 0, 0);
+
+/* 協定層級關係（WhatsApp 可跑在 TLS 或 QUIC 上）*/
+ndpi_set_proto_subprotocols(ndpi_str, NDPI_PROTOCOL_WHATSAPP,
+    NDPI_PROTOCOL_TLS, NDPI_PROTOCOL_QUIC,
+    NDPI_PROTOCOL_NO_MORE_SUBPROTOCOLS);
+</code></pre>
+<h2 id="template">解析器範本<a class="anchor" href="#template" aria-hidden="true">#</a></h2>
+<pre><code>static void ndpi_search_myprotocol(struct ndpi_detection_module_struct *ndpi_struct,
+                                   struct ndpi_flow_struct *flow) {
+  struct ndpi_packet_struct *packet = &amp;ndpi_struct-&gt;packet;
+
+  NDPI_LOG_DBG(ndpi_struct, "search myprotocol\n");
+
+  /* 1. 永遠先檢查長度，再碰 payload（記憶體安全鐵則）*/
+  if (packet-&gt;payload_packet_len &lt; MIN_PROTOCOL_LENGTH) {
+    NDPI_EXCLUDE_PROTO(ndpi_struct, flow);  /* 明確不是就早早排除 */
+    return;
+  }
+
+  /* 2. 比對協定特徵（magic bytes）*/
+  if (memcmp(packet-&gt;payload, "MYPROTO", 7) == 0) {
+    /* 3. 以 DPI 信心設定協定 */
+    ndpi_int_add_connection(ndpi_struct, flow,
+        NDPI_PROTOCOL_MYPROTOCOL, NDPI_REAL_PROTOCOL);
+    return;
+  }
+
+  /* 4. 沒比中就排除，之後的封包不會再呼叫這個解析器 */
+  NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+}
+</code></pre>
+<h2 id="staged">多階段偵測與延伸解析<a class="anchor" href="#staged" aria-hidden="true">#</a></h2>
+<p>複雜協定（如 TLS）用 flow 狀態欄位分階段：</p>
+<pre><code>/* 階段式偵測（TLS 概念示意）*/
+if (!flow-&gt;tls_quic.client_hello_processed) {
+  /* 階段 1：處理 ClientHello，先不設協定 */
+  if (process_client_hello(ndpi_struct, flow) == 0) {
+    flow-&gt;tls_quic.client_hello_processed = 1;
+    return;   /* 等更多封包 */
+  }
+} else if (!flow-&gt;tls_quic.certificate_processed) {
+  /* 階段 2：ServerHello + 憑證到齊才確認 */
+  if (process_server_certificate(ndpi_struct, flow) == 0) {
+    flow-&gt;tls_quic.certificate_processed = 1;
+    ndpi_int_add_connection(ndpi_struct, flow,
+        NDPI_PROTOCOL_TLS, NDPI_REAL_PROTOCOL);
+  }
+}
+
+/* 偵測完成後還要抽 metadata：掛延伸解析 */
+static int ndpi_search_myprotocol_extra(struct ndpi_detection_module_struct *s,
+                                        struct ndpi_flow_struct *flow) {
+  extract_additional_metadata(flow);
+  return have_all_metadata(flow) ? 0 : 1;   /* 0 = 停、1 = 續 */
+}
+/* 在主解析器內： */
+flow-&gt;extra_packets_func = ndpi_search_myprotocol_extra;
+</code></pre>
+<h2 id="helpers">常用輔助工具<a class="anchor" href="#helpers" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>函式／巨集</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><code>ndpi_int_add_connection()</code></td><td>以 DPI 信心設定協定</td></tr>
+<tr><td><code>ndpi_set_detected_protocol()</code></td><td>以自訂信心設定協定（如 MATCH_BY_PORT）</td></tr>
+<tr><td><code>ndpi_set_detected_protocol_keeping_master()</code></td><td>只更新 app 層、保留 master</td></tr>
+<tr><td><code>NDPI_EXCLUDE_PROTO()</code></td><td>排除本解析器（寫入 excluded 位圖）</td></tr>
+<tr><td><code>current_pkt_from_client_to_server()</code></td><td>判斷封包方向</td></tr>
+<tr><td><code>ndpi_set_risk()</code></td><td>標記安全風險（可附說明訊息）</td></tr>
+<tr><td><code>NDPI_LOG_DBG() / DBG2 / ERR</code></td><td>除錯與錯誤記錄</td></tr>
+<tr><td><code>ndpi_lru_find_cache() / ndpi_lru_add_to_cache()</code></td><td>快取查詢／寫入</td></tr>
+</tbody>
+</table>
+<h2 id="detection-methods">四種偵測手段可以並用<a class="anchor" href="#detection-methods" aria-hidden="true">#</a></h2>
+<pre><code>/* IP 範圍 → 協定 */
+ndpi_add_host_ip_subprotocol(ndpi_struct, "192.168.1.0/24", NDPI_PROTOCOL_MYAPP);
+
+/* 主機名稱樣式 → 協定（支援萬用字元與網域層級偵測）*/
+ndpi_add_host_url_subprotocol(ndpi_str, "*.example.com",
+    NDPI_PROTOCOL_MYAPP, NDPI_PROTOCOL_CATEGORY_WEB, NDPI_PROTOCOL_SAFE, 0);
+</code></pre>
+<p>port 比對信心最低，務必搭配 DPI；字串比對系統會自動處理萬用字元、網域層級與字尾錨定。</p>
+<h2 id="testing">測試與驗證<a class="anchor" href="#testing" aria-hidden="true">#</a></h2>
+<p>nDPI 用 PCAP 迴歸測試：測試 PCAP 放 <code>tests/pcap/</code>，預期輸出放 <code>tests/cfgs/default/result/</code>。</p>
+<pre><code># 產生參考輸出（迴歸測試基準）
+./example/ndpiReader -i tests/pcap/myprotocol.pcap &gt; \
+    tests/cfgs/default/result/myprotocol.pcap.out
+
+# 執行測試套件
+cd tests &amp;&amp; ./do.sh
+</code></pre>
+<p><strong>驗證清單</strong>：</p>
+<ul>
+<li>範例流量能正確偵測；相似協定不誤判</li>
+<li>畸形封包能優雅處理（fuzzing 是 nDPI CI 的常規項目）</li>
+<li>效能可接受（檢查 dissector 呼叫次數與快取命中率）</li>
+<li>全部迴歸測試通過（<code>make check</code>）</li>
+</ul>
+<h2 id="best-practices">最佳實務<a class="anchor" href="#best-practices" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>記憶體安全</strong>：存取 payload 前一律檢查 <code>payload_packet_len</code>；配置一律用 <code>ndpi_malloc / ndpi_free</code>。</li>
+<li><strong>早早排除</strong>：magic byte 不符就 <code>NDPI_EXCLUDE_PROTO()</code>，避免重複呼叫。</li>
+<li><strong>限制封包數</strong>：分析 N 個封包後放棄，避免無止境嘗試。</li>
+<li><strong>善用快取</strong>：昂貴的判斷結果進 LRU 快取。</li>
+<li><strong>支援執行期設定</strong>：透過 <code>ndpi_struct-&gt;cfg</code> 提供開關與參數。</li>
+<li><strong>寫文件</strong>：註明協定規格（RFC）、偵測啟發式邏輯、已知限制與測試涵蓋。</li>
+</ul>
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">ntop/nDPI 官方 GitHub</a> 與 <a href="https://deepwiki.com/ntop/nDPI" target="_blank" rel="noopener">DeepWiki</a>（索引 2025-12-05）。內容如與官方最新版不符，請以官方為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#twelve-steps">官方的 12 個步驟</a>
+      <a class="toc-h2" href="#registration">協定註冊</a>
+      <a class="toc-h2" href="#template">解析器範本</a>
+      <a class="toc-h2" href="#staged">多階段偵測與延伸解析</a>
+      <a class="toc-h2" href="#helpers">常用輔助工具</a>
+      <a class="toc-h2" href="#detection-methods">四種偵測手段可以並用</a>
+      <a class="toc-h2" href="#testing">測試與驗證</a>
+      <a class="toc-h2" href="#best-practices">最佳實務</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>
