@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>執行期核心功能 — NVIDIA Warp 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Warp</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://nvidia.github.io/warp/v1.14/user_guide/runtime.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="basics.html">基礎入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="runtime.html" class="current">執行期核心功能</a>
+        <a href="devices.html">裝置・串流・並行</a>
+        <a href="differentiability.html">可微分性</a>
+        <div class="nav-group-title">進階主題</div>
+        <a href="tiles.html">Tile 程式設計</a>
+        <a href="generics.html">泛型與程式碼生成</a>
+        <a href="interop.html">互操作性</a>
+        <div class="nav-group-title">模組與參考</div>
+        <a href="modules.html">領域模組</a>
+        <a href="faq.html">FAQ・除錯・限制</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="runtime">執行期核心功能<a class="anchor" href="#runtime" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://nvidia.github.io/warp/v1.14/user_guide/runtime.html">Runtime</a> 章節——Warp 執行期 API 的完整參考：陣列、資料型別、CUDA Graph 與空間計算原語。</p>
+</blockquote>
+
+<h2 id="陣列">陣列進階<a class="anchor" href="#陣列" aria-hidden="true">#</a></h2>
+<p>陣列是 Warp 最基本的記憶體抽象。建構方式：</p>
+<pre><code class="language-python">wp.empty(shape=1024, dtype=wp.vec3, device="cpu")   # 未初始化
+wp.zeros(shape=1024, dtype=float, device="cuda")     # 零初始化
+wp.full(shape=1024, value=10, dtype=int, device="cuda")
+
+r = np.random.rand(1024)
+a = wp.array(r, dtype=float, device="cpu")               # 複製到 Warp 自有記憶體
+a = wp.array(r, dtype=float, copy=False, device="cpu")   # 零拷貝包裝 NumPy 資料
+a = wp.array(r, dtype=float, device="cuda")              # 複製上 GPU
+</code></pre>
+<ul>
+<li>多維外部資料必須明確給 <code>dtype</code>（如 <code>(1024, 3)</code> 的 NumPy 陣列 → <code>dtype=wp.vec3</code>）。</li>
+<li>可從任何實作 <code>__cuda_array_interface__</code> 的物件（CuPy、PyTorch……）零拷貝建構——但該協定不含裝置資訊，<strong>務必明確指定 <code>device</code></strong>。</li>
+<li>搬移與複製：<code>array.to("cuda")</code> 跨裝置搬移;<code>wp.copy(dest, src)</code> 跨記憶體空間複製;另有 <code>wp.zeros_like</code>、<code>wp.ones_like</code>、<code>wp.full_like</code>、<code>wp.empty_like</code>、<code>wp.clone</code>。</li>
+</ul>
+<h3 id="多維與切片">多維陣列與切片<a class="anchor" href="#多維與切片" aria-hidden="true">#</a></h3>
+<pre><code class="language-python">wp.zeros(shape=(1024, 16), dtype=float, device="cuda")
+
+@wp.kernel
+def test(input: wp.array2d[float]):
+    i, j = wp.tid()
+    value = input[i, j]   # 取單一元素
+    row = input[i]        # 取 1D 切片（一列）
+</code></pre>
+<p>切片可串接（<code>array[i][j][k]</code>）並可傳給 <code>@wp.func</code>（函式需宣告對應維度）；目前僅支援單索引切片。</p>
+<h3 id="indexed-arrays">索引陣列（Indexed Arrays）<a class="anchor" href="#indexed-arrays" aria-hidden="true">#</a></h3>
+<p>用整數索引陣列對 <code>wp.array</code> 做進階索引會得到 <code>wp.indexedarray</code>——現有陣列的輕量 view，讓 kernel <strong>不需複製</strong>就能操作任意子集：</p>
+<pre><code class="language-python">arr = wp.array((1.23, 2.34, 3.45, 4.56, 5.67, 6.78), device="cuda")
+idx = wp.array((1, 3, 5), dtype=wp.int32, device="cuda")
+sub = arr[idx]        # indexedarray，只看奇數位置的元素
+</code></pre>
+<h3 id="structured-arrays">結構化陣列與 kernel 內陣列<a class="anchor" href="#structured-arrays" aria-hidden="true">#</a></h3>
+<ul>
+<li><strong>struct 陣列</strong>：<code>@wp.struct</code> 型別可作為 <code>dtype</code>;CPU 上的 struct 陣列可用 NumPy structured array 零拷貝檢視與修改,也能先在 NumPy 準備好再轉成 Warp 陣列（支援巢狀 struct 與向量成員）。</li>
+<li><strong>kernel 內建立陣列</strong>（Local Arrays）僅限兩種形式:<code>wp.array(ptr=..., shape=..., dtype=...)</code> 把現有記憶體重新詮釋成別的形狀,或 <code>wp.zeros(shape=N, dtype=float)</code> 配置編譯期常數大小的暫存陣列（支援索引、切片與 <code>wp.lower_bound</code> 等操作）。</li>
+</ul>
+
+<h2 id="型別">資料型別<a class="anchor" href="#型別" aria-hidden="true">#</a></h2>
+<h3 id="scalar">純量<a class="anchor" href="#scalar" aria-hidden="true">#</a></h3>
+<p><code>bool</code>、<code>int8/16/32/64</code>、<code>uint8/16/32/64</code>、<code>float16</code>、<code>bfloat16</code>、<code>float32</code>、<code>float64</code>；<code>float</code> 與 <code>int</code> 是 <code>float32</code>／<code>int32</code> 的別名。</p>
+<blockquote><p><strong>bfloat16 注意</strong>：NumPy 原生不支援 bfloat16，Warp 內部以 <code>uint16</code> 儲存——沒裝 <a href="https://github.com/jax-ml/ml-dtypes" target="_blank" rel="noopener">ml-dtypes</a> 時 <code>.numpy()</code> 與 <code>print()</code> 會顯示原始整數值（<code>pip install ml-dtypes</code> 即可正常顯示）。<code>wp.to_torch()</code>／<code>wp.to_jax()</code> 不受影響，永遠產生正確的 bfloat16 張量。</p></blockquote>
+<h3 id="vector-matrix">向量・矩陣・四元數・變換<a class="anchor" href="#vector-matrix" aria-hidden="true">#</a></h3>
+<table>
+<thead><tr><th>類別</th><th>內建型別</th><th>自訂長度／精度</th></tr></thead>
+<tbody>
+<tr><td>向量</td><td><code>vec2/3/4</code>＋型別後綴（<code>vec3d</code>＝double、<code>vec3h</code>＝half、<code>vec3i</code>＝int……）、6D <code>spatial_vector</code></td><td><code>wp.types.vector(length=5, dtype=wp.float64)</code></td></tr>
+<tr><td>矩陣</td><td><code>mat22/33/44</code>＋後綴、<code>spatial_matrix</code>（6×6）</td><td><code>wp.types.matrix(shape=(3,2), dtype=wp.float16)</code></td></tr>
+<tr><td>四元數</td><td><code>quat</code>（<code>quatf/quatd/quath</code>）——<strong>XYZW</strong> 順序（向量部在前）</td><td>—</td></tr>
+<tr><td>變換</td><td><code>transform</code>（7D：位置 p ＋ 四元數 q）</td><td><code>wp.types.transformation(dtype=wp.float64)</code></td></tr>
+</tbody>
+</table>
+<pre><code class="language-python">@wp.kernel
+def compute():
+    # 由平移與旋轉建構變換
+    t = wp.transform(
+            wp.vec3(1.0, 2.0, 3.0),
+            wp.quat_from_axis_angle(wp.vec3(0.0, 1.0, 0.0), wp.radians(30.0)))
+
+    p = wp.transform_point(t, wp.vec3(10.0, 0.5, 1.0))   # 變換點
+    v = wp.transform_vector(t, wp.vec3(10.0, 0.5, 1.0))  # 變換向量（忽略平移）
+</code></pre>
+<p>向量／矩陣／四元數／struct 都支援索引、切片、unpacking 與型別轉換；struct 還能定義運算子多載（<code>__add__</code> 等）。完整函式清單見官方 <a href="https://nvidia.github.io/warp/v1.14/language_reference/builtins.html" target="_blank" rel="noopener">Built-Ins</a>。</p>
+
+<h2 id="常數">常數<a class="anchor" href="#常數" aria-hidden="true">#</a></h2>
+<p>kernel 可以讀取外部定義的 Python 變數，視為<strong>編譯期常數</strong>。<code>wp.constant()</code> 已非必要，但能提供型別檢查並標明意圖：</p>
+<pre><code class="language-python">TYPE_SPHERE = wp.constant(0)
+TYPE_CUBE = wp.constant(1)
+
+@wp.kernel
+def collide(geometry: wp.array[int]):
+    t = geometry[wp.tid()]
+    if t == TYPE_SPHERE:
+        print("sphere")
+    elif t == TYPE_CUBE:
+        print("cube")
+</code></pre>
+<p>內建數學常數：<code>wp.PI</code>、<code>wp.HALF_PI</code>、<code>wp.TAU</code>、<code>wp.E</code>、<code>wp.PHI</code>、<code>wp.LN2</code>、<code>wp.INF</code>、<code>wp.NAN</code> 等（皆有小寫版本）。<code>wp.NAN</code> 僅限浮點型別，比較遵循 IEEE 754（NaN ≠ NaN），用 <code>wp.isnan()</code> 檢測。被參照的 Python 變數若會變動，行為細節見<a href="generics.html#codegen">程式碼生成</a>。</p>
+
+<h2 id="graphs">CUDA Graph<a class="anchor" href="#graphs" aria-hidden="true">#</a></h2>
+<p>從 Python 發射 kernel 的 CPU 開銷遠大於原生程式。<strong>CUDA Graph</strong> 可以錄下一大批 kernel launch，之後以極低的 CPU 開銷重播——RL 訓練等重複執行相同計算的場景必備：</p>
+<pre><code class="language-python"># 建議用 ScopedCapture（確保例外時也會結束擷取）
+with wp.ScopedCapture(device="cuda") as capture:
+    for i in range(100):
+        wp.launch(kernel=compute1, inputs=[a, b], device="cuda")
+
+# 重播（可多次，幾乎沒有 Python 開銷）
+wp.capture_launch(capture.graph)
+</code></pre>
+<ul>
+<li>也可用 <code>wp.capture_begin()</code>／<code>wp.capture_end()</code>（務必搭配 <code>try-finally</code>，否則例外會讓 stream 卡在擷取狀態）。</li>
+<li>只有 launch 呼叫會被錄進 graph——kernel 之外的 Python 邏輯不會。建 graph 有開銷，<strong>重複使用才划算</strong>。</li>
+<li>與會在擷取期間做懶初始化 CUDA 呼叫的函式庫（如 PyTorch）共用時，用 <code>capture_mode=wp.CaptureMode.RELAXED</code>。</li>
+<li><strong>條件執行</strong>：<code>wp.capture_if()</code>（依 GPU 上的條件值走 on_true／on_false 分支）與 <code>wp.capture_while()</code>（GPU 端 while 迴圈）讓 graph 內含動態控制流，不需回到 CPU 判斷。</li>
+<li><strong>CPU Graph</strong>：同一套 API 也支援在 CPU 裝置上錄製;錄好的 graph 還能<strong>序列化存檔</strong>，之後從 Python 或獨立 C++ 程式重播（部署場景不需 Python）。</li>
+</ul>
+
+<h2 id="spatial">空間計算原語<a class="anchor" href="#spatial" aria-hidden="true">#</a></h2>
+<p>Warp 內建幾何資料結構，全部以 <code>uint64</code> 的 <code>id</code> 傳入 kernel 使用：</p>
+<h3 id="mesh">Mesh（三角網格）<a class="anchor" href="#mesh" aria-hidden="true">#</a></h3>
+<pre><code class="language-python">mesh = wp.Mesh(points=points, indices=indices)   # 可另附 velocities
+
+@wp.kernel
+def closest_point_example(mesh: wp.uint64, query_points: wp.array[wp.vec3], closest: wp.array[wp.vec3]):
+    tid = wp.tid()
+    query = wp.mesh_query_point(mesh, query_points[tid], max_dist=10.0)
+    if query.result:
+        closest[tid] = wp.mesh_eval_position(mesh, query.face, query.u, query.v)
+
+wp.launch(closest_point_example, dim=query_points.shape,
+          inputs=[mesh.id, query_points], outputs=[closest], device="cuda:0")
+</code></pre>
+<ul>
+<li>幾何查詢：<code>wp.mesh_query_point()</code>（最近點，回傳命中面與重心座標）、<code>wp.mesh_query_ray()</code>（光線投射，回傳距離、法線、面索引）等。</li>
+<li>頂點位置可在執行期直接改 points buffer，之後呼叫 <code>mesh.refit()</code> 重建 BVH;<strong>拓撲（indices）不可更新</strong>，需重建 Mesh。</li>
+</ul>
+<h3 id="hashgrid">HashGrid(空間鄰居查詢)<a class="anchor" href="#hashgrid" aria-hidden="true">#</a></h3>
+<p>DEM、SPH 等粒子法的鄰居搜尋加速結構：</p>
+<pre><code class="language-python">grid = wp.HashGrid(dim_x=8, dim_y=8, dim_z=8, device="cuda:0")
+grid.build(points=p, radius=r)
+
+@wp.kernel
+def count_neighbors(grid: wp.uint64, points: wp.array[wp.vec3],
+                    radius: float, neighbor_count: wp.array[int]):
+    tid = wp.tid()
+    point = points[tid]
+    count = int(0)
+    for index in wp.hash_grid_query(grid, point, radius):
+        if index != tid and wp.length(points[index] - point) <= radius:
+            count += 1
+    neighbor_count[tid] = count
+</code></pre>
+<blockquote><p>查詢回傳的是「半徑內<strong>格子</strong>裡的所有點」，可能包含半徑外的點——<strong>使用者要自己檢查距離</strong>（kernel 通常本來就要算距離，避免重複計算）。</p></blockquote>
+<h3 id="volume">Volume・Texture・BVH<a class="anchor" href="#volume" aria-hidden="true">#</a></h3>
+<ul>
+<li><strong>Volume（NanoVDB 稀疏體積）</strong>：大範圍網格資料（SDF、流場）的稀疏表示。可從 <code>.nvdb</code> 檔（<code>load_from_nvdb()</code>）、記憶體緩衝或稠密 NumPy 陣列建立;kernel 內可直接存取 voxel 或用最近點／三線性內插從世界／局部空間取樣。</li>
+<li><strong>Texture</strong>：1D／2D／3D 紋理物件（RGBA 或單通道），提供硬體內插取樣。</li>
+<li><strong>BVH</strong>:對一組 AABB 建立包圍體階層,kernel 內用 <code>wp.bvh_query_ray()</code>／<code>wp.bvh_query_aabb()</code> 遍歷。</li>
+<li><strong>Marching Cubes</strong>：<code>wp.MarchingCubes</code> 從 3D 純量場萃取等值面三角網格；也可自訂實作。</li>
+</ul>
+<blockquote><p><strong>物件生命週期陷阱</strong>：Mesh／HashGrid／Volume／BVH 的 <code>id</code> 只是整數，<strong>不會</strong>保住 Python 物件——若只存 <code>id</code> 而丟掉物件參考，物件可能被 GC 回收導致 kernel 讀到懸空記憶體。務必在使用期間保留這些物件的參考。</p></blockquote>
+
+<h2 id="rng">亂數生成<a class="anchor" href="#rng" aria-hidden="true">#</a></h2>
+<p>kernel 內先用 <code>wp.rand_init(seed, offset)</code> 初始化 RNG 狀態（PCG 演算法），再呼叫 <code>wp.randf()</code> 等亂數函式：</p>
+<pre><code class="language-python">@wp.kernel
+def rand_kernel(seed: int, out_rand: wp.array[float]):
+    i = wp.tid()
+    rng = wp.rand_init(seed, i)   # offset 用執行緒索引，確保每條執行緒序列不同
+    out_rand[i] = wp.randf(rng)
+</code></pre>
+<ul>
+<li>RNG 狀態會在每次呼叫時內部更新——連續呼叫產生不同的數。</li>
+<li><strong>避免相關序列</strong>：不同 kernel 或同一 kernel 的多次 launch 若用同一個 seed，會產生相同／相關的亂數——每次 launch 遞增 seed。</li>
+</ul>
+
+<h2 id="其他">其他執行期功能<a class="anchor" href="#其他" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>功能</th><th>說明</th><th>官方原文</th></tr></thead>
+<tbody>
+<tr><td>Runtime Kernel Creation</td><td>執行期動態建立 kernel（closure 方式），見<a href="generics.html#動態kernel">泛型與程式碼生成</a></td><td><a href="https://nvidia.github.io/warp/v1.14/user_guide/runtime.html#runtime-kernel-creation">連結</a></td></tr>
+<tr><td>Launch Objects</td><td><code>wp.launch(..., record_cmd=True)</code> 回傳可重複執行的 Launch 物件，降低重複 launch 開銷</td><td><a href="https://nvidia.github.io/warp/v1.14/user_guide/runtime.html#launch-objects">連結</a></td></tr>
+<tr><td>Profiling</td><td><code>wp.ScopedTimer</code> 計時器，深入用法見 <a href="faq.html#profiling">效能分析</a></td><td><a href="https://nvidia.github.io/warp/v1.14/deep_dive/profiling.html">連結</a></td></tr>
+<tr><td>Allocation Tracking</td><td>追蹤記憶體配置，協助找出洩漏與峰值用量</td><td><a href="https://nvidia.github.io/warp/v1.14/user_guide/runtime.html#allocation-tracking">連結</a></td></tr>
+<tr><td>IPC</td><td>跨行程共享 GPU 陣列（Interprocess Communication）</td><td><a href="https://nvidia.github.io/warp/v1.14/user_guide/runtime.html#interprocess-communication-ipc">連結</a></td></tr>
+<tr><td>LTO Cache</td><td>Tile 的 MathDx LTO 編譯產物快取</td><td><a href="https://nvidia.github.io/warp/v1.14/user_guide/runtime.html#lto-cache">連結</a></td></tr>
+</tbody>
+</table>
+
+<footer class="page-footer">
+  <p>本頁整理自 NVIDIA Warp 官方文檔 1.14.0。內容以官方為準。下一步：<a href="devices.html">裝置・串流・並行 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#陣列">陣列進階</a>
+      <a href="#多維與切片" class="toc-h3">多維陣列與切片</a>
+      <a href="#indexed-arrays" class="toc-h3">索引陣列</a>
+      <a href="#structured-arrays" class="toc-h3">結構化／kernel 內陣列</a>
+      <a href="#型別">資料型別</a>
+      <a href="#常數">常數</a>
+      <a href="#graphs">CUDA Graph</a>
+      <a href="#spatial">空間計算原語</a>
+      <a href="#mesh" class="toc-h3">Mesh</a>
+      <a href="#hashgrid" class="toc-h3">HashGrid</a>
+      <a href="#volume" class="toc-h3">Volume・Texture・BVH</a>
+      <a href="#rng">亂數生成</a>
+      <a href="#其他">其他執行期功能</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

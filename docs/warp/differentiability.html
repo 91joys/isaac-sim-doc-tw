@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>可微分性 — NVIDIA Warp 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Warp</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://nvidia.github.io/warp/v1.14/user_guide/differentiability.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="basics.html">基礎入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="runtime.html">執行期核心功能</a>
+        <a href="devices.html">裝置・串流・並行</a>
+        <a href="differentiability.html" class="current">可微分性</a>
+        <div class="nav-group-title">進階主題</div>
+        <a href="tiles.html">Tile 程式設計</a>
+        <a href="generics.html">泛型與程式碼生成</a>
+        <a href="interop.html">互操作性</a>
+        <div class="nav-group-title">模組與參考</div>
+        <a href="modules.html">領域模組</a>
+        <a href="faq.html">FAQ・除錯・限制</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="可微分性">可微分性<a class="anchor" href="#可微分性" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://nvidia.github.io/warp/v1.14/user_guide/differentiability.html">Differentiability</a> 章節——Warp 最獨特的能力：每個 kernel 都自動有反向版本。</p>
+</blockquote>
+
+<h2 id="tape">wp.Tape：記錄與反向傳播<a class="anchor" href="#tape" aria-hidden="true">#</a></h2>
+<p>Warp 預設為每個 kernel 生成<strong>前向與反向（adjoint）兩個版本</strong>。反向 kernel 可用來計算損失函數的梯度，再回傳給 PyTorch 等機器學習框架。用法三步驟：</p>
+<ol>
+<li>參與梯度計算的陣列以 <code>requires_grad=True</code> 建立;</li>
+<li>用 <code>wp.Tape</code> 記錄 kernel launch;</li>
+<li><code>tape.backward(loss)</code> 反向傳播，之後從 <code>array.grad</code> 讀梯度。</li>
+</ol>
+<pre><code class="language-python">a = wp.zeros(1024, dtype=wp.vec3, device="cuda", requires_grad=True)
+
+tape = wp.Tape()
+
+# 前向:記錄計算
+with tape:
+    wp.launch(kernel=compute1, inputs=[a, b], device="cuda")
+    wp.launch(kernel=compute2, inputs=[c, d], device="cuda")
+    wp.launch(kernel=loss, inputs=[d, l], device="cuda")
+
+# 反向傳播
+tape.backward(l)
+
+# 損失對輸入 a 的梯度
+print(a.grad)
+</code></pre>
+<ul>
+<li>重複使用同一批 buffer 做多次反向傳播前，先呼叫 <code>tape.zero()</code> 歸零梯度。</li>
+<li>輸出梯度在反向過程中預設會被消耗（歸零）;要在 backward 後檢查中間陣列的梯度，建立時加 <code>retain_grad=True</code>——但<strong>僅限每個元素最多被寫一次</strong>的陣列，否則梯度會被重複計算。</li>
+</ul>
+
+<h2 id="overwrites">陣列覆寫陷阱<a class="anchor" href="#overwrites" aria-hidden="true">#</a></h2>
+<p>自動微分需要保存前向的中間結果供反向使用;<strong>覆寫先前結果會導致錯誤的梯度</strong>。PyTorch／JAX 每個運算都隱式配置新記憶體來迴避這個問題;Warp 的記憶體由使用者管理——當輸出陣列被後續 launch 覆寫時，Warp 只會正確傳播「最後一次寫入」的梯度（與 PyTorch／JAX 行為一致）。習慣寫法：<strong>每個 kernel 的輸出用獨立陣列</strong>，如同 PyTorch 的 <code>y = f(x)</code> 隱式配置 <code>y</code>：</p>
+<pre><code class="language-python">@wp.kernel
+def kernel_func(x: wp.array[float], y: wp.array[float]):
+    tid = wp.tid()
+    y[tid] = x[tid] ** 2.0 + 3.0 * x[tid] + 1.0
+
+x = wp.array([1.0, 2.0, 3.0], dtype=float, requires_grad=True)
+y = wp.zeros_like(x)   # 輸出用獨立陣列
+
+tape = wp.Tape()
+with tape:
+    wp.launch(kernel_func, x.shape, inputs=[x], outputs=[y])
+tape.backward(grads={y: wp.ones_like(x)})
+
+print(x.grad)   # [5. 7. 9.]
+</code></pre>
+<p>開發時可開啟<strong>覆寫追蹤</strong>（<code>wp.config.verify_autograd_array_access = True</code>），Warp 會在偵測到「先寫後讀以外的覆寫模式」時發出警告。另外 <code>wp.copy()</code>、<code>wp.clone()</code> 都是可微分的，梯度會流過複製操作。</p>
+
+<h2 id="jacobians">Jacobian 計算<a class="anchor" href="#jacobians" aria-hidden="true">#</a></h2>
+<p>對多值函數 f: Rⁿ→Rᵐ，把選擇向量 e 傳給 <code>tape.backward(grads={output: e})</code> 即可一次算出 Jacobian 的一整列（Jᵀe）：</p>
+<pre><code class="language-python">jacobian = np.empty((output_dim, input_dim), dtype=np.float32)
+
+tape = wp.Tape()
+with tape:
+    output_buffer = launch_kernels_to_be_differentiated(input_buffer)
+
+for output_index in range(output_dim):
+    # 選擇要微分的輸出列
+    select_index = np.zeros(output_dim)
+    select_index[output_index] = 1.0
+    e = wp.array(select_index, dtype=wp.float32)
+
+    tape.backward(grads={output_buffer: e})
+    jacobian[output_index, :] = tape.gradients[input_buffer].numpy()
+    tape.zero()   # 下一列前歸零
+</code></pre>
+<p>多個獨立環境平行模擬時，整體 Jacobian 是塊對角矩陣——把選擇向量 <code>np.tile(select_index, num_envs)</code> 展開，就能<strong>一次算出所有環境的同一列</strong>（RL 常用技巧）。</p>
+<h3 id="wp-grad">kernel 內的 wp.grad()<a class="anchor" href="#wp-grad" aria-hidden="true">#</a></h3>
+<p>若只需要「單一 Warp 函式」的偏導數，<code>wp.grad(func)</code> 比 tape 高效——單次 launch 內同時算前向值與整列 Jacobian，不用每列跑一次反向：</p>
+<pre><code class="language-python">@wp.func
+def squared_norm(x: float, y: float):
+    return x * x + y * y
+
+@wp.kernel(enable_backward=False)
+def compute_jacobian(x: wp.array[float], y: wp.array[float],
+                     z: wp.array[float], J: wp.array2d[float]):
+    i = wp.tid()
+    z[i] = squared_norm(x[i], y[i])            # 前向
+    grad_x, grad_y = wp.grad(squared_norm)(x[i], y[i])  # 偏導數
+    J[i, 0] = grad_x
+    J[i, 1] = grad_y
+</code></pre>
+
+<h2 id="custom-grad">自訂梯度與 replay 函式<a class="anchor" href="#custom-grad" aria-hidden="true">#</a></h2>
+<p>鏈式法則 h′(x) = f′(g(x)) · g′(x) 中，函式需要提供前向重演版本（<em>replay</em>，預設同原定義）與導數（<em>grad</em>），兩者都可以自訂覆蓋自動生成的版本。典型應用——擋掉非有限梯度：</p>
+<pre><code class="language-python">@wp.func
+def safe_sqrt(x: float):
+    return wp.sqrt(x)
+
+# 自動微分在 x=0 會得到 inf 梯度;自訂 grad 函式擋掉它:
+@wp.func_grad(safe_sqrt)
+def adj_safe_sqrt(x: float, adj_ret: float):
+    if x > 0.0:
+        wp.adjoint[x] += 1.0 / (2.0 * wp.sqrt(x)) * adj_ret
+
+# xs.grad: [0.5, 0.354, 0.]   ← x=0 處不再是 inf
+</code></pre>
+<ul>
+<li>自訂 grad 的簽名＝前向函式的輸入＋各輸出的 adjoint 變數;用 <code>wp.adjoint[參數] += ...</code> 累加偏導數。</li>
+<li><code>@wp.func_replay(myfunc)</code> 自訂反向過程中重演前向的方式（例如避免重算昂貴的中間值）。</li>
+<li>限制：泛型參數（<code>Any</code>）的函式暫不支援自訂 replay／grad。</li>
+<li>更底層的 <strong>custom native functions</strong> 允許直接嵌入 C++/CUDA 程式碼並提供對應的 adjoint 實作。</li>
+</ul>
+
+<h2 id="debug">梯度除錯<a class="anchor" href="#debug" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong><code>warp.autograd.gradcheck()</code></strong>：以有限差分驗證 kernel 的自動微分梯度;<code>gradcheck_tape()</code> 驗證整卷 tape。</li>
+<li><strong><code>jacobian()</code>／<code>jacobian_fd()</code></strong>：算出 kernel 所有輸入／輸出組合的 Jacobian（autodiff 與有限差分版本），並可視覺化比較。</li>
+<li><strong><code>tape.visualize()</code></strong>：輸出 GraphViz dot 檔，檢視記錄下來的計算圖。</li>
+<li><strong>覆寫追蹤</strong>：<code>wp.config.verify_autograd_array_access = True</code> 自動偵測會破壞梯度的陣列覆寫。</li>
+</ul>
+
+<h2 id="限制">限制與對策<a class="anchor" href="#限制" aria-hidden="true">#</a></h2>
+<p>Warp 用<strong>原始碼轉換</strong>做自動微分，反向需要前向的中間值，因此可微分 kernel 有幾條規則：</p>
+<table>
+<thead><tr><th>限制</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td>就地乘除不可微</td><td><code>+=</code>／<code>-=</code> 可微;<code>*=</code>／<code>/=</code> 反向會得到錯誤結果（<code>wp.config.log_level = wp.LOG_DEBUG</code> 時編譯會警告）</td></tr>
+<tr><td>向量／矩陣／四元數分量賦值</td><td>區域變數的每個分量<strong>只能賦值一次</strong>;之後可用 <code>+=</code>／<code>-=</code> 更新，但重新 <code>=</code> 賦值會破壞梯度</td></tr>
+<tr><td>動態迴圈</td><td>反向不會重演／展開動態迴圈——adjoint 若依賴迴圈中間值（如連乘），梯度會錯;純累加（如連加）沒問題。對策：迴圈次數改用編譯期常數讓 Warp 展開，或把迴圈拆成多次 kernel launch</td></tr>
+</tbody>
+</table>
+<blockquote><p><strong>相關工具</strong>：<code>warp.optim</code> 提供 Adam、SGD 等最佳化器直接搭配 Warp 梯度使用;非平滑函式（如 <code>wp.abs()</code> 在 x=0）的次梯度處理見 <a href="faq.html">FAQ</a>;與 PyTorch autograd 的橋接（<code>torch.autograd.Function</code>）見<a href="interop.html">互操作性</a>。</p></blockquote>
+
+<footer class="page-footer">
+  <p>本頁整理自 NVIDIA Warp 官方文檔 1.14.0。內容以官方為準。下一步：<a href="tiles.html">Tile 程式設計 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#tape">wp.Tape：記錄與反向</a>
+      <a href="#overwrites">陣列覆寫陷阱</a>
+      <a href="#jacobians">Jacobian 計算</a>
+      <a href="#wp-grad" class="toc-h3">kernel 內的 wp.grad()</a>
+      <a href="#custom-grad">自訂梯度與 replay</a>
+      <a href="#debug">梯度除錯</a>
+      <a href="#限制">限制與對策</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>中文文檔大全</title>
-  <meta name="description" content="中文文檔大全：NVIDIA Isaac Sim、Newton Physics 與 nDPI 官方文檔的完整中文整理">
+  <meta name="description" content="中文文檔大全：NVIDIA Isaac Sim、Newton Physics、NVIDIA Warp 與 nDPI 官方文檔的完整中文整理">
   <style>
     * { box-sizing: border-box; }
     body {
@@ -56,11 +56,13 @@
     .site-card.isaac { border-top-color: #76b900; }
     .site-card.newton { border-top-color: #1e88e5; }
     .site-card.ndpi { border-top-color: #14a89e; }
+    .site-card.warp { border-top-color: #7e57c2; }
     .site-card .logo { font-size: 2.2rem; margin-bottom: 10px; }
     .site-card h2 { margin: 0 0 4px; font-size: 1.5rem; }
     .site-card h2 .hl-isaac { color: #5a8f00; }
     .site-card h2 .hl-newton { color: #1565c0; }
     .site-card h2 .hl-ndpi { color: #0b7a72; }
+    .site-card h2 .hl-warp { color: #5e35b1; }
     .site-card .tagline { color: #57606a; font-size: 0.95rem; margin: 0 0 16px; }
     .site-card ul {
       margin: 0 0 18px;
@@ -82,6 +84,7 @@
     .site-card.isaac li::before { color: #76b900; }
     .site-card.newton li::before { color: #1e88e5; }
     .site-card.ndpi li::before { color: #14a89e; }
+    .site-card.warp li::before { color: #7e57c2; }
     .enter {
       display: inline-block;
       align-self: flex-start;
@@ -94,6 +97,7 @@
     .site-card.isaac .enter { background: #76b900; color: #10151a; }
     .site-card.newton .enter { background: #1e88e5; }
     .site-card.ndpi .enter { background: #0b7a72; }
+    .site-card.warp .enter { background: #5e35b1; }
     .section {
       max-width: 1020px;
       margin: 56px auto;
@@ -140,6 +144,7 @@
     <span class="badge">繁體中文</span>
     <span class="badge">Isaac Sim 6.0.1</span>
     <span class="badge">Newton Physics 1.3.0</span>
+    <span class="badge">Warp 1.14.0</span>
     <span class="badge">nDPI 5.0</span>
     <span class="badge">非官方學習資源</span>
   </div>
@@ -170,6 +175,19 @@
       <li>多世界平行模擬、感測器、視覺化與 Isaac Lab 整合</li>
     </ul>
     <span class="enter">進入 Newton 文檔 →</span>
+  </a>
+
+  <a class="site-card warp" href="warp/index.html">
+    <div class="logo">⚡</div>
+    <h2><span class="hl-warp">Warp</span> 中文文檔</h2>
+    <p class="tagline">NVIDIA 開源 Python GPU 計算框架——把 Python 函式 JIT 編譯成 CUDA kernel，可微分、內建幾何原語，Newton 的底層引擎。</p>
+    <ul>
+      <li>總覽文檔：kernel／launch／array 心智模型與框架比較</li>
+      <li>核心主題：執行期功能、多 GPU 與串流、可微分性</li>
+      <li>進階：Tile 程式設計（Tensor Core）、泛型、PyTorch／JAX 互通</li>
+      <li>領域模組：稀疏矩陣、FEM 工具組、渲染</li>
+    </ul>
+    <span class="enter">進入 Warp 文檔 →</span>
   </a>
 
   <a class="site-card ndpi" href="ndpi/index.html">
@@ -204,7 +222,7 @@
 </section>
 
 <footer class="site-footer">
-  <p>本站內容整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a> 與 <a href="https://newton-physics.github.io/newton/stable/guide/overview.html" target="_blank" rel="noopener">Newton Physics 官方文檔</a>。內容如與最新版官方文檔不符，請以官方為準。<br>本站為非官方學習資源。</p>
+  <p>本站內容整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>、<a href="https://newton-physics.github.io/newton/stable/guide/overview.html" target="_blank" rel="noopener">Newton Physics 官方文檔</a> 與 <a href="https://nvidia.github.io/warp/v1.14/index.html" target="_blank" rel="noopener">NVIDIA Warp 官方文檔</a>。內容如與最新版官方文檔不符，請以官方為準。<br>本站為非官方學習資源。</p>
 </footer>
 </body>
 </html>

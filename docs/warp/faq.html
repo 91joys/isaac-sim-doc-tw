@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAQ・除錯・限制 — NVIDIA Warp 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Warp</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://nvidia.github.io/warp/v1.14/user_guide/faq.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="basics.html">基礎入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="runtime.html">執行期核心功能</a>
+        <a href="devices.html">裝置・串流・並行</a>
+        <a href="differentiability.html">可微分性</a>
+        <div class="nav-group-title">進階主題</div>
+        <a href="tiles.html">Tile 程式設計</a>
+        <a href="generics.html">泛型與程式碼生成</a>
+        <a href="interop.html">互操作性</a>
+        <div class="nav-group-title">模組與參考</div>
+        <a href="modules.html">領域模組</a>
+        <a href="faq.html" class="current">FAQ・除錯・限制</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="faq">FAQ・除錯・限制<a class="anchor" href="#faq" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://nvidia.github.io/warp/v1.14/user_guide/faq.html">FAQ</a>、<a href="https://nvidia.github.io/warp/v1.14/user_guide/debugging.html">Debugging</a>、<a href="https://nvidia.github.io/warp/v1.14/user_guide/limitations.html">Limitations</a> 與 <a href="https://nvidia.github.io/warp/v1.14/deep_dive/profiling.html">Profiling</a> 章節。</p>
+</blockquote>
+
+<h2 id="常見問題">常見問題<a class="anchor" href="#常見問題" aria-hidden="true">#</a></h2>
+<h3 id="定位">Warp 與 Numba／Taichi／CuPy／PyTorch 是什麼關係？<a class="anchor" href="#定位" aria-hidden="true">#</a></h3>
+<p>與 Numba／Taichi 同屬 kernel 級 GPU 程式設計，差異在於：Warp 提供 <strong>kernel 自動微分</strong>、以 C++/CUDA 為中間表示（易掛接 C++ 函式庫）、內建網格／稀疏體積／點雲／USD 等幾何資料結構。與 PyTorch／JAX 非競爭關係——張量運算用它們，稀疏／條件邏輯／異質負載用 Warp，透過 <code>__cuda_array_interface__</code> 共享資料（詳見<a href="docs.html#比較">總覽文檔</a>）。</p>
+<h3 id="取代">該從 IsaacGym／PhysX 換成 Warp 嗎？<a class="anchor" href="#取代" aria-hidden="true">#</a></h3>
+<p>不是替代品——Warp 的模擬能力主要服務<strong>需要可微分物理</strong>的開發者，不是完整物理引擎。Warp 也整合於 IsaacGym，適合做 RL 的獎勵／觀測計算等輔助工作。完整物理引擎見 <a href="../newton/index.html">Newton</a>。</p>
+<h3 id="同步時機">什麼時候該呼叫 wp.synchronize()？<a class="anchor" href="#同步時機" aria-hidden="true">#</a></h3>
+<p><strong>幾乎永遠不用</strong>。同步昂貴，Warp 會自動處理操作間的相依（如 <code>array.numpy()</code> 隱式同步）。唯一需要手動同步的情境：用 <code>wp.copy()</code> 非同步複製回 CPU 後、呼叫 <code>.numpy()</code> 之前。細節見<a href="devices.html#同步指引">同步指引</a>。</p>
+<h3 id="外部賦值">為什麼 kernel 外不能對 Warp 陣列賦值？<a class="anchor" href="#外部賦值" aria-hidden="true">#</a></h3>
+<p>Python scope 的逐元素存取（<code>array[i] = 1.0</code>）需要極慢的裝置同步與複製,所以不支援。替代方案：從原生陣列初始化、launch kernel 設值,或用 <code>wp.full(8, 1.23, dtype=float)</code>、<code>arr.fill_(1.23)</code>、<code>arr[:4].fill_(1.23)</code>。</p>
+<h3 id="abs梯度">微分 wp.abs(x) 這類非平滑函式會怎樣？<a class="anchor" href="#abs梯度" aria-hidden="true">#</a></h3>
+<p>y=|x| 在 x=0 沒有唯一梯度（只有次梯度集合）;Warp 與多數自動微分框架一樣任選其一（<code>wp.abs()</code> 在原點取 1.0）。多數最佳化器（尤其隨機性的）對此不敏感。</p>
+<h3 id="多gpu-faq">支援多 GPU 嗎？<a class="anchor" href="#多gpu-faq" aria-hidden="true">#</a></h3>
+<p>支援——單一行程內即可跨多卡配置、launch 與複製（<code>cuda:0</code>／<code>cuda:1</code> 別名）;搭配 CUDA-aware MPI 的 mpi4py 也可以把 GPU 陣列直接傳給 MPI 呼叫。見<a href="devices.html#多gpu">多 GPU 程式設計</a>。</p>
+<h3 id="聯絡">如何回報問題？<a class="anchor" href="#聯絡" aria-hidden="true">#</a></h3>
+<p>Bug／功能請求／技術問題用 <a href="https://github.com/NVIDIA/warp/issues" target="_blank" rel="noopener">GitHub Issues</a>;其他事項寄 warp-python@nvidia.com。</p>
+
+<h2 id="debugging">除錯<a class="anchor" href="#debugging" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>環境診斷</strong>：<code>python -m warp.utils --diagnostics</code> 印出版本、驅動、裝置等資訊。</li>
+<li><strong>印值</strong>：kernel 內 <code>print(v)</code> 支援全部內建型別;純量可用 C 風格 <code>wp.printf("%f %d\n", x, i)</code>。</li>
+<li><strong>日誌</strong>：<code>wp.config.log_level = wp.LOG_DEBUG</code>、<code>wp.config.verbose_warnings = True</code>（含來源位置），也可掛自訂 logger。</li>
+<li><strong>Debug 模式</strong>：<code>wp.config.mode = "debug"</code>（或逐模組 <code>wp.set_module_options({"mode": "debug"})</code>）——啟用陣列越界檢查、tid 溢位警告、裝置碼行號。</li>
+<li><strong>斷言</strong>：debug 模式下 kernel 內的 <code>assert cond, "訊息"</code> 生效，失敗時中斷並印出位置。</li>
+<li><strong>單步除錯</strong>：CPU kernel 可用一般 C++ 除錯器（Visual Studio／gdb）;GPU 用 <code>cuda-gdb</code>。</li>
+<li><strong>檢視生成碼</strong>:kernel 快取目錄裡有生成的 <code>.cu</code>／<code>.cpp</code> 原始碼,<code>wp.config.line_directives = True</code> 可映射回 Python 行號。</li>
+<li><strong>CUDA 錯誤驗證</strong>：<code>wp.config.verify_cuda = True</code> 在每次操作後檢查 CUDA 錯誤（慢，僅除錯用）。</li>
+<li><strong>非有限值偵測</strong>：<code>wp.config.verify_fp = True</code> 檢查 NaN／Inf;搭配 <code>wp.isnan()</code>／<code>wp.isfinite()</code>。</li>
+<li><strong>CUDA 工具</strong>：<code>compute-sanitizer</code>（memcheck／racecheck）等 CUDA Toolkit 工具皆適用。</li>
+</ul>
+
+<h2 id="profiling">效能分析<a class="anchor" href="#profiling" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong><code>wp.ScopedTimer("label")</code></strong>：預設量 CPU 排程時間（不同步）;<code>synchronize=True</code> 量含裝置執行的總時間;<code>use_nvtx=True</code> 發 NVTX 範圍給 Nsight;<code>cuda_filter</code> 開啟 CUDA activity 分析（逐 kernel 計時）。</li>
+<li><strong>CUDA Event 計時</strong>：<code>wp.Event(enable_timing=True)</code>＋<code>wp.get_event_elapsed_time()</code> 精確量 GPU 區段。</li>
+<li><strong>Nsight Systems／Compute</strong>：系統級時間軸與單 kernel 深度分析;Warp 的 NVTX 標記讓時間軸更可讀。</li>
+<li><strong>模組編譯分析</strong>：找出編譯耗時的 kernel，配合 <a href="generics.html#aot">AOT 工作流程</a>預熱快取。</li>
+</ul>
+
+<h2 id="限制">語言限制清單<a class="anchor" href="#限制" aria-hidden="true">#</a></h2>
+<h3 id="不支援特性">kernel 內不支援的 Python 特性<a class="anchor" href="#不支援特性" aria-hidden="true">#</a></h3>
+<p>lambda、list comprehension、例外處理、遞迴、<code>eval()</code>、動態資料結構（list／set／dict）——這些特性上 GPU 都是效能陷阱，Warp 刻意不支援以避免效能懸崖。</p>
+<h3 id="其他限制">其他重要限制<a class="anchor" href="#其他限制" aria-hidden="true">#</a></h3>
+<table>
+<thead><tr><th>類別</th><th>限制</th></tr></thead>
+<tbody>
+<tr><td>kernel／函式</td><td>字串不能傳入 kernel;<code>wp.tid()</code> 不能在使用者函式內呼叫;<code>wp.atomic_add()</code> 對 float16/bfloat16 需 compute capability 7.0+（否則回傳 0）;模組已載入後修改 <code>wp.constant()</code> 不會觸發重編譯</td></tr>
+<tr><td>launch 網格</td><td>每一維 ≤ 2³¹−1;超出 CUDA block 硬體限制時自動退回 grid-stride loop（可用 <code>max_blocks</code> 微調）</td></tr>
+<tr><td>陣列</td><td>最多 4 維;每維 ≤ 2³¹−1;無複數型別</td></tr>
+<tr><td>struct</td><td>成員不能是泛型（<code>Any</code>）;不支援繼承（用組合替代）</td></tr>
+<tr><td>Volume</td><td>tile 配置後拓撲不可變</td></tr>
+<tr><td>多行程</td><td>父行程的 CUDA context 不能用於 <em>fork</em> 的子行程（改用 spawn）;多行程共用 kernel 快取目錄可能出問題（每行程獨立目錄）</td></tr>
+<tr><td>純量數學</td><td>低精度型別的數學函式多以 float32 模擬;精度與平台相關細節見官方原文</td></tr>
+<tr><td>變數作用域</td><td>kernel 內變數作用域規則與 Python 略有差異（迴圈變數等）;見官方 <a href="https://nvidia.github.io/warp/v1.14/user_guide/limitations.html#variable-scope" target="_blank" rel="noopener">Variable Scope</a></td></tr>
+</tbody>
+</table>
+<p>可微分性相關限制（就地乘除、動態迴圈……）見<a href="differentiability.html#限制">可微分性・限制與對策</a>;tile 相關 FAQ 見 <a href="tiles.html#faq">Tile 程式設計</a>。</p>
+
+<footer class="page-footer">
+  <p>本頁整理自 NVIDIA Warp 官方文檔 1.14.0。內容以官方為準。回到<a href="index.html">首頁</a>或<a href="docs.html">總覽文檔</a>。</p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#常見問題">常見問題</a>
+      <a href="#定位" class="toc-h3">與其他框架的關係</a>
+      <a href="#同步時機" class="toc-h3">wp.synchronize() 時機</a>
+      <a href="#外部賦值" class="toc-h3">kernel 外賦值</a>
+      <a href="#debugging">除錯</a>
+      <a href="#profiling">效能分析</a>
+      <a href="#限制">語言限制清單</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NVIDIA Warp 中文文檔</title>
+  <meta name="description" content="NVIDIA Warp 1.14 官方文檔中文版：把 Python 函式 JIT 編譯成 GPU kernel 的高效能模擬與空間計算框架完整中文導覽">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">Warp</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html" class="active">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://nvidia.github.io/warp/v1.14/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+
+<main class="content-full">
+  <section class="hero">
+    <h1>NVIDIA <span class="hl">Warp</span> 中文文檔</h1>
+    <p class="sub">把普通 Python 函式 JIT 編譯成高效能 CPU／GPU kernel 的 Python 框架——為模擬、機器人學與機器學習而生，內建幾何處理原語、全程可微分，並與 PyTorch／JAX 無縫互通。Newton Physics 與 MuJoCo Warp 都建構於其上。</p>
+    <div class="badges">
+      <span class="badge">依據官方文檔 1.14.0（stable）</span>
+      <span class="badge">Python → C++/CUDA JIT</span>
+      <span class="badge">Apache-2.0 開源</span>
+      <span class="badge">繁體中文</span>
+    </div>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="installation.html">安裝與快速入門</a>
+      <a class="btn btn-ghost" href="docs.html">閱讀總覽文檔</a>
+    </div>
+  </section>
+
+  <div class="cards">
+    <a class="card" href="docs.html">
+      <div class="icon">📘</div>
+      <h3>總覽文檔</h3>
+      <p>Warp 是什麼、與 Numba／Taichi／CuPy／PyTorch 的差異、kernel 編譯模型與生態系（Newton、MuJoCo Warp），一頁建立完整心智模型。</p>
+      <span class="go">前往閱讀 →</span>
+    </a>
+    <a class="card" href="installation.html">
+      <div class="icon">💿</div>
+      <h3>安裝與快速入門</h3>
+      <p>pip／conda 安裝、CUDA 驅動需求、從原始碼建置，到第一個 kernel：長度 1024 的向量運算跑上 GPU。</p>
+      <span class="go">開始安裝 →</span>
+    </a>
+    <a class="card" href="basics.html">
+      <div class="icon">🚀</div>
+      <h3>基礎入門</h3>
+      <p>@wp.kernel、wp.launch()、wp.array、使用者函式與 struct——強型別、值語義與編譯快取，Warp 程式設計的第一課。</p>
+      <span class="go">開始學習 →</span>
+    </a>
+    <a class="card" href="differentiability.html">
+      <div class="icon">🎯</div>
+      <h3>可微分性</h3>
+      <p>wp.Tape() 自動生成反向 kernel：requires_grad、Jacobian、自訂梯度函式與陣列覆寫陷阱——Warp 最獨特的能力。</p>
+      <span class="go">深入了解 →</span>
+    </a>
+    <a class="card" href="tiles.html">
+      <div class="icon">🧱</div>
+      <h3>Tile 程式設計</h3>
+      <p>SIMT 之上的 block 級協作運算：tile load／store、tile_matmul、FFT 與 Cholesky，用 Tensor Core 加速 GEMM。</p>
+      <span class="go">前往閱讀 →</span>
+    </a>
+  </div>
+
+  <section class="section" id="sections">
+    <h2>全部章節</h2>
+    <p>依官方文檔章節組織的中文專題頁，每頁附完整官方原文連結對照。</p>
+    <div class="feature-grid">
+      <a class="card" href="runtime.html">
+        <div class="icon">⚙️</div>
+        <h3>執行期核心功能</h3>
+        <p>陣列進階（多維、索引、結構化）、資料型別、常數與運算子，以及 Mesh／Volume／HashGrid／BVH 空間計算原語。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="devices.html">
+        <div class="icon">🖥️</div>
+        <h3>裝置・串流・並行</h3>
+        <p>cpu／cuda:0 裝置模型、ScopedDevice、多 GPU、Stream 與 Event、CUDA Graph 與記憶體池配置器。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="differentiability.html">
+        <div class="icon">🎯</div>
+        <h3>可微分性</h3>
+        <p>wp.Tape 反向傳播、Jacobian、custom_grad／custom_replay、梯度除錯與常見陷阱。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="tiles.html">
+        <div class="icon">🧱</div>
+        <h3>Tile 程式設計</h3>
+        <p>block 級執行模型、tile 儲存（register／shared）、GEMM 範例與 MathDx 連結。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="generics.html">
+        <div class="icon">🧬</div>
+        <h3>泛型與程式碼生成</h3>
+        <p>泛型 kernel／函式、wp.static() 靜態運算式、動態 kernel 建立與 AOT 編譯工作流程。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="interop.html">
+        <div class="icon">🔗</div>
+        <h3>互操作性</h3>
+        <p>NumPy、PyTorch、JAX、CuPy、Paddle 與 DLPack——零拷貝共享記憶體與跨框架微分。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="modules.html">
+        <div class="icon">📦</div>
+        <h3>領域模組</h3>
+        <p>warp.sparse 稀疏矩陣與迭代求解器、warp.fem 有限元素工具組、warp.render 渲染器。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="faq.html">
+        <div class="icon">❓</div>
+        <h3>FAQ・除錯・限制</h3>
+        <p>與其他 GPU 框架的比較、wp.synchronize() 時機、除錯工具、效能分析與語言限制清單。</p>
+        <span class="go">前往 →</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>建議學習路徑</h2>
+    <ol>
+      <li><a href="docs.html">總覽文檔</a>：先理解 Warp 的定位——kernel 級 GPU 程式設計，而非張量框架。</li>
+      <li><a href="installation.html">安裝與快速入門</a>：<code>pip install warp-lang</code>，跑起第一個 GPU kernel。</li>
+      <li><a href="basics.html">基礎入門</a>：掌握 <code>@wp.kernel</code> → <code>wp.launch()</code> → <code>wp.array</code> 的資料流與編譯模型。</li>
+      <li><a href="runtime.html">執行期核心功能</a>：陣列進階操作與 Mesh／Volume／HashGrid 空間計算原語。</li>
+      <li><a href="differentiability.html">可微分性</a>：用 <code>wp.Tape()</code> 讓梯度反向流過整段模擬。</li>
+      <li><a href="interop.html">互操作性</a>：把 Warp kernel 接進 PyTorch／JAX 訓練管線。</li>
+      <li>依方向深入：<a href="tiles.html">Tile 程式設計</a>（效能）、<a href="devices.html">多 GPU 與 CUDA Graph</a>（規模化）、<a href="modules.html">領域模組</a>（FEM／稀疏矩陣），或到 <a href="faq.html">FAQ</a> 查限制與除錯技巧。</li>
+    </ol>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>本站內容整理自 <a href="https://nvidia.github.io/warp/v1.14/index.html" target="_blank" rel="noopener">NVIDIA Warp 官方文檔</a>（1.14.0）。內容如與最新版官方文檔不符，請以官方為準。<br>Warp 由 NVIDIA 開發（Apache-2.0）；本站為非官方學習資源。 · <a href="../index.html">返回中文文檔大全</a></p>
+</footer>
+<script src="assets/script.js"></script>
+</body>
+</html>

@@ -24,6 +24,19 @@ docs/
 │   ├── visualization.html 視覺化
 │   ├── tutorials.html  教學與範例
 │   └── faq.html        FAQ・整合・遷移
+├── warp/           ← NVIDIA Warp 中文文檔（Warp 1.14.0）
+│   ├── index.html      Warp 首頁
+│   ├── docs.html       總覽文檔
+│   ├── installation.html 安裝與快速入門
+│   ├── basics.html     基礎入門（kernel、array、struct）
+│   ├── runtime.html    執行期核心功能（CUDA Graph、Mesh、Volume…）
+│   ├── devices.html    裝置・串流・並行
+│   ├── differentiability.html 可微分性（wp.Tape、Jacobian）
+│   ├── tiles.html      Tile 程式設計（Tensor Core）
+│   ├── generics.html   泛型與程式碼生成
+│   ├── interop.html    互操作性（PyTorch、JAX、DLPack）
+│   ├── modules.html    領域模組（sparse、fem、render）
+│   └── faq.html        FAQ・除錯・限制
 └── ndpi/           ← nDPI 中文文檔（nDPI 5.0）
     ├── index.html      nDPI 首頁
     ├── docs.html       總覽文檔
@@ -46,6 +59,7 @@ docs/
 
 - [Isaac Sim 官方文檔](https://docs.isaacsim.omniverse.nvidia.com/latest/index.html)（6.0.1）
 - [Newton Physics 官方文檔](https://newton-physics.github.io/newton/stable/guide/overview.html)（1.3.0，CC-BY-4.0）
+- [NVIDIA Warp 官方文檔](https://nvidia.github.io/warp/v1.14/index.html)（1.14.0）
 - [ntop/nDPI 官方 GitHub](https://github.com/ntop/nDPI) 與 [DeepWiki](https://deepwiki.com/ntop/nDPI)（nDPI 5.0，索引 2025-12-05）
 
 內容如與最新版官方文檔不符，請以官方為準。本站為非官方學習資源。

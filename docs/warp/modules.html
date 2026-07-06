@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>領域模組 — NVIDIA Warp 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Warp</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://nvidia.github.io/warp/v1.14/domain_modules/sparse.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="basics.html">基礎入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="runtime.html">執行期核心功能</a>
+        <a href="devices.html">裝置・串流・並行</a>
+        <a href="differentiability.html">可微分性</a>
+        <div class="nav-group-title">進階主題</div>
+        <a href="tiles.html">Tile 程式設計</a>
+        <a href="generics.html">泛型與程式碼生成</a>
+        <a href="interop.html">互操作性</a>
+        <div class="nav-group-title">模組與參考</div>
+        <a href="modules.html" class="current">領域模組</a>
+        <a href="faq.html">FAQ・除錯・限制</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="modules">領域模組<a class="anchor" href="#modules" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 Domain Modules 章節：<a href="https://nvidia.github.io/warp/v1.14/domain_modules/sparse.html">Sparse Matrices</a>、<a href="https://nvidia.github.io/warp/v1.14/domain_modules/fem.html">FEM Toolkit</a> 與 <a href="https://nvidia.github.io/warp/v1.14/domain_modules/render.html">Rendering</a>。</p>
+</blockquote>
+
+<h2 id="sparse">warp.sparse：稀疏矩陣<a class="anchor" href="#sparse" aria-hidden="true">#</a></h2>
+<p><code>warp.sparse</code> 實作模擬常用的稀疏線性代數,核心是 <strong>BSR（Block Sparse Row）矩陣</strong>——CSR 是 block 為 1×1 的特例。最常見的建構方式是 COO 座標三元組：</p>
+<pre><code class="language-python">from warp.sparse import bsr_from_triplets, bsr_zeros, bsr_identity, bsr_diag
+
+rows = wp.array([0, 1, 2], dtype=int)
+cols = wp.array([1, 2, 3], dtype=int)
+vals = wp.array([...], dtype=float)
+
+A = bsr_from_triplets(rows_of_blocks=2, cols_of_blocks=2,
+                      rows=rows, columns=cols, values=vals)
+
+# 特殊矩陣
+Z = bsr_zeros(4, 4, block_type=wp.float32)      # 1×1 block = CSR
+B = bsr_zeros(2, 2, block_type=wp.mat33)        # 3×3 block
+I = bsr_identity(rows_of_blocks=4, block_type=wp.float32)
+D = bsr_diag(diag=wp.array([1.0, 2.0, 3.0, 4.0]))
+</code></pre>
+<ul>
+<li>block 可為矩形（<code>wp.mat23</code>）;<code>bsr_copy()</code>／<code>bsr_assign()</code> 可轉換 block 大小（需整除相容）與純量型別。</li>
+<li>支援矩陣加減、縮放、轉置、矩陣乘法與 matrix-vector 乘積等常用運算。</li>
+</ul>
+<h3 id="solvers">迭代線性求解器<a class="anchor" href="#solvers" aria-hidden="true">#</a></h3>
+<p><code>warp.optim.linear</code> 提供四種迭代求解器（皆可加前置條件器）：<strong>CG</strong>（共軛梯度）、<strong>CR</strong>（共軛殘差）、<strong>BiCGSTAB</strong>、<strong>GMRES</strong>：</p>
+<pre><code class="language-python">from warp.optim.linear import cg
+
+x = cg(A, b, x=x, maxiter=100, tol=1e-6)   # 解 Ax = b
+</code></pre>
+<p>除稀疏矩陣外也接受稠密 2D Warp 陣列，或用 <code>LinearOperator</code> 介面自訂運算子。</p>
+
+<h2 id="fem">warp.fem：有限元素工具組<a class="anchor" href="#fem" aria-hidden="true">#</a></h2>
+<p><code>warp.fem</code> 用 Galerkin 有限元素法求解微分方程描述的物理系統（擴散、對流、流體、彈性……），設計目標是快速實驗各種 FEM 形式與離散化方案。</p>
+<h3 id="integrands">Integrand（積分形式）<a class="anchor" href="#integrands" aria-hidden="true">#</a></h3>
+<pre><code class="language-python">from warp.fem import integrand, Sample, Domain, Field, grad
+
+@integrand
+def linear_form(s: Sample, domain: Domain, v: Field):
+    x = domain(s)                        # 取樣點的世界座標
+    return v(s) * wp.max(0.0, 1.0 - wp.length(x))
+
+@integrand
+def diffusion_form(s: Sample, u: Field, v: Field, nu: float):
+    return nu * wp.dot(grad(u, s), grad(v, s))
+</code></pre>
+<p>integrand 是普通的 Warp kernel（可呼叫任意 Warp 函式），但接受三種特殊參數：<code>Sample</code>（目前積分取樣點）、<code>Field</code>（抽象場，呼叫時代換為離散場／test／trial 場，以 <code>u(s)</code> 求值）、<code>Domain</code>（抽象積分域，提供 <code>normal()</code> 等運算子）。integrand 不能直接 <code>wp.launch()</code>，要經由 <code>integrate()</code>／<code>interpolate()</code> 呼叫，Field 參數用 <code>fields={...}</code>、一般參數用 <code>values={...}</code> 傳入。</p>
+<h3 id="workflow">基本工作流程<a class="anchor" href="#workflow" aria-hidden="true">#</a></h3>
+<ol>
+<li><strong>Geometry</strong>：2D／3D 規則網格、NanoVDB 體積、三角／四邊形／四面體／六面體非結構網格。</li>
+<li><strong>FunctionSpace</strong>：<code>make_polynomial_space()</code> 為幾何配上形函數——Lagrange（連續／不連續）、Serendipity（k≤3）、Nédélec／Raviart-Thomas 向量形函數、B-spline。</li>
+<li><strong>積分域</strong>：<code>Cells</code>（單元）或 <code>BoundarySides</code>（邊界）。</li>
+<li><strong>線性形式 → 右端項</strong>：<code>make_test()</code> 定 test 函數，<code>integrate()</code> 得 <code>wp.array</code>。</li>
+<li><strong>雙線性形式 → 系統矩陣</strong>：<code>make_trial()</code> 定 trial 函數，<code>integrate()</code> 得 <code>BsrMatrix</code>——test／trial 可屬不同空間（Mixed FEM）。</li>
+<li><strong>求解</strong>：交給上述迭代求解器。</li>
+</ol>
+<pre><code class="language-python"># 節錄自 warp/examples/fem/example_diffusion.py
+geo = Grid2D(res=wp.vec2i(resolution))
+scalar_space = make_polynomial_space(geo, degree=degree)
+
+domain = Cells(geometry=geo)
+test = make_test(space=scalar_space, domain=domain)
+rhs = integrate(linear_form, fields={"v": test})
+
+trial = make_trial(space=scalar_space, domain=domain)
+matrix = integrate(diffusion_form, fields={"u": trial, "v": test},
+                   values={"nu": viscosity})
+
+x = cg(matrix, rhs, ...)
+</code></pre>
+<p>進階功能：自適應網格（adaptivity）、粒子式積分（PicQuadrature，支援 APIC 流體）、非協調接觸、場運算子（divergence、curl……）與視覺化輔助。入門範例：<code>example_diffusion.py</code>、<code>example_diffusion_3d.py</code>、<code>example_mixed_elasticity.py</code> 等（見<a href="installation.html#範例庫">範例庫</a>）。</p>
+
+<h2 id="render">warp.render：渲染<a class="anchor" href="#render" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>元件</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><code>OpenGLRenderer</code></td><td>互動式即時播放——主要用於除錯（需 pyglet）</td></tr>
+<tr><td><code>UsdRenderer</code></td><td>把場景輸出成 <strong>USD 檔</strong>，再交給外部 3D 應用（Omniverse、Blender……）做精緻渲染（需 usd-core）</td></tr>
+<tr><td><code>wp.RegisteredGLBuffer</code></td><td><strong>CUDA 圖形互通</strong>——把 OpenGL buffer 註冊給 CUDA，直接映射為 Warp 陣列在 kernel 中讀寫，免 CPU↔GPU 來回複製</td></tr>
+</tbody>
+</table>
+
+<h2 id="sim">warp.sim 呢？<a class="anchor" href="#sim" aria-hidden="true">#</a></h2>
+<blockquote><p>舊版 Warp 內建的 <code>warp.sim</code> 物理模擬模組<strong>已棄用並移出</strong>——其功能由 <a href="https://github.com/newton-physics/newton" target="_blank" rel="noopener">Newton Physics</a> 承接（同樣建構於 Warp、由 Disney Research／Google DeepMind／NVIDIA 維護）。物理模擬需求請參考本站的 <a href="../newton/index.html">Newton 中文文檔</a>，遷移指南見 <a href="../newton/faq.html">Newton FAQ・整合・遷移</a>。</p></blockquote>
+
+<footer class="page-footer">
+  <p>本頁整理自 NVIDIA Warp 官方文檔 1.14.0。內容以官方為準。下一步：<a href="faq.html">FAQ・除錯・限制 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#sparse">warp.sparse：稀疏矩陣</a>
+      <a href="#solvers" class="toc-h3">迭代線性求解器</a>
+      <a href="#fem">warp.fem：有限元素</a>
+      <a href="#integrands" class="toc-h3">Integrand</a>
+      <a href="#workflow" class="toc-h3">基本工作流程</a>
+      <a href="#render">warp.render：渲染</a>
+      <a href="#sim">warp.sim 呢？</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

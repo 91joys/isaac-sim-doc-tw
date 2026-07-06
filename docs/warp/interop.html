@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>互操作性 — NVIDIA Warp 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Warp</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://nvidia.github.io/warp/v1.14/user_guide/interoperability.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="basics.html">基礎入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="runtime.html">執行期核心功能</a>
+        <a href="devices.html">裝置・串流・並行</a>
+        <a href="differentiability.html">可微分性</a>
+        <div class="nav-group-title">進階主題</div>
+        <a href="tiles.html">Tile 程式設計</a>
+        <a href="generics.html">泛型與程式碼生成</a>
+        <a href="interop.html" class="current">互操作性</a>
+        <div class="nav-group-title">模組與參考</div>
+        <a href="modules.html">領域模組</a>
+        <a href="faq.html">FAQ・除錯・限制</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="interop">互操作性<a class="anchor" href="#interop" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://nvidia.github.io/warp/v1.14/user_guide/interoperability.html">Interoperability</a>、<a href="https://nvidia.github.io/warp/v1.14/user_guide/interoperability_pytorch.html">PyTorch Interoperability</a> 與 <a href="https://nvidia.github.io/warp/v1.14/user_guide/interoperability_jax.html">JAX Interoperability</a> 章節。</p>
+</blockquote>
+
+<h2 id="總覽">快速對照<a class="anchor" href="#總覽" aria-hidden="true">#</a></h2>
+<p>Warp 透過標準協定（<code>__array__</code>、<code>__array_interface__</code>、<code>__cuda_array_interface__</code>）與其他框架互通，NumPy／CuPy／PyTorch／JAX／Paddle 都適用：</p>
+<table>
+<thead><tr><th>框架</th><th>轉換函式</th><th>零拷貝</th><th>梯度感知</th></tr></thead>
+<tbody>
+<tr><td>NumPy</td><td><code>wp.from_numpy</code>／<code>array.numpy()</code></td><td>僅 CPU</td><td>否</td></tr>
+<tr><td>PyTorch</td><td><code>wp.from_torch</code>／<code>wp.to_torch</code></td><td>是</td><td><strong>是</strong></td></tr>
+<tr><td>JAX</td><td><code>wp.from_jax</code>／<code>wp.to_jax</code></td><td>是</td><td>經 <code>jax_kernel</code></td></tr>
+<tr><td>Paddle</td><td><code>wp.from_paddle</code>／<code>wp.to_paddle</code></td><td>是</td><td>是</td></tr>
+<tr><td>CuPy／Numba</td><td><code>__cuda_array_interface__</code> 協定</td><td>是</td><td>否</td></tr>
+<tr><td>DLPack</td><td><code>wp.from_dlpack</code>／<code>wp.to_dlpack</code></td><td>是</td><td>否</td></tr>
+</tbody>
+</table>
+
+<h2 id="直接傳遞">最快上手：外部陣列直接傳給 kernel<a class="anchor" href="#直接傳遞" aria-hidden="true">#</a></h2>
+<p>實作了 <code>__array_interface__</code>（CPU）或 <code>__cuda_array_interface__</code>（GPU）的物件可以<strong>不經轉換</strong>直接放進 <code>wp.launch()</code> 的 inputs：</p>
+<pre><code class="language-python">@wp.kernel
+def saxpy(x: wp.array[float], y: wp.array[float], a: float):
+    i = wp.tid()
+    y[i] = a * x[i] + y[i]
+
+# NumPy 陣列直接傳入（CPU）
+x = np.arange(n, dtype=np.float32)
+y = np.ones(n, dtype=np.float32)
+wp.launch(saxpy, dim=n, inputs=[x, y, 1.0], device="cpu")
+
+# CuPy／PyTorch 張量直接傳入（GPU;陣列所在裝置需與 launch 裝置一致）
+x = cp.arange(n, dtype=cp.float32)
+y = cp.ones(n, dtype=cp.float32)
+wp.launch(saxpy, dim=n, inputs=[x, y, 1.0], device="cuda:0")
+</code></pre>
+
+<h2 id="pytorch">PyTorch<a class="anchor" href="#pytorch" aria-hidden="true">#</a></h2>
+<pre><code class="language-python">t = wp.to_torch(w)     # Warp → Torch（零拷貝）
+w = wp.from_torch(t)   # Torch → Warp（零拷貝）
+
+# 裝置與 dtype 對映工具
+torch_device = wp.device_to_torch("cuda:0")
+torch_dtype = wp.dtype_to_torch(wp.float32)
+warp_dtype = wp.dtype_from_torch(t.dtype)
+</code></pre>
+<ul>
+<li><strong>梯度自動橋接</strong>：轉換時 <code>requires_grad</code> 陣列的梯度 buffer 也一併轉換——Warp 陣列可直接參與 PyTorch autograd,如把 <code>wp.to_torch(xs)</code> 交給 <code>torch.optim.Adam</code>,用 <code>wp.Tape</code> 算梯度、Adam 更新。</li>
+<li><strong>接進 autograd 圖</strong>:定義 <code>torch.autograd.Function</code>,在 <code>forward()</code> 內 launch Warp kernel、<code>backward()</code> 內用 tape 反向;包在 <code>torch.compile()</code> 中會自動視為 opaque callable。</li>
+<li><strong>共用 CUDA Graph</strong>:PyTorch 與 Warp 操作可以錄進同一個 graph,但兩者必須在<strong>同一條非預設 stream</strong> 上——用 <code>wp.stream_from_torch()</code>／<code>wp.stream_to_torch()</code> 互換 stream 後再 <code>ScopedCapture</code>。</li>
+</ul>
+<h3 id="效能調校">效能調校<a class="anchor" href="#效能調校" aria-hidden="true">#</a></h3>
+<ul>
+<li><code>wp.from_torch()</code> 雖零拷貝但有 CPU 開銷——<strong>轉換一次、重複使用</strong>，不要在迴圈內反覆轉換。</li>
+<li>無法重用時（每輪都產生新張量），傳 <code>return_ctype=True</code> 取得低階陣列描述子——跳過建構 <code>wp.array</code> 物件，官方基準快約 2 倍;描述子可直接傳給 kernel，但不能用在其他需要 <code>wp.array</code> 的地方。</li>
+</ul>
+
+<h2 id="jax">JAX<a class="anchor" href="#jax" aria-hidden="true">#</a></h2>
+<pre><code class="language-python">warp_array = wp.from_jax(jax_array)
+jax_array = wp.to_jax(warp_array)
+</code></pre>
+<p>殺手級功能——<strong><code>jax_kernel()</code> 把 Warp kernel 變成 JAX primitive</strong>，可在 <code>@jax.jit</code> 函式內呼叫：</p>
+<pre><code class="language-python">from warp import jax_kernel
+
+@wp.kernel
+def triple_kernel(input: wp.array[float], output: wp.array[float]):
+    tid = wp.tid()
+    output[tid] = 3.0 * input[tid]
+
+jax_triple = jax_kernel(triple_kernel)
+
+@jax.jit
+def f():
+    x = jnp.arange(0, 64, dtype=jnp.float32)
+    return jax_triple(x)
+</code></pre>
+<ul>
+<li>kernel 簽名<strong>輸入在前、輸出在後</strong>，至少一個輸出陣列;多個輸出用 <code>num_outputs</code> 指定。</li>
+<li>可微分版本支援 JAX 的自動微分（forward／reverse）;另支援 sharding／多 GPU 場景。</li>
+<li>追求極致效能與 stream 同步控制時，可改用底層 DLPack 協定。</li>
+</ul>
+
+<h2 id="其他框架">Paddle・DLPack・CuPy／Numba<a class="anchor" href="#其他框架" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>Paddle</strong>：<code>wp.from_paddle</code>／<code>wp.to_paddle</code> 零拷貝且梯度感知（可把 Warp 陣列交給 <code>paddle.optimizer.Adam</code>）;stream 互換用 <code>wp.stream_from_paddle()</code>。效能調校原則同 PyTorch。</li>
+<li><strong>DLPack</strong>：跨框架標準張量協定——<code>wp.from_dlpack()</code>／<code>wp.to_dlpack()</code>，適合需要精細控制的場景。</li>
+<li><strong>CuPy／Numba</strong>：純協定層互通——Warp GPU 陣列暴露 <code>__cuda_array_interface__</code>，雙向皆可直接使用。</li>
+<li><strong>NumPy</strong>：<code>array.numpy()</code> 對 CPU 陣列回傳零拷貝 view、對 GPU 陣列先複製回主機;<code>np.array(warp_array)</code> 也可直接建構。dtype 對映用 <code>wp.dtype_to_numpy()</code>。</li>
+</ul>
+<blockquote><p><strong>提醒</strong>：從 <code>__cuda_array_interface__</code> 建構 Warp 陣列時，該協定不含裝置資訊——務必明確指定 <code>device</code>，確保與資料實際所在的 GPU 一致。</p></blockquote>
+
+<footer class="page-footer">
+  <p>本頁整理自 NVIDIA Warp 官方文檔 1.14.0。內容以官方為準。下一步：<a href="modules.html">領域模組 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#總覽">快速對照</a>
+      <a href="#直接傳遞">外部陣列直接傳遞</a>
+      <a href="#pytorch">PyTorch</a>
+      <a href="#效能調校" class="toc-h3">效能調校</a>
+      <a href="#jax">JAX</a>
+      <a href="#其他框架">Paddle・DLPack・CuPy</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

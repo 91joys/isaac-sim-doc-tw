@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>總覽文檔 — NVIDIA Warp 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Warp</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html" class="active">總覽文檔</a>
+    <a href="https://nvidia.github.io/warp/v1.14/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html" class="current">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="basics.html">基礎入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="runtime.html">執行期核心功能</a>
+        <a href="devices.html">裝置・串流・並行</a>
+        <a href="differentiability.html">可微分性</a>
+        <div class="nav-group-title">進階主題</div>
+        <a href="tiles.html">Tile 程式設計</a>
+        <a href="generics.html">泛型與程式碼生成</a>
+        <a href="interop.html">互操作性</a>
+        <div class="nav-group-title">模組與參考</div>
+        <a href="modules.html">領域模組</a>
+        <a href="faq.html">FAQ・除錯・限制</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="總覽">NVIDIA Warp 總覽文檔<a class="anchor" href="#總覽" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方文檔首頁與 <a href="https://nvidia.github.io/warp/v1.14/user_guide/basics.html">Basics</a>、<a href="https://nvidia.github.io/warp/v1.14/user_guide/faq.html">FAQ</a> 章節，依據 Warp 1.14.0（stable）。</p>
+</blockquote>
+
+<h2 id="warp-是什麼">Warp 是什麼<a class="anchor" href="#warp-是什麼" aria-hidden="true">#</a></h2>
+<p><strong>Warp 是一個把普通 Python 函式 JIT 編譯成高效能 kernel 程式碼的 Python 框架</strong>，編譯出的 kernel 可在 CPU 或 GPU 上執行，速度接近原生 C++/CUDA。它為 GPU 加速的模擬、機器人學與機器學習而設計，有三個核心賣點：</p>
+<ul>
+<li><strong>kernel 級程式設計</strong>：你控制的是「每一條執行緒做什麼」，而非整個張量的運算——對模擬與圖學中常見的稀疏、條件分支、異質工作負載遠比張量模型方便。</li>
+<li><strong>內建空間計算原語</strong>：三角網格（Mesh）、稀疏體積（NanoVDB Volume）、雜湊網格（HashGrid）、BVH、點雲、USD 資料都是一等公民，物理模擬與幾何處理開箱即用。</li>
+<li><strong>全程可微分</strong>：kernel 可自動生成反向傳播版本，用 <code>wp.Tape()</code> 記錄計算圖後即可 <code>tape.backward()</code>，與 PyTorch／JAX／Paddle 組成端到端可微分的機器學習管線。</li>
+</ul>
+<p>最小可執行範例——把 1024 個向量內積跑上 GPU：</p>
+<pre><code class="language-python">import warp as wp
+import numpy as np
+
+@wp.kernel
+def simple_kernel(a: wp.array[wp.vec3],
+                  b: wp.array[wp.vec3],
+                  c: wp.array[float]):
+    tid = wp.tid()          # 取得執行緒索引
+    c[tid] = wp.dot(a[tid], b[tid])
+
+n = 1024
+a = wp.array(np.random.rand(n, 3), dtype=wp.vec3, device="cuda")
+b = wp.array(np.random.rand(n, 3), dtype=wp.vec3, device="cuda")
+c = wp.zeros(n, dtype=float, device="cuda")
+
+wp.launch(simple_kernel, dim=n, inputs=[a, b, c], device="cuda")
+print(c.numpy())            # 自動同步並取回 CPU
+</code></pre>
+
+<h2 id="心智模型">三個核心概念：kernel、launch、array<a class="anchor" href="#心智模型" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>概念</th><th>角色</th><th>重點</th></tr></thead>
+<tbody>
+<tr><td><code>@wp.kernel</code></td><td>計算單元</td><td>Python 函式 → C++/CUDA kernel，與 CUDA kernel 一一對應；參數必須有型別註記，不能存取全域 Python 狀態</td></tr>
+<tr><td><code>wp.launch()</code></td><td>啟動 kernel</td><td>指定 <code>dim</code>（1D–4D 執行緒網格）、<code>inputs</code> 與 <code>device</code>；kernel 內用 <code>wp.tid()</code> 取得執行緒索引</td></tr>
+<tr><td><code>wp.array</code></td><td>資料容器</td><td>固定大小、最多 4 維的同質容器，住在 CPU 或 GPU 記憶體；<code>.numpy()</code> 取回主機端並自動同步</td></tr>
+</tbody>
+</table>
+<p>與 CPython 最大的差異是<strong>強型別</strong>：所有變數都有型別（由運算式與函式簽名推斷）、內建型別採<strong>值語義</strong>（<code>a = b</code> 是複製不是參考）、不支援 tuple 初始化與 Python list——小型集合用 <code>wp.vec3</code> 等向量型別，大型集合用 <code>wp.zeros()</code>。詳見<a href="basics.html">基礎入門</a>。</p>
+
+<h2 id="編譯模型">編譯模型<a class="anchor" href="#編譯模型" aria-hidden="true">#</a></h2>
+<p>Warp 採 <strong>Python → C++/CUDA 的 JIT 編譯模型</strong>：</p>
+<ol>
+<li>同一個 Python 模組內所有 <code>@wp.kernel</code> 在<strong>第一次 launch 時</strong>整批編譯成動態函式庫與 PTX。</li>
+<li>編譯結果以模組雜湊為鍵<strong>快取</strong>（如 <code>~/.cache/warp/1.14.0</code>），程式重啟後載入僅需數十毫秒——首次 <code>(compiled)</code>，之後 <code>(cached)</code>。</li>
+<li>使用 C++/CUDA 作為中間表示，因此很容易在 kernel 中掛接低階常式與現有 C++ 函式庫。</li>
+</ol>
+<p>進階的靜態運算式（<code>wp.static()</code>）、動態 kernel 建立與 AOT 編譯見<a href="generics.html">泛型與程式碼生成</a>。</p>
+
+<h2 id="比較">與其他 Python GPU 框架的關係<a class="anchor" href="#比較" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>框架</th><th>模型</th><th>與 Warp 的差異</th></tr></thead>
+<tbody>
+<tr><td><strong>Numba</strong></td><td>kernel 級</td><td>Numba 支援較大的 Python 子集；Warp 則提供 kernel 自動微分（機器學習關鍵）、以 C++/CUDA 為中間表示、內建幾何資料結構</td></tr>
+<tr><td><strong>Taichi</strong></td><td>kernel 級</td><td>概念相近；Warp 用 C++/CUDA 中間表示便於掛接 C++ 函式庫，且網格／稀疏體積／USD 是一等公民</td></tr>
+<tr><td><strong>CuPy</strong></td><td>張量級</td><td>CuPy 是 GPU 版 NumPy（陣列整體運算）；Warp 讓你控制個別執行緒</td></tr>
+<tr><td><strong>PyTorch／JAX</strong></td><td>張量級</td><td>非競爭關係：神經網路推論等張量運算用 PyTorch／JAX，稀疏／條件邏輯／異質負載用 Warp kernel，兩者以 <code>__cuda_array_interface__</code> 零拷貝共享資料（見<a href="interop.html">互操作性</a>）</td></tr>
+</tbody>
+</table>
+<blockquote><p><strong>一句話定位</strong>：需要「對每條執行緒的控制權」與「可微分」時用 Warp；純張量運算留給 PyTorch／JAX；Warp 不是物理引擎的替代品——需要完整物理引擎請用建構於 Warp 之上的 Newton。</p></blockquote>
+
+<h2 id="生態系">生態系：誰在用 Warp<a class="anchor" href="#生態系" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong><a href="https://github.com/newton-physics/newton" target="_blank" rel="noopener">Newton Physics</a></strong>：GPU 加速可微分物理引擎（Disney Research／Google DeepMind／NVIDIA），整個引擎以 Warp 撰寫——本站另有 <a href="../newton/index.html">Newton 中文文檔</a>。</li>
+<li><strong><a href="https://github.com/google-deepmind/mujoco_warp" target="_blank" rel="noopener">MuJoCo Warp</a></strong>：Google DeepMind 與 NVIDIA 維護的 GPU 最佳化 MuJoCo 物理模擬器。</li>
+<li><strong><a href="https://github.com/rewarped/rewarped" target="_blank" rel="noopener">Rewarped</a></strong>:平行可微分多物理模擬的強化學習平台。</li>
+<li><strong><a href="https://github.com/Autodesk/XLB" target="_blank" rel="noopener">XLB</a></strong>：Autodesk 維護的 Lattice Boltzmann 流體求解器（Warp 後端）。</li>
+<li><strong><a href="https://github.com/zeshunzong/warp-mpm" target="_blank" rel="noopener">warp-mpm</a></strong>：MPM 模擬器，用於 PhysGaussian 等生成動力學研究。</li>
+</ul>
+<p>Warp 也整合於 NVIDIA Omniverse（<code>omni.warp</code> extension），Isaac Sim 中亦可直接使用。</p>
+
+<h2 id="模組地圖">套件模組地圖<a class="anchor" href="#模組地圖" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>模組</th><th>內容</th><th>本站章節</th></tr></thead>
+<tbody>
+<tr><td><code>warp</code></td><td>核心：kernel、array、資料型別、Mesh／Volume／HashGrid／BVH、串流與 CUDA Graph</td><td><a href="basics.html">基礎入門</a>、<a href="runtime.html">執行期核心功能</a></td></tr>
+<tr><td><code>warp.autograd</code></td><td>梯度檢查與微分工具</td><td><a href="differentiability.html">可微分性</a></td></tr>
+<tr><td><code>warp.sparse</code></td><td>BSR／CSR 稀疏矩陣與迭代線性求解器</td><td><a href="modules.html#sparse">領域模組</a></td></tr>
+<tr><td><code>warp.fem</code></td><td>有限元素工具組（積分形式、函數空間、幾何）</td><td><a href="modules.html#fem">領域模組</a></td></tr>
+<tr><td><code>warp.render</code></td><td>OpenGL／USD 渲染器與 CUDA 圖形互通</td><td><a href="modules.html#render">領域模組</a></td></tr>
+<tr><td><code>warp.optim</code></td><td>Adam、SGD 等最佳化器</td><td><a href="differentiability.html">可微分性</a></td></tr>
+<tr><td><code>warp.sim</code></td><td>（已棄用）物理模擬模組——官方建議改用 <a href="../newton/index.html">Newton</a></td><td>—</td></tr>
+</tbody>
+</table>
+
+<h2 id="章節對照">章節對照：本站 ↔ 官方文檔<a class="anchor" href="#章節對照" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>本站章節</th><th>對應官方章節</th></tr></thead>
+<tbody>
+<tr><td><a href="installation.html">安裝與快速入門</a></td><td><a href="https://nvidia.github.io/warp/v1.14/user_guide/installation.html">Installation</a>、<a href="https://nvidia.github.io/warp/v1.14/user_guide/compatibility.html">Compatibility &amp; Support</a></td></tr>
+<tr><td><a href="basics.html">基礎入門</a></td><td><a href="https://nvidia.github.io/warp/v1.14/user_guide/basics.html">Basics</a></td></tr>
+<tr><td><a href="runtime.html">執行期核心功能</a></td><td><a href="https://nvidia.github.io/warp/v1.14/user_guide/runtime.html">Runtime</a></td></tr>
+<tr><td><a href="devices.html">裝置・串流・並行</a></td><td><a href="https://nvidia.github.io/warp/v1.14/user_guide/devices.html">Devices</a>、<a href="https://nvidia.github.io/warp/v1.14/deep_dive/concurrency.html">Concurrency</a>、<a href="https://nvidia.github.io/warp/v1.14/deep_dive/allocators.html">Allocators</a></td></tr>
+<tr><td><a href="differentiability.html">可微分性</a></td><td><a href="https://nvidia.github.io/warp/v1.14/user_guide/differentiability.html">Differentiability</a></td></tr>
+<tr><td><a href="tiles.html">Tile 程式設計</a></td><td><a href="https://nvidia.github.io/warp/v1.14/user_guide/tiles.html">Tiles</a></td></tr>
+<tr><td><a href="generics.html">泛型與程式碼生成</a></td><td><a href="https://nvidia.github.io/warp/v1.14/user_guide/generics.html">Generics</a>、<a href="https://nvidia.github.io/warp/v1.14/deep_dive/codegen.html">Code Generation</a></td></tr>
+<tr><td><a href="interop.html">互操作性</a></td><td><a href="https://nvidia.github.io/warp/v1.14/user_guide/interoperability.html">Interoperability</a>（含 <a href="https://nvidia.github.io/warp/v1.14/user_guide/interoperability_pytorch.html">PyTorch</a>／<a href="https://nvidia.github.io/warp/v1.14/user_guide/interoperability_jax.html">JAX</a>）</td></tr>
+<tr><td><a href="modules.html">領域模組</a></td><td><a href="https://nvidia.github.io/warp/v1.14/domain_modules/sparse.html">Sparse Matrices</a>、<a href="https://nvidia.github.io/warp/v1.14/domain_modules/fem.html">FEM Toolkit</a>、<a href="https://nvidia.github.io/warp/v1.14/domain_modules/render.html">Rendering</a></td></tr>
+<tr><td><a href="faq.html">FAQ・除錯・限制</a></td><td><a href="https://nvidia.github.io/warp/v1.14/user_guide/faq.html">FAQ</a>、<a href="https://nvidia.github.io/warp/v1.14/user_guide/debugging.html">Debugging</a>、<a href="https://nvidia.github.io/warp/v1.14/user_guide/limitations.html">Limitations</a>、<a href="https://nvidia.github.io/warp/v1.14/deep_dive/profiling.html">Profiling</a></td></tr>
+</tbody>
+</table>
+<p>官方另有 <a href="https://nvidia.github.io/warp/v1.14/api_reference/warp.html" target="_blank" rel="noopener">API Reference</a> 與 <a href="https://nvidia.github.io/warp/v1.14/language_reference/builtins.html" target="_blank" rel="noopener">Built-Ins 語言參考</a>（kernel 內可用的全部內建函式），屬查表性質，本站不另翻譯。</p>
+
+<footer class="page-footer">
+  <p>本頁整理自 NVIDIA Warp 官方文檔 1.14.0。內容以官方為準。下一步：<a href="installation.html">安裝與快速入門 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#warp-是什麼">Warp 是什麼</a>
+      <a href="#心智模型">三個核心概念</a>
+      <a href="#編譯模型">編譯模型</a>
+      <a href="#比較">與其他框架的關係</a>
+      <a href="#生態系">生態系</a>
+      <a href="#模組地圖">套件模組地圖</a>
+      <a href="#章節對照">章節對照</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

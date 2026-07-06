@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>安裝與快速入門 — NVIDIA Warp 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Warp</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://nvidia.github.io/warp/v1.14/user_guide/installation.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html" class="current">安裝與快速入門</a>
+        <a href="basics.html">基礎入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="runtime.html">執行期核心功能</a>
+        <a href="devices.html">裝置・串流・並行</a>
+        <a href="differentiability.html">可微分性</a>
+        <div class="nav-group-title">進階主題</div>
+        <a href="tiles.html">Tile 程式設計</a>
+        <a href="generics.html">泛型與程式碼生成</a>
+        <a href="interop.html">互操作性</a>
+        <div class="nav-group-title">模組與參考</div>
+        <a href="modules.html">領域模組</a>
+        <a href="faq.html">FAQ・除錯・限制</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="安裝">安裝與快速入門<a class="anchor" href="#安裝" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://nvidia.github.io/warp/v1.14/user_guide/installation.html">Installation</a> 與 <a href="https://nvidia.github.io/warp/v1.14/user_guide/compatibility.html">Compatibility &amp; Support</a> 章節。</p>
+</blockquote>
+
+<h2 id="系統需求">系統需求<a class="anchor" href="#系統需求" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>作業系統</th><th>架構</th><th>平台</th><th>支援狀態</th><th>加速器</th></tr></thead>
+<tbody>
+<tr><td>Windows 10/11</td><td>x86-64</td><td>PC</td><td>✅ 支援</td><td>CUDA</td></tr>
+<tr><td>Windows 11</td><td>arm64</td><td>PC</td><td>規劃中</td><td>CUDA（規劃中）</td></tr>
+<tr><td>Linux</td><td>x86-64</td><td>PC／伺服器</td><td>✅ 支援</td><td>CUDA</td></tr>
+<tr><td>Linux</td><td>aarch64</td><td>Jetson／伺服器</td><td>✅ 支援</td><td>CUDA</td></tr>
+<tr><td>macOS</td><td>arm64（Apple Silicon）</td><td>Mac</td><td>✅ 支援</td><td>僅 CPU</td></tr>
+<tr><td>macOS</td><td>x86-64（Intel）</td><td>Mac</td><td>已終止（用 1.9.x 以前版本）</td><td>無</td></tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Python 3.10 以上</strong>；必要相依套件只有 <strong>NumPy</strong>。</li>
+<li><strong>GPU 加速</strong>需要支援 CUDA 的 NVIDIA GPU:CUDA 12.x 套件最低 Maxwell（GTX 9xx、<code>sm_52</code>）,CUDA 13.x 套件最低 Turing（RTX 20xx、<code>sm_75</code>）。</li>
+<li><strong>驅動需求</strong>由「建置 Warp 所用的 CUDA Toolkit 版本」決定:CUDA 12.x 建置需驅動 <strong>525+</strong>,CUDA 13.x 建置需驅動 <strong>580+</strong>。PyPI 上的 wheel 目前以 CUDA 12.9 建置。</li>
+<li>沒有 GPU 也能用——所有平台都支援純 CPU 執行。</li>
+<li><code>float16</code> 原子操作需要 compute capability 7.0+（Volta）,較舊 GPU 上會回傳零。</li>
+</ul>
+
+<h2 id="pip-安裝">pip 安裝（推薦）<a class="anchor" href="#pip-安裝" aria-hidden="true">#</a></h2>
+<pre><code class="language-bash"># 標準安裝（PyPI，CUDA 12.9 runtime）
+pip install warp-lang
+
+# 加裝範例程式的選用相依（usd-core、pyglet 等）
+pip install "warp-lang[examples]"
+</code></pre>
+<p>其他安裝管道：</p>
+<pre><code class="language-bash"># Nightly build（main 分支、CUDA 12 runtime，無 macOS 版）
+pip install -U --pre warp-lang --extra-index-url=https://pypi.nvidia.com/
+
+# conda-forge（預設裝最新 CUDA 變體）
+conda install conda-forge::warp-lang
+conda install "conda-forge::warp-lang=*=*cpu*"      # 純 CPU 變體
+conda install "conda-forge::warp-lang=*=*cuda129*"  # 指定 CUDA 12.9
+
+# CUDA 13 runtime 版 wheel（GitHub Releases，此為 Windows x86-64 例）
+pip install https://github.com/NVIDIA/warp/releases/download/v1.14.0/warp_lang-1.14.0+cu13-py3-none-win_amd64.whl
+</code></pre>
+<blockquote><p>驅動太舊時 Warp 初始化會發出 <code>Insufficient CUDA driver version</code> 警告，CUDA 裝置不可用但 CPU 仍可執行。解法：更新驅動、改裝相容的預建套件，或用相容的 CUDA Toolkit 從原始碼建置。另外 Tile 的完整 MathDx 功能需要 CUDA 12.6.3+。</p></blockquote>
+
+<h2 id="快速入門">快速入門：第一個 kernel<a class="anchor" href="#快速入門" aria-hidden="true">#</a></h2>
+<p>安裝完成後，先確認 Warp 能找到你的裝置：</p>
+<pre><code class="language-python">import warp as wp
+wp.init()
+</code></pre>
+<pre><code>Warp 1.14.0 initialized:
+CUDA Toolkit 12.9, Driver 12.9
+Devices:
+    "cpu"      : "x86_64"
+    "cuda:0"   : "NVIDIA GeForce RTX 3090" (24 GiB, sm_86, mempool enabled)
+Kernel cache:
+    C:\Users\you\AppData\Local\NVIDIA\warp\Cache\1.14.0
+</code></pre>
+<p>接著寫第一個 kernel——計算 1024 個向量的內積：</p>
+<pre><code class="language-python">import numpy as np
+import warp as wp
+
+@wp.kernel
+def dot_products(a: wp.array[wp.vec3],
+                 b: wp.array[wp.vec3],
+                 c: wp.array[float]):
+    tid = wp.tid()
+    c[tid] = wp.dot(a[tid], b[tid])
+
+n = 1024
+a = wp.array(np.random.rand(n, 3), dtype=wp.vec3, device="cuda")
+b = wp.array(np.random.rand(n, 3), dtype=wp.vec3, device="cuda")
+c = wp.zeros(n, dtype=float, device="cuda")
+
+wp.launch(dot_products, dim=n, inputs=[a, b, c], device="cuda")
+print(c.numpy())   # .numpy() 會自動同步 GPU 並取回資料
+</code></pre>
+<p>第一次執行時模組會被編譯（訊息顯示 <code>(compiled)</code>，可能需要數秒）；之後執行直接從快取載入（<code>(cached)</code>，數十毫秒）。語法細節見<a href="basics.html">基礎入門</a>。</p>
+
+<h2 id="範例庫">內建範例庫<a class="anchor" href="#範例庫" aria-hidden="true">#</a></h2>
+<p><a href="https://github.com/NVIDIA/warp/tree/main/warp/examples" target="_blank" rel="noopener">warp/examples</a> 目錄涵蓋物理模擬、幾何處理、最佳化與 tile GPU 程式設計，安裝 <code>warp-lang[examples]</code> 後從命令列直接執行：</p>
+<pre><code class="language-bash">python -m warp.examples.&lt;子目錄&gt;.&lt;範例名&gt;
+
+# 例如：
+python -m warp.examples.core.example_fluid      # 2D 流體
+python -m warp.examples.core.example_sph        # SPH 粒子
+python -m warp.examples.fem.example_diffusion_3d
+python -m warp.examples.optim.example_diffray   # 可微分光線追蹤
+python -m warp.examples.tile.example_tile_mlp   # tile MLP
+</code></pre>
+<table>
+<thead><tr><th>子目錄</th><th>主題</th><th>代表範例</th></tr></thead>
+<tbody>
+<tr><td><code>core</code></td><td>核心功能</td><td>DEM、流體、CUDA Graph 擷取、marching cubes、mesh 光線投射、SPH、NanoVDB、波動方程</td></tr>
+<tr><td><code>fem</code></td><td>有限元素</td><td>3D 擴散、混合彈性、APIC 流體、磁靜力學、自適應網格</td></tr>
+<tr><td><code>optim</code></td><td>可微分最佳化</td><td>可微分光線追蹤（diffray）、流體 checkpoint、粒子斥力</td></tr>
+<tr><td><code>tile</code></td><td>Tile 程式設計</td><td>MLP 推論、N-body、Monte Carlo 幾何處理</td></tr>
+</tbody>
+</table>
+
+<h2 id="原始碼建置">從原始碼建置<a class="anchor" href="#原始碼建置" aria-hidden="true">#</a></h2>
+<p>需求：Visual Studio 2019+（Windows）／GCC 9.4+（Linux）、Python 開發標頭、<strong>CUDA Toolkit 12.0+</strong>、Git LFS。</p>
+<pre><code class="language-bash">git clone https://github.com/NVIDIA/warp.git
+cd warp
+python build_lib.py        # 產出 warp/bin/ 平台二進位檔
+pip install -e .           # -e 讓後續修改即時生效
+</code></pre>
+<ul>
+<li>CUDA Toolkit 路徑用 <code>CUDA_PATH</code> 環境變數或 <code>--cuda-path="..."</code> 覆寫。</li>
+<li>預設靜態連結 CUDA 函式庫（自足的二進位檔）；<code>--use-dynamic-cuda</code> 改為動態連結。</li>
+<li><code>--quick</code> 快速建置會跳過 CUDA 向後相容層，最低驅動需求改由 Toolkit 版本決定。</li>
+<li>Linux ARM＋CUDA 12.9 建置有已知 bug，無法涵蓋 Maxwell／Pascal／Volta 架構;需要時改用 12.9 以前的 Toolkit。</li>
+</ul>
+<blockquote><p><strong>Conda 環境注意</strong>：建置環境的 C++ runtime 版本必須「等於或舊於」執行環境，否則會出現 <code>GLIBCXX_3.4.30 not found</code> 之類錯誤——可在執行環境 <code>conda install -c conda-forge libstdcxx-ng=12.1</code> 解決。</p></blockquote>
+
+<h2 id="docker">Docker 與 Omniverse<a class="anchor" href="#docker" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>Docker</strong>：安裝 <a href="https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/index.html" target="_blank" rel="noopener">NVIDIA Container Toolkit</a> 後以 <code>docker run --gpus all</code> 讓容器看得到 GPU。建議以 <code>nvidia/cuda</code> 的 <code>devel</code> 映像為基底建置、<code>runtime</code> 映像部署（多階段建置可大幅縮小映像）。官方文檔附完整 Dockerfile 範例。</li>
+<li><strong>Omniverse</strong>：Omniverse Kit 內建 <code>omni.warp</code> extension，在 Isaac Sim 等 Kit 應用中啟用即可使用 Warp（版本隨 Kit 發佈）。</li>
+</ul>
+
+<h2 id="版本策略">版本與支援策略<a class="anchor" href="#版本策略" aria-hidden="true">#</a></h2>
+<ul>
+<li>版號 <code>X.Y.Z</code> <strong>不採用</strong>語意化版本:<strong>Y</strong> 為每月例行的功能版（唯一可含棄用／破壞性變更的版本）,<strong>Z</strong> 為不定期的錯誤修正版。</li>
+<li>功能狀態分為 Experimental → Stable → Deprecated → Removed;棄用功能<strong>至少維護 4 個月</strong>（約 4 個功能版）,期間顯示 <code>DeprecationWarning</code>。</li>
+<li>Nightly 版格式 <code>X.Y.Z.devYYYYMMDD</code>,發佈於 NVIDIA PyPI index,不受穩定版相容性保證。</li>
+</ul>
+
+<footer class="page-footer">
+  <p>本頁整理自 NVIDIA Warp 官方文檔 1.14.0。內容以官方為準。下一步：<a href="basics.html">基礎入門 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#系統需求">系統需求</a>
+      <a href="#pip-安裝">pip 安裝（推薦）</a>
+      <a href="#快速入門">快速入門：第一個 kernel</a>
+      <a href="#範例庫">內建範例庫</a>
+      <a href="#原始碼建置">從原始碼建置</a>
+      <a href="#docker">Docker 與 Omniverse</a>
+      <a href="#版本策略">版本與支援策略</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

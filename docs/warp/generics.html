@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>泛型與程式碼生成 — NVIDIA Warp 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Warp</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://nvidia.github.io/warp/v1.14/user_guide/generics.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="basics.html">基礎入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="runtime.html">執行期核心功能</a>
+        <a href="devices.html">裝置・串流・並行</a>
+        <a href="differentiability.html">可微分性</a>
+        <div class="nav-group-title">進階主題</div>
+        <a href="tiles.html">Tile 程式設計</a>
+        <a href="generics.html" class="current">泛型與程式碼生成</a>
+        <a href="interop.html">互操作性</a>
+        <div class="nav-group-title">模組與參考</div>
+        <a href="modules.html">領域模組</a>
+        <a href="faq.html">FAQ・除錯・限制</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="generics">泛型與程式碼生成<a class="anchor" href="#generics" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://nvidia.github.io/warp/v1.14/user_guide/generics.html">Generics</a> 與 <a href="https://nvidia.github.io/warp/v1.14/deep_dive/codegen.html">Code Generation</a> 章節。</p>
+</blockquote>
+
+<h2 id="泛型kernel">泛型 kernel<a class="anchor" href="#泛型kernel" aria-hidden="true">#</a></h2>
+<p>用 <code>typing.Any</code> 代替具體型別，同一份程式碼即可支援多種資料型別（模板）：</p>
+<pre><code class="language-python">from typing import Any
+
+@wp.kernel
+def scale(x: wp.array[Any], s: Any):
+    i = wp.tid()
+    x[i] = s * x[i]
+
+x16 = wp.array(data, dtype=wp.float16)
+x32 = wp.array(data, dtype=wp.float32)
+
+# Warp 依參數型別自動生成對應的 kernel 實例
+wp.launch(scale, dim=n, inputs=[x16, wp.float16(3)])
+wp.launch(scale, dim=n, inputs=[x32, wp.float32(3)])
+</code></pre>
+<p><strong>型別推斷注意</strong>：Python 的 <code>42</code> 推斷為 <code>wp.int32</code>、<code>0.5</code> 為 <code>wp.float32</code>——其他型別要明確用 <code>wp.int64(42)</code>、<code>wp.float16(0.5)</code>;向量／矩陣用 Warp 型別（<code>wp.vec3f(...)</code>）而非 tuple。</p>
+<h3 id="顯式實例化">隱式 vs. 顯式實例化<a class="anchor" href="#顯式實例化" aria-hidden="true">#</a></h3>
+<p>每次用新型別組合 launch 泛型 kernel 都會<strong>隱式生成新實例並重載模組</strong>（每次一百多毫秒），且舊 CUDA 驅動上 graph 擷取期間不允許模組重載。用 <code>@wp.overload</code> <strong>預先宣告</strong>全部實例可讓模組只載入一次：</p>
+<pre><code class="language-python">@wp.overload
+def scale(x: wp.array[wp.float16], s: wp.float16):
+    ...   # 本體用省略號,不重複程式碼
+
+# 或函式形式,可用迴圈批次宣告:
+for T in [wp.float16, wp.float32, wp.float64]:
+    wp.overload(scale, [wp.array[T], T])
+
+# 回傳值是具體 kernel 實例——launch 更快(免型別推斷),參數也更寬鬆
+scale_f32 = wp.overload(scale, [wp.array[wp.float32], wp.float32])
+wp.launch(scale_f32, dim=n, inputs=[x32, 3])
+</code></pre>
+<p><strong>泛型函式</strong>（<code>@wp.func</code>＋<code>Any</code>）同理;kernel 內可用 <code>type()</code> 運算子取得變數型別做轉型（如 <code>type(x)(0)</code>）。限制：泛型 kernel 無法自訂梯度函式、無法在某些場景序列化——細節見官方 <a href="https://nvidia.github.io/warp/v1.14/user_guide/generics.html#limitations-and-rough-edges" target="_blank" rel="noopener">Limitations and Rough Edges</a>。</p>
+
+<h2 id="codegen">程式碼生成模型<a class="anchor" href="#codegen" aria-hidden="true">#</a></h2>
+<p>kernel 以 <strong>Python 模組</strong>為單位編譯——同模組所有 kernel 一起編譯（比逐個快），launch 時檢查模組是否過期。<strong>執行期新增 kernel 會改變模組</strong>，導致下次 launch 重新編譯;編譯結果以內容雜湊為鍵快取，重跑程式時直接載入（<code>(cached)</code>）。</p>
+<p><strong>外部參照與常數</strong>：kernel 參照的外部 Python 變數在<strong>程式碼生成時</strong>固化為常數。變數之後改變不會自動反映——需呼叫 <code>kernel.module.mark_modified()</code> 或重新定義 kernel。</p>
+
+<h2 id="static">靜態運算式 wp.static()<a class="anchor" href="#static" aria-hidden="true">#</a></h2>
+<p><code>wp.static(expr)</code> 在 kernel <strong>定義時</strong>執行任意 Python 運算式，把結果直接寫死進生成的程式碼。結果可以是純量、向量、struct、字串或 <strong>Warp 函式</strong>（不可為陣列）：</p>
+<pre><code class="language-python">import scipy.linalg
+
+@wp.kernel
+def my_kernel():
+    static_var = wp.static(3 + 2)                                  # 常數折疊
+    static_norm = wp.static(wp.float64(scipy.linalg.norm([3, 4]))) # 可呼叫任意 Python
+    wp.printf("static_norm = %f\n", static_norm)
+</code></pre>
+<p>三個殺手級用途：</p>
+<ul>
+<li><strong>靜態條件消除</strong>：<code>if wp.static("red" in available_colors):</code> ——常數分支在生成的程式碼中被完全消除，零分支開銷，適合生成特化 kernel。</li>
+<li><strong>靜態迴圈展開</strong>：range 為編譯期常數的迴圈自動展開，配合 <code>wp.static()</code> 可在展開的每一步做不同的事（如依索引選不同函式）。</li>
+<li><strong>函式指標</strong>：<code>wp.static(func_table[i])</code> 在生成時選擇要呼叫的 Warp 函式——實現「編譯期分派」。</li>
+</ul>
+
+<h2 id="動態kernel">動態 kernel 建立（閉包）<a class="anchor" href="#動態kernel" aria-hidden="true">#</a></h2>
+<p>用 Python 閉包在執行期以不同的常數、型別或函式特化 kernel：</p>
+<pre><code class="language-python"># 以常數特化
+def create_kernel_with_constant(constant):
+    @wp.kernel
+    def k(a: wp.array[float]):
+        tid = wp.tid()
+        a[tid] += constant
+    return k
+
+k1 = create_kernel_with_constant(17.0)
+k2 = create_kernel_with_constant(42.0)
+
+# 以型別特化
+def create_kernel_with_dtype(vec_type):
+    @wp.kernel
+    def k(a: wp.array[vec_type]):
+        tid = wp.tid()
+        a[tid] += float(tid) * vec_type(1.0)
+    return k
+
+k2d = create_kernel_with_dtype(wp.vec2)
+k4d = create_kernel_with_dtype(wp.vec4)
+</code></pre>
+<p>函式（把 <code>@wp.func</code> 當參數傳入）與 struct 同樣可以閉包捕獲。每個閉包 kernel 都是獨立實例，有自己的模組雜湊——不同特化並存不衝突。</p>
+
+<h2 id="aot">AOT 編譯工作流程<a class="anchor" href="#aot" aria-hidden="true">#</a></h2>
+<p>除了 JIT，Warp 也支援 <strong>ahead-of-time</strong> 編譯，用於部署與 CI：</p>
+<ul>
+<li><strong>手動編譯模組</strong>：<code>wp.get_module(...).load(device)</code> 不需 launch 任何 kernel 即可觸發編譯——CI 中預熱快取。</li>
+<li><strong>散佈預編譯模組</strong>：把 kernel 快取目錄隨應用程式打包，目標機器免編譯直接載入（模組雜湊需一致）。</li>
+<li><strong>無 CUDA 驅動編譯</strong>:Docker build 階段沒有 GPU 也能編譯 CUDA 模組（設 <code>wp.config.cuda_output="ptx"</code> 等），執行階段才需要驅動。</li>
+</ul>
+<p>詳細範例（含 Dockerfile）見官方 <a href="https://nvidia.github.io/warp/v1.14/deep_dive/codegen.html#ahead-of-time-compilation-workflows" target="_blank" rel="noopener">Ahead-of-Time Compilation Workflows</a>。</p>
+
+<h2 id="設定">模組與 kernel 設定<a class="anchor" href="#設定" aria-hidden="true">#</a></h2>
+<p>編譯行為可在三個層級調整（<a href="https://nvidia.github.io/warp/v1.14/user_guide/configuration.html" target="_blank" rel="noopener">Configuration</a>）：</p>
+<table>
+<thead><tr><th>層級</th><th>方式</th><th>常用選項</th></tr></thead>
+<tbody>
+<tr><td>全域</td><td><code>wp.config.*</code>（import 後立即設定）</td><td><code>mode="debug"</code>、<code>verify_fp</code>、<code>verify_cuda</code>、<code>enable_backward</code>、<code>kernel_cache_dir</code></td></tr>
+<tr><td>模組</td><td><code>wp.set_module_options({...})</code></td><td><code>fast_math</code>、<code>enable_backward</code>、<code>max_unroll</code></td></tr>
+<tr><td>kernel</td><td><code>@wp.kernel(enable_backward=False, ...)</code></td><td>不需微分的 kernel 關掉反向生成可加速編譯、減少記憶體</td></tr>
+</tbody>
+</table>
+
+<footer class="page-footer">
+  <p>本頁整理自 NVIDIA Warp 官方文檔 1.14.0。內容以官方為準。下一步：<a href="interop.html">互操作性 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#泛型kernel">泛型 kernel</a>
+      <a href="#顯式實例化" class="toc-h3">隱式 vs. 顯式實例化</a>
+      <a href="#codegen">程式碼生成模型</a>
+      <a href="#static">靜態運算式 wp.static()</a>
+      <a href="#動態kernel">動態 kernel 建立</a>
+      <a href="#aot">AOT 編譯工作流程</a>
+      <a href="#設定">模組與 kernel 設定</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

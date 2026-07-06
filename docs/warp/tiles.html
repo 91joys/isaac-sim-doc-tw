@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tile 程式設計 — NVIDIA Warp 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Warp</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://nvidia.github.io/warp/v1.14/user_guide/tiles.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="basics.html">基礎入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="runtime.html">執行期核心功能</a>
+        <a href="devices.html">裝置・串流・並行</a>
+        <a href="differentiability.html">可微分性</a>
+        <div class="nav-group-title">進階主題</div>
+        <a href="tiles.html" class="current">Tile 程式設計</a>
+        <a href="generics.html">泛型與程式碼生成</a>
+        <a href="interop.html">互操作性</a>
+        <div class="nav-group-title">模組與參考</div>
+        <a href="modules.html">領域模組</a>
+        <a href="faq.html">FAQ・除錯・限制</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="tiles">Tile 程式設計<a class="anchor" href="#tiles" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://nvidia.github.io/warp/v1.14/user_guide/tiles.html">Tiles</a> 章節。Tile 原語自 Warp 1.5.0 引入，概念上類似 OpenAI Triton 的 block 程式設計模型。</p>
+</blockquote>
+
+<h2 id="是什麼">Tile 是什麼<a class="anchor" href="#是什麼" aria-hidden="true">#</a></h2>
+<p>一般 Warp kernel 是 <strong>SIMT</strong> 模型——每條執行緒獨立處理自己的元素。<strong>Tile 原語</strong>讓一個 block 的執行緒<strong>協作</strong>處理一塊資料（tile），得以利用高效記憶體存取、共享記憶體與 <strong>Tensor Core</strong> 等硬體單元。線性代數 tile 運算（<code>tile_matmul</code>、<code>tile_fft</code>、<code>tile_cholesky</code>）背後由 cuBLASDx／cuFFTDx（MathDx）驅動——<strong>需要以 CUDA 12.6.3+ 建置的 Warp</strong>。</p>
+<p>tile 是最多 4 維的資料陣列，元素可以是純量、向量、矩陣或 struct。</p>
+
+<h2 id="執行模型">執行模型與 launch_tiled<a class="anchor" href="#執行模型" aria-hidden="true">#</a></h2>
+<pre><code class="language-python">TILE_SIZE = wp.constant(256)
+TILE_THREADS = 64
+
+@wp.kernel
+def compute(a: wp.array2d[float], b: wp.array2d[float]):
+    i = wp.tid()                        # block 索引
+    t = wp.tile_load(a[i], TILE_SIZE)   # 整個 block 協作載入一列
+    s = wp.tile_sum(t)                  # 協作歸約:單元素 tile
+    wp.tile_store(b[i], s)
+
+wp.launch_tiled(compute, dim=[a.shape[0]], inputs=[a, b], block_dim=TILE_THREADS)
+</code></pre>
+<p><code>wp.launch_tiled()</code> 為 launch grid 的<strong>每個元素</strong>分配 <code>block_dim</code> 條執行緒——kernel 內 <code>wp.tid()</code> 回傳的是 block 索引，不是執行緒索引。它等價於 <code>wp.launch()</code> 多加一個 trailing 維度，但更方便。2D tile 直接從 2D 陣列載入：</p>
+<pre><code class="language-python">t = wp.tile_load(array, shape=(TILE_M, TILE_N), offset=(i*TILE_M, j*TILE_N))
+</code></pre>
+
+<h2 id="storage">Tile 儲存：register 與 shared<a class="anchor" href="#storage" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th></th><th>Register tile（預設）</th><th>Shared memory tile</th></tr></thead>
+<tbody>
+<tr><td>存放位置</td><td>分散在整個 block 的暫存器（如 block 64 執行緒存 256 元素 tile → 每緒 4 個）</td><td>block 共享記憶體</td></tr>
+<tr><td>速度</td><td>最快</td><td>快，支援任意隨機存取</td></tr>
+<tr><td>限制</td><td>執行緒無法有效讀其他執行緒持有的元素——操作以 map／reduce／reshape 高階形式表達</td><td>容量有限——tile 太大會編譯或 launch 失敗</td></tr>
+</tbody>
+</table>
+<p>Warp 自動決定最佳位置，需要整塊隨機存取的操作（如 <code>tile_matmul</code>、元素賦值 <code>tile[row, col] = val</code>）會自動遷移到 shared memory 並插入執行緒同步。shared tile 配置保證 16-byte 對齊；載入時 Warp 以三層機制極大化頻寬（向量化 float4 → coalesced byte-copy → 純量 fallback），確定條件滿足時可用 <code>tile_load(..., aligned=True)</code> 跳過執行期對齊檢查。</p>
+
+<h2 id="gemm">範例：通用矩陣乘法（GEMM）<a class="anchor" href="#gemm" aria-hidden="true">#</a></h2>
+<pre><code class="language-python">import numpy as np
+import warp as wp
+
+TILE_M = wp.constant(8)
+TILE_N = wp.constant(4)
+TILE_K = wp.constant(8)
+TILE_THREADS = 64
+
+@wp.kernel
+def tile_gemm(A: wp.array2d[float], B: wp.array2d[float], C: wp.array2d[float]):
+    i, j = wp.tid()   # 輸出 tile 索引
+
+    sum = wp.tile_zeros(shape=(TILE_M, TILE_N), dtype=wp.float32)
+    K = A.shape[1]
+
+    for k in range(int(K / TILE_K)):
+        a = wp.tile_load(A, shape=(TILE_M, TILE_K), offset=(i*TILE_M, k*TILE_K))
+        b = wp.tile_load(B, shape=(TILE_K, TILE_N), offset=(k*TILE_K, j*TILE_N))
+        wp.tile_matmul(a, b, sum)   # sum += a @ b（累加!）
+
+    wp.tile_store(C, sum, offset=(i*TILE_M, j*TILE_N))
+
+M, K, N = TILE_M * 7, TILE_K * 6, TILE_N * 5
+A_wp = wp.array(np.random.rand(M, K).astype(np.float32))
+B_wp = wp.array(np.random.rand(K, N).astype(np.float32))
+C_wp = wp.zeros((M, N), dtype=wp.float32)
+
+wp.launch_tiled(tile_gemm, dim=(int(M/TILE_M), int(N/TILE_N)),
+                inputs=[A_wp, B_wp, C_wp], block_dim=TILE_THREADS)
+</code></pre>
+
+<h2 id="operations">Tile 運算總覽<a class="anchor" href="#operations" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>類別</th><th>代表函式</th></tr></thead>
+<tbody>
+<tr><td>建構</td><td><code>tile_zeros</code>、<code>tile_ones</code>、<code>tile_full</code>、<code>tile_arange</code>、<code>tile_randf</code>、<code>tile</code>／<code>untile</code>（SIMT↔tile）、<code>tile_view</code>、<code>tile_broadcast</code>、<code>tile_reshape</code>、<code>tile_astype</code></td></tr>
+<tr><td>載入／儲存</td><td><code>tile_load</code>、<code>tile_store</code>、<code>tile_atomic_add</code>、<code>tile_assign</code>、<code>tile_extract</code>、<code>tile_scatter_add</code>、indexed 變體</td></tr>
+<tr><td>Map／歸約</td><td><code>tile_map</code>、<code>tile_reduce</code>、<code>tile_sum/min/max</code>、<code>tile_argmin/argmax</code>、<code>tile_sort</code>、<code>tile_scan_inclusive/exclusive</code></td></tr>
+<tr><td>逐元素算術</td><td><code>+ - *</code>、<code>+=</code>／<code>-=</code>、一元負號——全 block 協作執行</td></tr>
+<tr><td>線性代數（MathDx）</td><td><code>tile_matmul</code>、<code>tile_fft</code>／<code>tile_ifft</code>、<code>tile_cholesky</code>／<code>tile_cholesky_solve</code>、三角求解等</td></tr>
+</tbody>
+</table>
+<p>tile 也能在 <code>@wp.func</code> 間傳遞（簽名建議用 <code>typing.Any</code>）;<strong>Tile Stack</strong> 與 <strong>register tile 軟體管線化</strong>等進階技巧見官方原文。tile 運算<strong>支援自動微分</strong>，與 <code>wp.Tape</code> 正常搭配。</p>
+
+<h2 id="simt">Tile 與 SIMT 混用<a class="anchor" href="#simt" aria-hidden="true">#</a></h2>
+<p>同一個 kernel 內可自由切換兩種模式：<code>wp.tile()</code> 把每條執行緒的值聚成 tile（SIMT → tile），<code>wp.untile()</code> 反向拆回（tile → SIMT）。常見模式——各執行緒獨立算出自己的值，再協作歸約；官方範例顯示用 tile 做全陣列歸約比純 <code>wp.atomic_add()</code> 快約 4 倍。</p>
+
+<h2 id="faq">Tile 常見問題精選<a class="anchor" href="#faq" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>協作分支規則</strong>：tile 運算是全 block 協作的——<strong>不可放在發散分支</strong>（依執行緒 index 而異的 if）內，否則死鎖或錯誤結果。</li>
+<li><strong>tile 形狀必須是編譯期常數</strong>：用 <code>wp.constant()</code> 或 Python 常數，不能用執行期變數。</li>
+<li><strong>垃圾值／NaN 輸出</strong>:最常見原因是把未初始化的 tile 傳給 <code>tile_matmul()</code>——它是<strong>累加</strong>語意，輸出 tile 要先 <code>tile_zeros()</code>。</li>
+<li><strong>Shared memory 溢位</strong>：非 MathDx tile 顯示超出上限警告＋<code>CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES</code>;MathDx 操作則在 LTO 編譯時失敗。縮小 tile 或降低 block_dim。</li>
+<li><strong><code>Failed to compile LTO</code></strong>:MathDx 執行期生成連結時物件失敗——常見於 CUDA 版本過舊（&lt;12.6.3）或 shared memory 需求過大;檢查 <a href="runtime.html#其他">LTO Cache</a> 與建置設定。</li>
+<li><strong>CPU 與 GPU 行為差異</strong>：CPU 上 block_dim 固定為 1，tile 操作退化為序列執行——功能等價但無協作加速。</li>
+<li><strong>越界處理</strong>：<code>tile_load</code> 對出界元素自動補零，<code>tile_store</code> 自動裁切——部分 tile（陣列尺寸非 tile 整數倍）可安全處理。</li>
+</ul>
+
+<footer class="page-footer">
+  <p>本頁整理自 NVIDIA Warp 官方文檔 1.14.0。內容以官方為準。下一步：<a href="generics.html">泛型與程式碼生成 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#是什麼">Tile 是什麼</a>
+      <a href="#執行模型">執行模型與 launch_tiled</a>
+      <a href="#storage">Tile 儲存</a>
+      <a href="#gemm">範例：GEMM</a>
+      <a href="#operations">Tile 運算總覽</a>
+      <a href="#simt">Tile 與 SIMT 混用</a>
+      <a href="#faq">常見問題精選</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

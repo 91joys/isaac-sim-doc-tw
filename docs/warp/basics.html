@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>基礎入門 — NVIDIA Warp 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Warp</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://nvidia.github.io/warp/v1.14/user_guide/basics.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="basics.html" class="current">基礎入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="runtime.html">執行期核心功能</a>
+        <a href="devices.html">裝置・串流・並行</a>
+        <a href="differentiability.html">可微分性</a>
+        <div class="nav-group-title">進階主題</div>
+        <a href="tiles.html">Tile 程式設計</a>
+        <a href="generics.html">泛型與程式碼生成</a>
+        <a href="interop.html">互操作性</a>
+        <div class="nav-group-title">模組與參考</div>
+        <a href="modules.html">領域模組</a>
+        <a href="faq.html">FAQ・除錯・限制</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="基礎">基礎入門<a class="anchor" href="#基礎" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://nvidia.github.io/warp/v1.14/user_guide/basics.html">Basics</a> 章節。官方另提供 <a href="https://github.com/NVIDIA/accelerated-computing-hub" target="_blank" rel="noopener">NVIDIA Accelerated Computing Hub</a> 上的 Colab 教學筆記本（Warp 入門、Ising 模型模擬）。</p>
+</blockquote>
+
+<h2 id="初始化">初始化<a class="anchor" href="#初始化" aria-hidden="true">#</a></h2>
+<p>第一次呼叫 <code>wp.launch()</code> 等 Warp 函式時，Warp 會自動初始化並印出可用裝置、驅動版本與 kernel 快取位置。也可以用 <code>wp.init()</code> 明確初始化：</p>
+<pre><code class="language-python">import warp as wp
+
+wp.init()
+</code></pre>
+<pre><code>Warp 1.14.0 initialized:
+CUDA Toolkit 12.9, Driver 12.9
+Devices:
+    "cpu"      : "x86_64"
+    "cuda:0"   : "NVIDIA GeForce RTX 3090" (24 GiB, sm_86, mempool enabled)
+    "cuda:1"   : "NVIDIA GeForce RTX 3090" (24 GiB, sm_86, mempool enabled)
+CUDA peer access:
+    Supported fully (all-directional)
+Kernel cache:
+    /home/nvidia/.cache/warp/1.14.0
+</code></pre>
+
+<h2 id="kernels">Kernel<a class="anchor" href="#kernels" aria-hidden="true">#</a></h2>
+<p>計算 kernel 就是加上 <code>@wp.kernel</code> 裝飾器的 Python 函式，概念上與 CUDA kernel 一一對應——launch 時 kernel 本體會被平行執行指定次數：</p>
+<pre><code class="language-python">import warp as wp
+
+@wp.kernel
+def simple_kernel(a: wp.array[wp.vec3],
+                  b: wp.array[wp.vec3],
+                  c: wp.array[float]):
+    tid = wp.tid()          # 取得執行緒索引
+    x = a[tid]              # 讀取兩個 vec3
+    y = b[tid]
+    r = wp.dot(x, y)        # 內積
+    c[tid] = r              # 寫回結果
+</code></pre>
+<p>要點：</p>
+<ul>
+<li>kernel 會編譯成原生 C++/CUDA 程式碼，因此<strong>所有輸入參數都必須有靜態型別註記</strong>。</li>
+<li>kernel 可能在 CPU 或 GPU 上執行，<strong>不能存取任意的 Python 全域狀態</strong>——資料一律透過參數（陣列）進出。</li>
+<li>kernel 內可用的內建函式（數學、向量、四元數、幾何……）見官方 <a href="https://nvidia.github.io/warp/v1.14/language_reference/builtins.html" target="_blank" rel="noopener">Built-Ins</a>。</li>
+</ul>
+<p>用 <code>wp.launch()</code> 啟動 kernel，支援 <strong>1D–4D 執行緒網格</strong>：</p>
+<pre><code class="language-python"># 1D：1024 條執行緒
+wp.launch(kernel=simple_kernel,  # 要啟動的 kernel
+          dim=1024,              # 執行緒數
+          inputs=[a, b, c],      # 參數
+          device="cuda")         # 執行裝置
+
+# 2D：處理 1024×1024 影像
+wp.launch(kernel=compute_image, dim=(1024, 1024), inputs=[img], device="cuda")
+</code></pre>
+<p>多維網格在 kernel 內用多重指派取得索引：</p>
+<pre><code class="language-python">@wp.kernel
+def compute_image(pixel_data: wp.array2d[wp.vec3]):
+    i, j = wp.tid()
+</code></pre>
+
+<h2 id="arrays">陣列（wp.array）<a class="anchor" href="#arrays" aria-hidden="true">#</a></h2>
+<p><code>wp.array</code> 是固定大小的多維容器（最多 4 維），存放同質的 Warp 資料型別元素，可住在主機（CPU）或裝置（GPU）記憶體。配置方式與 NumPy／PyTorch 類似：</p>
+<pre><code class="language-python"># 未初始化的 vec3 陣列
+v = wp.empty(shape=n, dtype=wp.vec3, device="cuda")
+
+# 零初始化的四元數陣列
+q = wp.zeros(shape=n, dtype=wp.quat, device="cuda")
+
+# 從 NumPy 初始化（自動搬到指定裝置）
+a = np.ones((10, 3), dtype=np.float32)
+v = wp.from_numpy(a, dtype=wp.vec3, device="cuda")
+</code></pre>
+<ul>
+<li>kernel 參數註記用 <code>wp.array2d</code>、<code>wp.array3d</code>、<code>wp.array4d</code> 別名表達維度。</li>
+<li>從外部資料（NumPy、list、tuple）建立時<strong>預設會複製</strong>;若輸入連續且在同一裝置，可用 <code>copy=False</code> 直接別名外部記憶體（見<a href="interop.html">互操作性</a>）。</li>
+<li><code>array.numpy()</code> 把 GPU 資料取回 CPU——會<strong>自動同步</strong>等待未完成的工作;對 CPU 陣列呼叫則回傳零拷貝的 NumPy view。</li>
+</ul>
+<p>常用運算子 <code>+ - * /</code> 對陣列已有多載：</p>
+<pre><code class="language-python">a = wp.array(np.arange(10), dtype=wp.float32)
+b = wp.array(np.arange(10), dtype=wp.float32)
+c = 2.0 * a + b     # 逐元素運算
+c *= 10.0           # 就地運算
+print(c)
+# [  0.  30.  60.  90. 120. 150. 180. 210. 240. 270.]
+</code></pre>
+<p>更進一步的逐元素映射見 <code>warp.map()</code>；陣列的索引、切片與結構化用法見<a href="runtime.html">執行期核心功能</a>。</p>
+
+<h2 id="user-functions">使用者函式（@wp.func）<a class="anchor" href="#user-functions" aria-hidden="true">#</a></h2>
+<p>用 <code>@wp.func</code> 定義可被 kernel 呼叫的函式（同模組或跨模組皆可），回傳型別註記可省略：</p>
+<pre><code class="language-python">@wp.func
+def square(x: float):
+    return x * x
+
+# 可接受陣列與 struct
+@wp.func
+def lookup(foos: wp.array[wp.uint32], index: int):
+    return foos[index]
+
+# 可回傳多個值
+@wp.func
+def multi_valued_func(a: wp.float32, b: wp.float32):
+    return a + b, a - b, a * b, a / b
+
+# 可用同名多簽名多載
+@wp.func
+def custom(x: int):
+    return x + 1
+
+@wp.func
+def custom(x: float):
+    return x + 1.0
+</code></pre>
+<ul>
+<li>kernel 能做的事函式幾乎都能做，<strong>唯一例外是 <code>wp.tid()</code></strong>——需要執行緒索引就從參數傳入。</li>
+<li><code>@wp.func</code> 也能直接從 Python 呼叫（實驗性）：從 kernel 呼叫時由 Warp 編譯，從 Python 呼叫時由直譯器執行，因此後者不能用 tile API 等 kernel 專屬功能。</li>
+<li>tile 參數建議用 <code>typing.Any</code> 讓編譯器自動推斷型別（見<a href="generics.html">泛型</a>）。</li>
+</ul>
+
+<h2 id="structs">使用者結構（@wp.struct）<a class="anchor" href="#structs" aria-hidden="true">#</a></h2>
+<pre><code class="language-python">@wp.struct
+class MyStruct:
+    pos: wp.vec3
+    vel: wp.vec3
+    active: int
+    indices: wp.array[int]
+</code></pre>
+<p>所有屬性在類別定義時就要有合法型別註記。struct 可以作為 <code>wp.array</code> 的 <code>dtype</code>，也可以直接當 kernel 參數傳入。細節與限制見<a href="runtime.html">執行期核心功能</a>與 <a href="faq.html#限制">Limitations</a>。</p>
+
+<h2 id="scope">Python scope 與 kernel scope<a class="anchor" href="#scope" aria-hidden="true">#</a></h2>
+<p>Warp API 分成兩個層次：</p>
+<table>
+<thead><tr><th></th><th>Python scope</th><th>Kernel scope</th></tr></thead>
+<tbody>
+<tr><td>在哪裡呼叫</td><td>一般 Python 程式碼（kernel／函式之外）</td><td><code>@wp.kernel</code>／<code>@wp.func</code> 內</td></tr>
+<tr><td>文檔</td><td><a href="https://nvidia.github.io/warp/v1.14/api_reference/warp.html" target="_blank" rel="noopener">warp API Reference</a></td><td><a href="https://nvidia.github.io/warp/v1.14/language_reference/builtins.html" target="_blank" rel="noopener">Built-Ins</a></td></tr>
+<tr><td>例子</td><td><code>wp.launch</code>、<code>wp.zeros</code>、<code>wp.copy</code>、<code>wp.Tape</code></td><td><code>wp.tid</code>、<code>wp.dot</code>、<code>wp.atomic_add</code>、<code>wp.mesh_query_point</code></td></tr>
+</tbody>
+</table>
+<p>kernel-scope API 一般也能在 Python scope 使用，但反之不行。kernel 內不支援完整的 Python 語言——沒實作的功能與「上了 GPU 就是效能陷阱」的功能（動態型別、list comprehension、例外、GC……）都被排除。</p>
+
+<h2 id="編譯模型">編譯模型與 kernel 快取<a class="anchor" href="#編譯模型" aria-hidden="true">#</a></h2>
+<p>Warp 採 Python → C++/CUDA 編譯模型：同一 Python 模組的全部 kernel 在<strong>該模組第一次 launch 時</strong>編譯成動態函式庫與 PTX，並在應用程式重啟間快取。每次模組載入會印出：模組名、雜湊前 7 碼、目標裝置、耗時，以及 <code>(compiled)</code>／<code>(cached)</code>／<code>(error)</code> 狀態：</p>
+<pre><code># 第一次執行——完整編譯
+Module __main__ 0b0ecab load on device 'cuda:0' took 4136.19 ms  (compiled)
+
+# 第二次執行——從快取載入
+Module __main__ 0b0ecab load on device 'cuda:0' took 30.98 ms  (cached)
+</code></pre>
+<p>設 <code>wp.config.log_level = wp.LOG_DEBUG</code> 可在每次模組載入開始時也印出訊息。更深入的程式碼生成機制見<a href="generics.html#codegen">泛型與程式碼生成</a>。</p>
+
+<h2 id="語言特性">語言特性：與 CPython 的差異<a class="anchor" href="#語言特性" aria-hidden="true">#</a></h2>
+<h3 id="值語義">內建型別與值語義<a class="anchor" href="#值語義" aria-hidden="true">#</a></h3>
+<p>Warp 內建類似高階著色語言的數學型別：<code>vec2/vec3/vec4</code>、<code>mat22/mat33/mat44</code>、<code>quat</code>、<code>array</code> 等。所有內建型別採<strong>值語義</strong>——<code>a = b</code> 產生的是 <code>b</code> 的複本，不是參考。</p>
+<h3 id="強型別">強型別<a class="anchor" href="#強型別" aria-hidden="true">#</a></h3>
+<p>所有變數都必須有型別（由來源運算式與函式簽名推斷）；kernel 參數必須加型別註記。方便起見，函式簽名可用 <code>typing.Any</code> 代替具體型別（見<a href="generics.html">泛型</a>）：</p>
+<pre><code class="language-python">from typing import Any
+
+@wp.kernel
+def generic_kernel(a: wp.array[Any],
+                   b: wp.array[Any],
+                   c: Any):
+    ...
+</code></pre>
+<h3 id="不支援-tuple-list">不支援 tuple 初始化與 list<a class="anchor" href="#不支援-tuple-list" aria-hidden="true">#</a></h3>
+<pre><code class="language-python"># ✗ 無效
+a = (1.0, 2.0, 3.0)
+my_data = [1.0, 2.0, 3.0]
+
+# ✓ 有效：向量型別（2–4 個元素）
+a = wp.vec3(1.0, 2.0, 3.0)
+
+# ✓ 有效：固定大小的堆疊陣列（支援索引與切片）
+my_data = wp.zeros(shape=16, dtype=float)
+</code></pre>
+<p>完整的限制清單見 <a href="faq.html#限制">FAQ・除錯・限制</a>。</p>
+
+<footer class="page-footer">
+  <p>本頁整理自 NVIDIA Warp 官方文檔 1.14.0。內容以官方為準。下一步：<a href="runtime.html">執行期核心功能 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#初始化">初始化</a>
+      <a href="#kernels">Kernel</a>
+      <a href="#arrays">陣列（wp.array）</a>
+      <a href="#user-functions">使用者函式</a>
+      <a href="#structs">使用者結構</a>
+      <a href="#scope">Python vs. kernel scope</a>
+      <a href="#編譯模型">編譯模型與快取</a>
+      <a href="#語言特性">與 CPython 的差異</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

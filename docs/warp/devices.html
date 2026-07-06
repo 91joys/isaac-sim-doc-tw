@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>裝置・串流・並行 — NVIDIA Warp 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Warp</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://nvidia.github.io/warp/v1.14/user_guide/devices.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="basics.html">基礎入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="runtime.html">執行期核心功能</a>
+        <a href="devices.html" class="current">裝置・串流・並行</a>
+        <a href="differentiability.html">可微分性</a>
+        <div class="nav-group-title">進階主題</div>
+        <a href="tiles.html">Tile 程式設計</a>
+        <a href="generics.html">泛型與程式碼生成</a>
+        <a href="interop.html">互操作性</a>
+        <div class="nav-group-title">模組與參考</div>
+        <a href="modules.html">領域模組</a>
+        <a href="faq.html">FAQ・除錯・限制</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="devices">裝置・串流・並行<a class="anchor" href="#devices" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://nvidia.github.io/warp/v1.14/user_guide/devices.html">Devices</a>、<a href="https://nvidia.github.io/warp/v1.14/deep_dive/concurrency.html">Concurrency</a> 與 <a href="https://nvidia.github.io/warp/v1.14/deep_dive/allocators.html">Allocators</a> 章節。</p>
+</blockquote>
+
+<h2 id="裝置模型">裝置模型<a class="anchor" href="#裝置模型" aria-hidden="true">#</a></h2>
+<p>Warp 用字串別名標識計算裝置：CPU 是 <code>"cpu"</code>，每張 CUDA GPU 是 <code>"cuda:i"</code>（i 為 CUDA 裝置序號）——與 PyTorch 慣例一致。每個 API 呼叫都可用 <code>device</code> 參數指定目標：</p>
+<pre><code class="language-python">a = wp.zeros(n, device="cpu")
+b = wp.zeros(n, device="cuda:0")
+c = wp.zeros(n, device="cuda:1")
+wp.launch(kernel, dim=b.size, inputs=[b], device="cuda:0")
+</code></pre>
+<blockquote><p><code>"cuda:i"</code> 對應裝置 i 的 <strong>primary CUDA context</strong>，與 CUDA Runtime API（PyTorch 等）相容，因此 GPU 記憶體可以直接共享。</p></blockquote>
+<h3 id="預設裝置">預設裝置與 ScopedDevice<a class="anchor" href="#預設裝置" aria-hidden="true">#</a></h3>
+<p>省略 <code>device</code> 參數時使用<strong>預設裝置</strong>——初始化時有 CUDA 就是 <code>"cuda:0"</code>，否則 <code>"cpu"</code>：</p>
+<pre><code class="language-python">wp.set_device("cuda:1")      # 改預設裝置（同時切換 CUDA context）
+d = wp.get_device()          # 取得目前預設裝置
+p = wp.get_preferred_device()  # 取得「原始」預設裝置
+
+# 建議做法：用 ScopedDevice（可任意巢狀，離開時還原）
+with wp.ScopedDevice("cuda:0"):
+    b = wp.zeros(n)
+    with wp.ScopedDevice("cuda:1"):
+        c = wp.zeros(n)
+        wp.launch(kernel, dim=c.size, inputs=[c])   # 在 cuda:1
+    wp.launch(kernel, dim=b.size, inputs=[b])       # 在 cuda:0
+</code></pre>
+<p>特殊別名 <code>"cuda"</code> 指向<strong>目前的</strong> CUDA context——方便讓外部程式（如 <code>torch.cuda.set_device()</code>）控制執行裝置;但在 context 可能被其他程式不可預期切換的環境，建議用明確的 <code>"cuda:i"</code>。進階者可用 <code>wp.map_cuda_device("alias", ctx_ptr)</code> 為自訂 CUDA context 註冊別名。</p>
+
+<h2 id="多gpu">多 GPU 程式設計<a class="anchor" href="#多gpu" aria-hidden="true">#</a></h2>
+<pre><code class="language-python">@wp.kernel
+def inc(a: wp.array[float]):
+    tid = wp.tid()
+    a[tid] = a[tid] + 1.0
+
+arrs = []
+for device in wp.get_cuda_devices():      # 列出所有 CUDA 裝置
+    with wp.ScopedDevice(device):
+        a = wp.zeros(250 * 1024 * 1024, dtype=float)
+        arrs.append(a)
+        for _ in range(1000):
+            wp.launch(inc, dim=a.size, inputs=[a])
+
+wp.synchronize()                           # 等所有裝置完成
+</code></pre>
+<p><strong>Peer access</strong>：硬體支援時（同型 GPU＋NVLink/PCIe 拓撲）可讓 GPU 直接讀另一張 GPU 的記憶體，初始化訊息會回報支援狀態。<code>wp.is_peer_access_supported()</code> 檢查、<code>wp.set_peer_access_enabled()</code> 啟用（<strong>有方向性</strong>）。好處是跨卡 DMA 直傳（免 CPU staging buffer）；代價是配置／釋放變慢——不需要就別開。注意 peer access <strong>不會</strong>加速記憶體池配置器的傳輸，那要改開 <a href="#配置器">memory pool access</a>。</p>
+
+<h2 id="非同步">非同步執行<a class="anchor" href="#非同步" aria-hidden="true">#</a></h2>
+<p>CUDA kernel launch 對主機（Python 執行緒）<strong>非同步</strong>——<code>wp.launch()</code> 排程後立即返回，CPU 可同時做別的事;不同 CUDA 裝置上的 kernel 也能並行執行。CPU kernel launch 目前是同步的，要並行就先發 CUDA 再跑 CPU：</p>
+<pre><code class="language-python">wp.launch(kernel1, ..., device="cuda:0")   # 非同步
+wp.launch(kernel2, ..., device="cuda:1")   # 與 cuda:0 並行
+wp.launch(kernel3, ..., device="cpu")      # CPU 同步執行，與兩張 GPU 並行
+do_cpu_work()
+</code></pre>
+<p>CUDA 陣列的建立與初始化也非同步。<strong>陣列複製</strong>：主機↔裝置的複製只有在主機陣列是 <strong>pinned</strong> 時才非同步（<code>wp.zeros(..., device="cpu", pinned=True)</code>）——pinned 記憶體允許 DMA 直傳，適合作主機↔裝置的中轉緩衝，但配置較慢且系統有量限，因此 Warp 預設不 pin。</p>
+
+<h2 id="streams">Stream 與 Event<a class="anchor" href="#streams" aria-hidden="true">#</a></h2>
+<p>CUDA stream 是「在 GPU 上依序執行的操作序列」；不同 stream 的操作可以並行交錯。Warp 初始化時為每個 CUDA 裝置建立一條目前 stream，該裝置的所有操作都排進去。</p>
+<pre><code class="language-python">stream = wp.Stream("cuda:0")             # 建立新 stream
+s3 = wp.Stream("cuda:0", cuda_stream=h)  # 包裝外部 stream 句柄（與 PyTorch 共享）
+
+# 用 ScopedStream 把一段操作排上指定 stream（兼具 ScopedDevice 功能）
+with wp.ScopedStream(stream):
+    a = wp.zeros(n, dtype=float)
+    wp.launch(kernel, dim=n, inputs=[a])
+</code></pre>
+<p>典型用途——<strong>計算與傳輸重疊</strong>：</p>
+<pre><code class="language-python">with wp.ScopedDevice("cuda:0"):
+    compute_stream = wp.Stream()
+    transfer_stream = wp.Stream()
+
+    with wp.ScopedStream(compute_stream):
+        wp.launch(kernel, dim=a.size, inputs=[a])   # 計算
+    with wp.ScopedStream(transfer_stream):
+        wp.copy(b, c)                               # 同時傳輸（c 需 pinned）
+</code></pre>
+<p><strong>Event</strong> 提供裝置端的 stream 間同步（不阻塞 CPU）：在 stream A 上 <code>wp.record_event(e)</code>，讓 stream B <code>wp.wait_event(e)</code>——B 會等 A 到達該點才繼續，CPU 全程不停。<code>stream.wait_stream(other)</code> 是記錄＋等待的簡寫。Event 也能跨裝置使用，編排完全在 GPU 上運行的多 stream／多卡工作流。</p>
+
+<h2 id="同步指引">同步指引<a class="anchor" href="#同步指引" aria-hidden="true">#</a></h2>
+<p>原則：<strong>同步愈少愈好，但不能更少</strong>。過度同步扼殺並行；同步不足則產生亂序錯誤。主機端同步由重到輕：</p>
+<table>
+<thead><tr><th>函式</th><th>等待範圍</th><th>使用時機</th></tr></thead>
+<tbody>
+<tr><td><code>wp.synchronize()</code></td><td>所有裝置</td><td>幾乎永遠不該用（除錯例外）</td></tr>
+<tr><td><code>wp.synchronize_device(d)</code></td><td>單一裝置的所有 stream</td><td>等一張卡完成</td></tr>
+<tr><td><code>wp.synchronize_stream(s)</code></td><td>單一 stream</td><td>等特定序列（如 readback stream）完成，其他照跑</td></tr>
+<tr><td><code>wp.synchronize_event(e)</code></td><td>單一 event 記錄點</td><td>最細粒度——等到某個點即可，後續操作照常非同步</td></tr>
+</tbody>
+</table>
+<p>常見情況其實<strong>不需要手動同步</strong>——<code>array.numpy()</code> 等操作會自動同步（見 <a href="faq.html#同步時機">FAQ：何時該呼叫 wp.synchronize()</a>）。<strong>Graph 擷取期間</strong>禁止主機端同步與同步版 default stream，只允許 event 同步;graph 擷取必須在同一條 stream 開始與結束，中間可以用 event fork／join 其他 stream（甚至其他 GPU），錄成多卡並行的單一 graph。</p>
+
+<h2 id="配置器">記憶體池配置器<a class="anchor" href="#配置器" aria-hidden="true">#</a></h2>
+<p>Warp 預設使用 CUDA 的 <strong>stream-ordered memory pool allocator</strong>（初始化訊息中的 <code>mempool enabled</code>）——配置／釋放依 stream 排序、可在 graph 擷取中配置記憶體，且從池中重配置遠快於原生 <code>cudaMalloc</code>。實務建議：</p>
+<ul>
+<li><strong>迴圈內避免反覆配置</strong>：能預配置就預配置;或設定池的 release threshold（<code>wp.set_mempool_release_threshold()</code>）減少歸還開銷。</li>
+<li><strong>跨裝置池存取</strong>：<code>wp.set_mempool_access_enabled("cuda:0", "cuda:1", True)</code> 讓一張卡直接存取另一張卡的池記憶體（等同池版 peer access）。</li>
+<li><strong>自訂配置器</strong>：可掛接外部配置器,例如把 Warp 與 PyTorch 都導向 <a href="https://github.com/rapidsai/rmm" target="_blank" rel="noopener">RMM</a>,兩個框架共享同一個記憶體池，避免互相搶佔 GPU 記憶體。</li>
+</ul>
+<p>CPU／GPU 跨裝置記憶體存取（integrated GPU、Grace Hopper 等統一記憶體架構）的能力檢查與存取模式選擇，見官方 <a href="https://nvidia.github.io/warp/v1.14/deep_dive/memory_access.html" target="_blank" rel="noopener">CPU/GPU cross-device memory access</a>。</p>
+
+<footer class="page-footer">
+  <p>本頁整理自 NVIDIA Warp 官方文檔 1.14.0。內容以官方為準。下一步：<a href="differentiability.html">可微分性 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#裝置模型">裝置模型</a>
+      <a href="#預設裝置" class="toc-h3">預設裝置與 ScopedDevice</a>
+      <a href="#多gpu">多 GPU 程式設計</a>
+      <a href="#非同步">非同步執行</a>
+      <a href="#streams">Stream 與 Event</a>
+      <a href="#同步指引">同步指引</a>
+      <a href="#配置器">記憶體池配置器</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>
