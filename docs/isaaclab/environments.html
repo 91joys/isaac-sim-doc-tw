@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>可用環境 — Isaac Lab 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Isaac Lab</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://isaac-sim.github.io/IsaacLab/main/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+      <div class="nav-group-title">入門</div>
+      <a href="docs.html">總覽文檔</a>
+      <a href="installation.html">安裝與部署</a>
+      <div class="nav-group-title">概念與教學</div>
+      <a href="concepts.html">核心概念與架構</a>
+      <a href="tutorials.html">教學系列</a>
+      <div class="nav-group-title">環境與訓練</div>
+      <a href="environments.html" class="current">可用環境</a>
+      <a href="rl.html">強化學習</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="可用環境">可用環境<a class="anchor" href="#可用環境" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://isaac-sim.github.io/IsaacLab/main/source/overview/environments.html">Available Environments</a> 章節。Isaac Lab 內建大量現成任務，涵蓋單智能體與多智能體，皆以 <code>gym.make("Isaac-...-v0")</code> 建立。</p>
+</blockquote>
+<hr>
+
+<h2 id="任務命名慣例">任務命名慣例<a class="anchor" href="#任務命名慣例" aria-hidden="true">#</a></h2>
+<p>任務 ID 遵循以下模式：</p>
+<pre><code>Isaac-[任務]-[機器人]-[變體]-[工作流程]-v[版本]</code></pre>
+<table>
+<thead>
+<tr><th>範例 ID</th><th>解讀</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Isaac-Lift-Cube-Franka-v0</code></td><td>Franka 手臂抬升方塊，Manager-Based（無 <code>-Direct</code> 後綴）</td></tr>
+<tr><td><code>Isaac-Velocity-Rough-Anymal-C-Direct-v0</code></td><td>ANYmal-C 在崎嶇地形速度追蹤，Direct 工作流程</td></tr>
+<tr><td><code>Isaac-Cartpole-RGB-Camera-Direct-v0</code></td><td>Cartpole 加 RGB 攝影機變體，Direct 工作流程</td></tr>
+</tbody>
+</table>
+<ul>
+<li>後綴 <code>-Direct</code> 表示 Direct 工作流程；無此後綴多為 Manager-Based。</li>
+<li>版本號自 <code>v0</code> 起算。</li>
+<li>可用 <code>scripts/environments/list_envs.py</code> 列出當前所有已註冊環境。</li>
+</ul>
+<pre><code>./isaaclab.sh -p scripts/environments/list_envs.py</code></pre>
+
+<h2 id="單智能體任務">單智能體任務<a class="anchor" href="#單智能體任務" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr><th>類別</th><th>說明</th><th>代表任務</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>經典控制（Classic）</strong></td><td>低維度基準任務，適合快速驗證</td><td>Cartpole、MuJoCo Humanoid（<code>Isaac-Humanoid-v0</code>）、Ant</td></tr>
+<tr><td><strong>機械臂操作（Manipulation）</strong></td><td>手臂伸取、抬升、開抽屜</td><td>Franka、UR10 的 Reach、Lift-Cube、Open-Drawer</td></tr>
+<tr><td><strong>接觸密集裝配</strong></td><td>需精細力控的裝配</td><td>插銷（Peg insertion）、齒輪嚙合、螺帽鎖固</td></tr>
+<tr><td><strong>AutoMate</strong></td><td>100 種幾何各異的插接（plug-socket）裝配任務</td><td>Assembly 系列</td></tr>
+<tr><td><strong>FORGE</strong></td><td>Factory 任務強化版，加入力感測與動力學隨機化</td><td>Forge 系列</td></tr>
+<tr><td><strong>足式移動（Locomotion）</strong></td><td>平地與崎嶇地形的速度追蹤</td><td>ANYmal、Unitree（Go2／H1／G1）、Spot 的 Velocity 任務</td></tr>
+<tr><td><strong>導航（Navigation）</strong></td><td>朝目標位置與朝向前進</td><td>Navigation 任務</td></tr>
+<tr><td><strong>多旋翼（Multirotor）</strong></td><td>無人機控制</td><td>Quadcopter 懸停</td></tr>
+<tr><td><strong>其他</strong></td><td>雜項任務</td><td>Humanoid 動作模仿（motion imitation）</td></tr>
+</tbody>
+</table>
+
+<h2 id="多智能體任務">多智能體任務<a class="anchor" href="#多智能體任務" aria-hidden="true">#</a></h2>
+<p>Isaac Lab 也提供支援<strong>同時控制多個智能體</strong>的環境，涵蓋經典控制與操作任務，可搭配 SKRL 的多智能體演算法（MAPPO、IPPO）訓練。</p>
+
+<h2 id="快速上手一個環境">快速上手一個環境<a class="anchor" href="#快速上手一個環境" aria-hidden="true">#</a></h2>
+<p>先用零動作或隨機動作腳本確認環境可正常運行，再進入訓練：</p>
+<pre><code># 以隨機動作跑一個環境（確認可正常步進與渲染）
+./isaaclab.sh -p scripts/environments/random_agent.py \
+    --task Isaac-Cartpole-v0 --num_envs 32
+
+# 以零動作跑（觀察被動動力學）
+./isaaclab.sh -p scripts/environments/zero_agent.py \
+    --task Isaac-Cartpole-v0 --num_envs 32</code></pre>
+<blockquote>
+<p>選定環境後，接著到<a href="rl.html">強化學習</a>頁挑選 RL 框架開始訓練。入門建議從 <code>Isaac-Cartpole-v0</code> 或 <code>Isaac-Ant-v0</code> 這類低維度任務起步。</p>
+</blockquote>
+<hr>
+<p><em>本頁由 Claude 整理，任務清單以官方文檔與當前程式碼為準；實際可用環境請以 <code>list_envs.py</code> 輸出為主。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://isaac-sim.github.io/IsaacLab/main/source/overview/environments.html" target="_blank" rel="noopener">Isaac Lab 官方文檔 · Available Environments</a>。內容如與官方不符，請以官方為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#任務命名慣例">任務命名慣例</a>
+      <a class="toc-h2" href="#單智能體任務">單智能體任務</a>
+      <a class="toc-h2" href="#多智能體任務">多智能體任務</a>
+      <a class="toc-h2" href="#快速上手一個環境">快速上手一個環境</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

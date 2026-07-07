@@ -13,6 +13,14 @@ docs/
 │   ├── tutorial.html   Script Editor 教學等四大實戰教學
 │   ├── …               10 個專題章節頁
 │   └── note/           Markdown 原稿
+├── isaaclab/       ← Isaac Lab 中文文檔（建構於 Isaac Sim 的機器人學習框架）
+│   ├── index.html      Isaac Lab 首頁
+│   ├── docs.html       總覽文檔（9 章）
+│   ├── installation.html 安裝與部署（四種安裝路徑、容器與雲端）
+│   ├── concepts.html   核心概念與架構（五層架構、雙工作流程、致動器、感測器）
+│   ├── tutorials.html  教學系列（六大主題循序實戰）
+│   ├── environments.html 可用環境（任務類別與命名慣例）
+│   └── rl.html         強化學習（RSL-RL／RL-Games／SKRL／SB3）
 ├── newton/         ← Newton Physics 中文文檔（Newton 1.3.0）
 │   ├── index.html      Newton 首頁
 │   ├── docs.html       總覽文檔
@@ -58,6 +66,7 @@ docs/
 ## 資料來源
 
 - [Isaac Sim 官方文檔](https://docs.isaacsim.omniverse.nvidia.com/latest/index.html)（6.0.1）
+- [Isaac Lab 官方文檔](https://isaac-sim.github.io/IsaacLab/main/index.html)（main）
 - [Newton Physics 官方文檔](https://newton-physics.github.io/newton/stable/guide/overview.html)（1.3.0，CC-BY-4.0）
 - [NVIDIA Warp 官方文檔](https://nvidia.github.io/warp/v1.14/index.html)（1.14.0）
 - [ntop/nDPI 官方 GitHub](https://github.com/ntop/nDPI) 與 [DeepWiki](https://deepwiki.com/ntop/nDPI)（nDPI 5.0，索引 2025-12-05）

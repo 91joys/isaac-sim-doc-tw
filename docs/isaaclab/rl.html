@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>強化學習 — Isaac Lab 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Isaac Lab</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://isaac-sim.github.io/IsaacLab/main/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+      <div class="nav-group-title">入門</div>
+      <a href="docs.html">總覽文檔</a>
+      <a href="installation.html">安裝與部署</a>
+      <div class="nav-group-title">概念與教學</div>
+      <a href="concepts.html">核心概念與架構</a>
+      <a href="tutorials.html">教學系列</a>
+      <div class="nav-group-title">環境與訓練</div>
+      <a href="environments.html">可用環境</a>
+      <a href="rl.html" class="current">強化學習</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="強化學習">強化學習<a class="anchor" href="#強化學習" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://isaac-sim.github.io/IsaacLab/main/source/overview/reinforcement-learning/rl_existing_scripts.html">Reinforcement Learning</a> 章節。Isaac Lab 開箱支援四大 RL 框架，並以 Hydra 管理設定、支援多 GPU／多節點訓練。</p>
+</blockquote>
+<hr>
+
+<h2 id="四大-rl-框架">四大 RL 框架<a class="anchor" href="#四大-rl-框架" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr><th>框架</th><th>特點</th><th>模組名</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>RSL-RL</strong></td><td>輕量、訓練快；支援策略蒸餾（teacher-student）；ETH／NVIDIA 足式移動研究常用</td><td><code>rsl_rl</code></td></tr>
+<tr><td><strong>RL-Games</strong></td><td>高效能、支援分散式訓練；效能導向</td><td><code>rl_games</code></td></tr>
+<tr><td><strong>SKRL</strong></td><td>同時支援 PyTorch 與 JAX 後端；內建多智能體演算法（MAPPO、IPPO）</td><td><code>skrl</code></td></tr>
+<tr><td><strong>Stable-Baselines3</strong></td><td>整合簡單、社群成熟；適合單／多環境入門</td><td><code>sb3</code></td></tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>安全提醒：</strong>RL-Games 搭配 Ray 工作流程做分散式訓練或超參數搜尋時，因 Ray 的安全風險，不建議在非受控網路環境下使用。</p>
+</blockquote>
+
+<h2 id="選擇建議">選擇建議<a class="anchor" href="#選擇建議" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>足式移動／需策略蒸餾</strong> → RSL-RL：與官方 locomotion 任務契合度高、上手快。</li>
+<li><strong>追求極致吞吐</strong> → RL-Games：大規模平行下效能佳。</li>
+<li><strong>多智能體或想用 JAX</strong> → SKRL：後端與演算法選擇最廣。</li>
+<li><strong>熟悉 SB3／教學入門</strong> → Stable-Baselines3：API 熟悉、除錯資源多。</li>
+</ul>
+
+<h2 id="訓練與回放">訓練與回放<a class="anchor" href="#訓練與回放" aria-hidden="true">#</a></h2>
+<p>每個框架都遵循一致三步：安裝框架模組 → 以 <code>--task</code> 指定任務訓練 → 用 checkpoint 回放評估。腳本位於 <code>scripts/reinforcement_learning/&lt;框架&gt;/</code>。</p>
+<h3 id="rsl-rl-範例">RSL-RL 範例<a class="anchor" href="#rsl-rl-範例" aria-hidden="true">#</a></h3>
+<pre><code># 安裝框架相依
+./isaaclab.sh -i rsl_rl
+
+# 訓練（headless、4096 個平行環境）
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
+    --task Isaac-Velocity-Rough-Anymal-C-v0 --headless --num_envs 4096
+
+# 回放最新 checkpoint（帶畫面、少量環境）
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py \
+    --task Isaac-Velocity-Rough-Anymal-C-v0 --num_envs 32</code></pre>
+<h3 id="其他框架">其他框架<a class="anchor" href="#其他框架" aria-hidden="true">#</a></h3>
+<pre><code># RL-Games
+./isaaclab.sh -i rl_games
+./isaaclab.sh -p scripts/reinforcement_learning/rl_games/train.py --task Isaac-Ant-v0 --headless
+
+# SKRL
+./isaaclab.sh -i skrl
+./isaaclab.sh -p scripts/reinforcement_learning/skrl/train.py --task Isaac-Cartpole-v0 --headless
+
+# Stable-Baselines3
+./isaaclab.sh -i sb3
+./isaaclab.sh -p scripts/reinforcement_learning/sb3/train.py --task Isaac-Cartpole-v0 --headless</code></pre>
+<p>各框架共通支援：headless 執行、自訂平行環境數、載入預訓練 checkpoint、錄製影片（需 ffmpeg）、TensorBoard 記錄（輸出至 <code>logs/</code>）。</p>
+<pre><code># 以 TensorBoard 檢視訓練曲線
+./isaaclab.sh -p -m tensorboard.main --logdir logs</code></pre>
+
+<h2 id="hydra-設定系統">Hydra 設定系統<a class="anchor" href="#hydra-設定系統" aria-hidden="true">#</a></h2>
+<p><a href="https://isaac-sim.github.io/IsaacLab/main/source/features/hydra.html">原文連結</a></p>
+<p>Isaac Lab 以 <strong>Hydra</strong> 管理環境與代理設定，可在命令列直接<strong>覆寫</strong>任意設定欄位，無需改程式碼：</p>
+<pre><code># 覆寫環境數與部分環境參數
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
+    --task Isaac-Cartpole-v0 --headless \
+    env.scene.num_envs=2048 \
+    agent.max_iterations=500</code></pre>
+
+<h2 id="規模化與再現">規模化與再現<a class="anchor" href="#規模化與再現" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>多 GPU／多節點訓練</strong>：以分散式資料平行擴展吞吐，見官方 <a href="https://isaac-sim.github.io/IsaacLab/main/source/features/multi_gpu.html">Multi-GPU/Multi-Node</a>。</li>
+<li><strong>群體式訓練（PBT）</strong>：自動搜尋超參數。</li>
+<li><strong>Ray 任務派發</strong>：分散式訓練與超參數搜尋（注意 Ray 安全性）。</li>
+<li><strong>可再現性與決定性</strong>：固定隨機種子並控制模擬決定性以重現實驗。</li>
+</ul>
+
+<h2 id="sim2real-部署">Sim2Real 部署<a class="anchor" href="#sim2real-部署" aria-hidden="true">#</a></h2>
+<p>訓練完成的策略可輸出（如 TorchScript／ONNX）並部署到真實機器人。搭配<a href="concepts.html#致動器actuators">擬真致動器模型</a>與<a href="docs.html#9-進階功能與資源">域隨機化</a>，能顯著縮小 sim-to-real 落差。官方另提供 <a href="https://isaac-sim.github.io/IsaacLab/main/source/policy_deployment/index.html">Sim2Real Policy Deployment</a> 指引。</p>
+<hr>
+<p><em>本頁由 Claude 整理，指令與框架版本以官方文檔為準；如發現與最新版不符，請以連結內原文為主。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://isaac-sim.github.io/IsaacLab/main/source/overview/reinforcement-learning/rl_existing_scripts.html" target="_blank" rel="noopener">Isaac Lab 官方文檔 · Reinforcement Learning</a>。內容如與官方不符，請以官方為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#四大-rl-框架">四大 RL 框架</a>
+      <a class="toc-h2" href="#選擇建議">選擇建議</a>
+      <a class="toc-h2" href="#訓練與回放">訓練與回放</a>
+      <a class="toc-h3" href="#rsl-rl-範例">RSL-RL 範例</a>
+      <a class="toc-h3" href="#其他框架">其他框架</a>
+      <a class="toc-h2" href="#hydra-設定系統">Hydra 設定系統</a>
+      <a class="toc-h2" href="#規模化與再現">規模化與再現</a>
+      <a class="toc-h2" href="#sim2real-部署">Sim2Real 部署</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Isaac Lab 中文文檔</title>
+  <meta name="description" content="NVIDIA Isaac Lab 官方文檔中文版：安裝部署、核心概念與架構、教學系列、可用環境與強化學習訓練的完整中文整理">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">Isaac Lab</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html" class="active">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://isaac-sim.github.io/IsaacLab/main/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+
+<main class="content-full">
+  <section class="hero">
+    <h1>NVIDIA <span class="hl">Isaac Lab</span> 中文文檔</h1>
+    <p class="sub">建構於 Isaac Sim 之上的 GPU 加速機器人學習框架——涵蓋官方文檔的中文整理：安裝部署、核心概念與架構、教學系列、可用環境與四大強化學習框架，逐頁附官方原文連結對照。</p>
+    <div class="badges">
+      <span class="badge">依據官方文檔 main</span>
+      <span class="badge">建構於 Isaac Sim</span>
+      <span class="badge">Manager-Based ＋ Direct 雙工作流程</span>
+      <span class="badge">繁體中文</span>
+    </div>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="tutorials.html">開始教學系列</a>
+      <a class="btn btn-ghost" href="docs.html">閱讀總覽文檔</a>
+    </div>
+  </section>
+
+  <div class="cards">
+    <a class="card" href="docs.html">
+      <div class="icon">📘</div>
+      <h3>總覽文檔</h3>
+      <p>9 章系統性整理：什麼是 Isaac Lab、生態系定位、安裝、核心概念、環境設計、可用環境、強化學習、進階功能，與官方章節對照表。</p>
+      <span class="go">前往閱讀 →</span>
+    </a>
+    <a class="card" href="installation.html">
+      <div class="icon">💿</div>
+      <h3>安裝與部署</h3>
+      <p>四種安裝路徑（pip／二進位／原始碼／pip 套件）、系統需求、`isaaclab.sh` 工具、容器與雲端部署，以及資產快取設定。</p>
+      <span class="go">前往閱讀 →</span>
+    </a>
+    <a class="card" href="concepts.html">
+      <div class="icon">🧠</div>
+      <h3>核心概念與架構</h3>
+      <p>App／Simulation／Scene／Environment／Manager 五層架構、Manager-Based 與 Direct 雙工作流程、致動器、感測器與運動生成器。</p>
+      <span class="go">前往閱讀 →</span>
+    </a>
+    <a class="card" href="tutorials.html">
+      <div class="icon">🎓</div>
+      <h3>教學系列</h3>
+      <p>六大主題循序實戰：從空場景與 AppLauncher，到剛體／關節互動、Interactive Scene、環境設計、感測器整合與運動生成器控制。</p>
+      <span class="go">開始學習 →</span>
+    </a>
+    <a class="card" href="environments.html">
+      <div class="icon">🌍</div>
+      <h3>可用環境</h3>
+      <p>經典控制、機械臂操作、接觸密集裝配、足式移動、導航、多旋翼與多智能體任務全覽，附任務命名慣例解析。</p>
+      <span class="go">前往閱讀 →</span>
+    </a>
+    <a class="card" href="rl.html">
+      <div class="icon">🤖</div>
+      <h3>強化學習</h3>
+      <p>RSL-RL、RL-Games、SKRL、Stable-Baselines3 四大框架的訓練／回放指令、選擇建議，與 Hydra 設定、多 GPU 訓練。</p>
+      <span class="go">前往閱讀 →</span>
+    </a>
+  </div>
+
+  <section class="section" id="sections">
+    <h2>全部章節</h2>
+    <p>依官方文檔章節組織的中文專題頁，每頁附完整官方原文連結對照。</p>
+    <div class="feature-grid">
+      <a class="card" href="docs.html">
+        <div class="icon">📘</div>
+        <h3>總覽文檔</h3>
+        <p>9 章一次讀懂 Isaac Lab：定位、生態系、安裝、架構、環境設計到官方章節對照。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="installation.html">
+        <div class="icon">💿</div>
+        <h3>安裝與部署</h3>
+        <p>四種安裝路徑比較、系統需求、容器與雲端部署，與 `isaaclab.sh` 常用指令。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="concepts.html">
+        <div class="icon">🧠</div>
+        <h3>核心概念與架構</h3>
+        <p>五層架構、雙工作流程、Manager 模組、致動器模型、感測器與運動生成器。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="tutorials.html">
+        <div class="icon">🎓</div>
+        <h3>教學系列</h3>
+        <p>六大主題 20+ 課：模擬、資產互動、場景、環境設計、感測器與運動生成器。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="environments.html">
+        <div class="icon">🌍</div>
+        <h3>可用環境</h3>
+        <p>八大任務類別、代表任務與 `Isaac-*-v0` 命名慣例，含多智能體任務。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="rl.html">
+        <div class="icon">🤖</div>
+        <h3>強化學習</h3>
+        <p>四大 RL 框架比較與指令、Hydra 設定系統、多 GPU／多節點與 Sim2Real 部署。</p>
+        <span class="go">前往 →</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>建議學習路徑</h2>
+    <ol>
+      <li><a href="docs.html#1-什麼是-isaac-lab">認識 Isaac Lab</a>：先弄清楚 Isaac Lab 與 Isaac Sim、Isaac Gym 的關係與定位。</li>
+      <li><a href="installation.html">安裝與部署</a>：選定安裝方式（新手建議 pip），把 Isaac Lab 跑起來並驗證安裝。</li>
+      <li><a href="concepts.html">核心概念與架構</a>：建立 App／Scene／Environment／Manager 的心智模型，理解兩種工作流程的取捨。</li>
+      <li><a href="tutorials.html">教學系列</a>：從空場景與剛體／關節互動開始，逐步走到建立 Manager-Based／Direct RL 環境並註冊。</li>
+      <li><a href="environments.html">挑選環境</a>＋<a href="rl.html">訓練策略</a>：從 <code>Isaac-Cartpole-v0</code> 等入門任務起步，用 RSL-RL 等框架跑第一個訓練。</li>
+    </ol>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>本站內容整理自 <a href="https://isaac-sim.github.io/IsaacLab/main/index.html" target="_blank" rel="noopener">Isaac Lab 官方文檔</a>。內容如與最新版官方文檔不符，請以官方為準。<br>Isaac Lab、Isaac Sim、Omniverse 為 NVIDIA Corporation 之商標；本站為非官方學習資源。</p>
+</footer>
+<script src="assets/script.js"></script>
+</body>
+</html>

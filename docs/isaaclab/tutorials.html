@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>教學系列 — Isaac Lab 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Isaac Lab</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://isaac-sim.github.io/IsaacLab/main/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+      <div class="nav-group-title">入門</div>
+      <a href="docs.html">總覽文檔</a>
+      <a href="installation.html">安裝與部署</a>
+      <div class="nav-group-title">概念與教學</div>
+      <a href="concepts.html">核心概念與架構</a>
+      <a href="tutorials.html" class="current">教學系列</a>
+      <div class="nav-group-title">環境與訓練</div>
+      <a href="environments.html">可用環境</a>
+      <a href="rl.html">強化學習</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="教學系列">教學系列<a class="anchor" href="#教學系列" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://isaac-sim.github.io/IsaacLab/main/source/tutorials/index.html">Tutorials</a> 章節，依六大主題循序漸進。每個教學都對應 <code>scripts/tutorials/</code> 下的可執行腳本，建議搭配官方原始碼實作。</p>
+</blockquote>
+<hr>
+<p>教學執行方式一致——以 <code>isaaclab.sh -p</code> 執行對應腳本，例如：</p>
+<pre><code>./isaaclab.sh -p scripts/tutorials/00_sim/create_empty.py</code></pre>
+
+<h2 id="一設定簡單模擬">一、設定簡單模擬<a class="anchor" href="#一設定簡單模擬" aria-hidden="true">#</a></h2>
+<p><code>scripts/tutorials/00_sim/</code></p>
+<table>
+<thead>
+<tr><th>教學</th><th>學到什麼</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>建立空場景</strong>（Creating an empty scene）</td><td>啟動最基本的模擬：AppLauncher、SimulationContext、步進迴圈</td></tr>
+<tr><td><strong>生成 Prim 到場景</strong>（Spawning prims）</td><td>用 <code>spawn</code> 設定加入地面、光源、幾何物件與 USD 資產</td></tr>
+<tr><td><strong>深入 AppLauncher</strong>（Deep-dive into AppLauncher）</td><td>掌握 AppLauncher API 與命令列參數（headless、裝置、攝影機）</td></tr>
+</tbody>
+</table>
+
+<h2 id="二與資產互動">二、與資產互動<a class="anchor" href="#二與資產互動" aria-hidden="true">#</a></h2>
+<p><code>scripts/tutorials/01_assets/</code></p>
+<table>
+<thead>
+<tr><th>教學</th><th>學到什麼</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>加入新機器人</strong>（Adding a New Robot）</td><td>把自訂機器人（URDF／USD）整合進 Isaac Lab 的資產設定</td></tr>
+<tr><td><strong>與剛體互動</strong>（Rigid object）</td><td>讀寫剛體的位姿與速度，施加外力</td></tr>
+<tr><td><strong>與關節體互動</strong>（Articulation）</td><td>控制多關節機構：設定關節目標、讀取關節狀態</td></tr>
+<tr><td><strong>與可變形體互動</strong>（Deformable object）</td><td>操作柔性／軟體材質物件</td></tr>
+<tr><td><strong>與表面夾爪互動</strong>（Surface gripper）</td><td>夾爪機構與表面接觸的處理</td></tr>
+</tbody>
+</table>
+
+<h2 id="三建立場景">三、建立場景<a class="anchor" href="#三建立場景" aria-hidden="true">#</a></h2>
+<p><code>scripts/tutorials/02_scene/</code></p>
+<table>
+<thead>
+<tr><th>教學</th><th>學到什麼</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>使用 Interactive Scene</strong></td><td>以 <code>InteractiveScene</code> 高階抽象一次宣告地形、機器人與感測器，並自動複製成多個平行環境</td></tr>
+</tbody>
+</table>
+
+<h2 id="四設計環境">四、設計環境<a class="anchor" href="#四設計環境" aria-hidden="true">#</a></h2>
+<p><code>scripts/tutorials/03_envs/</code>——本主題是 RL 的核心，從建立環境到訓練代理。</p>
+<table>
+<thead>
+<tr><th>教學</th><th>學到什麼</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>建立 Manager-Based Base 環境</strong></td><td>用設定類別組裝觀測、動作等 Manager，建立非 RL 的基礎環境</td></tr>
+<tr><td><strong>建立 Manager-Based RL 環境</strong></td><td>加入獎勵、終止、事件 Manager，完成可訓練的 RL 環境</td></tr>
+<tr><td><strong>建立 Direct 工作流程 RL 環境</strong></td><td>不經 Manager，直接實作觀測／獎勵／終止方法</td></tr>
+<tr><td><strong>註冊環境</strong>（Registering）</td><td>用 <code>gymnasium.register()</code> 給環境 <code>Isaac-...-v0</code> 的 ID</td></tr>
+<tr><td><strong>以 RL 代理訓練</strong>（Training with an RL Agent）</td><td>串接 RL 框架跑起第一個訓練</td></tr>
+<tr><td><strong>設定 RL 代理</strong>（Configuring an RL Agent）</td><td>管理超參數與框架設定</td></tr>
+<tr><td><strong>修改既有 Direct RL 環境</strong></td><td>在現成環境上客製化</td></tr>
+<tr><td><strong>USD 環境中的策略推論</strong></td><td>載入已訓練策略在 USD 場景中執行</td></tr>
+</tbody>
+</table>
+
+<h2 id="五整合感測器">五、整合感測器<a class="anchor" href="#五整合感測器" aria-hidden="true">#</a></h2>
+<p><code>scripts/tutorials/04_sensors/</code></p>
+<table>
+<thead>
+<tr><th>教學</th><th>學到什麼</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>在機器人上加感測器</strong></td><td>把攝影機、接觸感測器、IMU、ray caster 等掛到機器人並讀取輸出</td></tr>
+</tbody>
+</table>
+
+<h2 id="運動生成器">六、使用運動生成器<a class="anchor" href="#運動生成器" aria-hidden="true">#</a></h2>
+<p><code>scripts/tutorials/05_controllers/</code></p>
+<table>
+<thead>
+<tr><th>教學</th><th>學到什麼</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>使用任務空間控制器</strong>（Task-space controller）</td><td>差分逆運動學（Differential IK）：在末端執行器空間下指令</td></tr>
+<tr><td><strong>使用操作空間控制器</strong>（Operational Space Controller）</td><td>OSC：在任務空間控制力／阻抗，適合接觸密集與柔順任務</td></tr>
+</tbody>
+</table>
+
+<h2 id="延伸how-to-指南">延伸：How-to 指南<a class="anchor" href="#延伸how-to-指南" aria-hidden="true">#</a></h2>
+<p>官方另有 <a href="https://isaac-sim.github.io/IsaacLab/main/source/how-to/index.html">How-to Guides</a> 針對特定操作提供實用範例：</p>
+<ul>
+<li>匯入新資產（URDF／MJCF／Mesh 轉 USD）。</li>
+<li>撰寫環境設定與 CLI 參數處理。</li>
+<li>渲染與錄影、除錯視覺標記（Markers）。</li>
+<li>效能調校與大規模訓練最佳化。</li>
+</ul>
+<blockquote>
+<p>建議順序：先跑完主題一～三建立基礎，再進入主題四完成第一個可訓練環境，最後依需求補上感測器與控制器。訓練框架與指令見<a href="rl.html">強化學習</a>頁。</p>
+</blockquote>
+<hr>
+<p><em>本頁由 Claude 整理，教學清單與腳本路徑以官方文檔為準；如發現與最新版不符，請以連結內原文為主。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://isaac-sim.github.io/IsaacLab/main/source/tutorials/index.html" target="_blank" rel="noopener">Isaac Lab 官方文檔 · Tutorials</a>。內容如與官方不符，請以官方為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#一設定簡單模擬">一、設定簡單模擬</a>
+      <a class="toc-h2" href="#二與資產互動">二、與資產互動</a>
+      <a class="toc-h2" href="#三建立場景">三、建立場景</a>
+      <a class="toc-h2" href="#四設計環境">四、設計環境</a>
+      <a class="toc-h2" href="#五整合感測器">五、整合感測器</a>
+      <a class="toc-h2" href="#運動生成器">六、使用運動生成器</a>
+      <a class="toc-h2" href="#延伸how-to-指南">延伸：How-to 指南</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

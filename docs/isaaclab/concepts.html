@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>核心概念與架構 — Isaac Lab 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Isaac Lab</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://isaac-sim.github.io/IsaacLab/main/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+      <div class="nav-group-title">入門</div>
+      <a href="docs.html">總覽文檔</a>
+      <a href="installation.html">安裝與部署</a>
+      <div class="nav-group-title">概念與教學</div>
+      <a href="concepts.html" class="current">核心概念與架構</a>
+      <a href="tutorials.html">教學系列</a>
+      <div class="nav-group-title">環境與訓練</div>
+      <a href="environments.html">可用環境</a>
+      <a href="rl.html">強化學習</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="核心概念與架構">核心概念與架構<a class="anchor" href="#核心概念與架構" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://isaac-sim.github.io/IsaacLab/main/source/overview/core-concepts/index.html">Core Concepts</a> 章節，涵蓋分層架構、兩種工作流程、致動器、感測器與運動生成器。</p>
+</blockquote>
+<hr>
+
+<h2 id="分層架構">分層架構<a class="anchor" href="#分層架構" aria-hidden="true">#</a></h2>
+<p>Isaac Lab 以層層堆疊的抽象組織一次模擬，由下而上為：</p>
+<table>
+<thead>
+<tr><th>層級</th><th>對應類別</th><th>職責</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>App</strong></td><td><code>AppLauncher</code></td><td>啟動與初始化底層 Isaac Sim／Omniverse Kit；解析 <code>--headless</code>、<code>--device</code>、<code>--enable_cameras</code> 等命令列參數</td></tr>
+<tr><td><strong>Simulation</strong></td><td><code>SimulationContext</code></td><td>管理物理與渲染引擎、時間步進（<code>dt</code>）、重力與模擬設定</td></tr>
+<tr><td><strong>Scene</strong></td><td><code>InteractiveScene</code></td><td>容納機器人、剛體、感測器、地形，並自動把單一環境複製成多份平行實例</td></tr>
+<tr><td><strong>Environment</strong></td><td><code>ManagerBasedRLEnv</code> / <code>DirectRLEnv</code></td><td>RL 相容介面：<code>reset()</code>／<code>step()</code>、觀測、獎勵、終止</td></tr>
+<tr><td><strong>Managers</strong></td><td><code>ObservationManager</code> 等</td><td>模組化處理觀測、獎勵、動作、終止與事件邏輯</td></tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>關鍵設計：</strong>你只需描述「單一環境」的樣貌，<code>InteractiveScene</code> 會自動複製成 <code>num_envs</code> 份，並以向量化張量（形狀為 <code>[num_envs, ...]</code>）統一存取所有實例的狀態——這是 Isaac Lab 大規模平行模擬的基礎。</p>
+</blockquote>
+
+<h2 id="app-與-applauncher">App 與 AppLauncher<a class="anchor" href="#app-與-applauncher" aria-hidden="true">#</a></h2>
+<p>任何 Isaac Lab 腳本都必須<strong>先啟動模擬 App，才能匯入依賴模擬的模組</strong>。這與 Isaac Sim 的 <code>SimulationApp</code> 鐵則一致：</p>
+<pre><code>import argparse
+from isaaclab.app import AppLauncher
+
+# 解析參數並啟動 App
+parser = argparse.ArgumentParser()
+AppLauncher.add_app_launcher_args(parser)   # 加入 --headless、--device 等
+args = parser.parse_args()
+app_launcher = AppLauncher(args)
+simulation_app = app_launcher.app
+
+# ── 之後才能匯入依賴 Omniverse 的模組 ──
+import isaaclab.sim as sim_utils
+# ... 你的模擬程式 ...
+
+simulation_app.close()</code></pre>
+
+<h2 id="兩種工作流程">兩種工作流程<a class="anchor" href="#兩種工作流程" aria-hidden="true">#</a></h2>
+<p><a href="https://isaac-sim.github.io/IsaacLab/main/source/overview/core-concepts/task_workflows.html">原文連結</a></p>
+<h3 id="manager-based">Manager-Based<a class="anchor" href="#manager-based" aria-hidden="true">#</a></h3>
+<p>把環境拆成多個<strong>設定類別</strong>，由對應 Manager 在每步驟自動執行。各 Manager 的職責：</p>
+<table>
+<thead>
+<tr><th>Manager</th><th>職責</th></tr>
+</thead>
+<tbody>
+<tr><td><code>ObservationManager</code></td><td>依設定的觀測項（term）組裝觀測向量，支援分組與雜訊</td></tr>
+<tr><td><code>ActionManager</code></td><td>把策略輸出映射到致動器指令（如關節位置、速度、力矩）</td></tr>
+<tr><td><code>RewardManager</code></td><td>加總各獎勵項並套用權重</td></tr>
+<tr><td><code>TerminationManager</code></td><td>判定回合結束：超時、跌倒、達標等</td></tr>
+<tr><td><code>EventManager</code></td><td>在重置或特定時機套用隨機化與事件（域隨機化）</td></tr>
+<tr><td><code>CurriculumManager</code></td><td>依訓練進度調整難度（課程學習）</td></tr>
+<tr><td><code>CommandManager</code></td><td>產生目標指令（如目標速度、目標位姿）</td></tr>
+</tbody>
+</table>
+<p>每一項邏輯以「term」為單位定義，例如一個獎勵項：</p>
+<pre><code>from isaaclab.managers import RewardTermCfg as RewTerm
+from isaaclab.utils import configclass
+
+@configclass
+class RewardsCfg:
+    # 追蹤線速度指令的獎勵
+    track_lin_vel = RewTerm(
+        func=mdp.track_lin_vel_xy_exp,
+        weight=1.0,
+        params={"command_name": "base_velocity", "std": 0.5},
+    )
+    # 動作變化的懲罰
+    action_rate = RewTerm(func=mdp.action_rate_l2, weight=-0.01)</code></pre>
+<h3 id="direct">Direct<a class="anchor" href="#direct" aria-hidden="true">#</a></h3>
+<p>在單一環境類別中直接以 Python 實作各方法，不經 Manager 層：</p>
+<pre><code>from isaaclab.envs import DirectRLEnv
+
+class MyEnv(DirectRLEnv):
+    def _get_observations(self) -> dict:
+        obs = torch.cat([...], dim=-1)
+        return {"policy": obs}
+
+    def _get_rewards(self) -> torch.Tensor:
+        return compute_reward(...)
+
+    def _get_dones(self) -> tuple[torch.Tensor, torch.Tensor]:
+        terminated = ...
+        truncated = self.episode_length_buf >= self.max_episode_length - 1
+        return terminated, truncated</code></pre>
+<p>Direct 控制更直接、開銷更低、除錯路徑更短，貼近傳統 Isaac Gym 寫法；Manager-Based 則模組化、易複用與組合。兩者選擇取決於任務規模與客製需求。</p>
+
+<h2 id="致動器actuators">致動器（Actuators）<a class="anchor" href="#致動器actuators" aria-hidden="true">#</a></h2>
+<p>致動器是連接「策略輸出」與「關節實際動作」的模型。真實馬達並非理想力源，選對致動器模型對 sim-to-real 至關重要。Isaac Lab 提供：</p>
+<table>
+<thead>
+<tr><th>類型</th><th>說明</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Implicit（隱式）</strong></td><td>由 PhysX 內部以 PD 增益求解，效能最佳，適合多數關節</td></tr>
+<tr><td><strong>Ideal PD（顯式）</strong></td><td>在 Python 端以理想 PD 計算力矩，行為透明可控</td></tr>
+<tr><td><strong>DC Motor</strong></td><td>加入力矩—速度飽和曲線，貼近直流馬達特性</td></tr>
+<tr><td><strong>Actuator Net（致動器網路）</strong></td><td>以神經網路擬合真實致動器（如 ANYmal 的 MLP/LSTM），最擬真</td></tr>
+</tbody>
+</table>
+
+<h2 id="感測器sensors">感測器（Sensors）<a class="anchor" href="#感測器sensors" aria-hidden="true">#</a></h2>
+<p>Isaac Lab 內建多種感測器，輸出皆以向量化張量提供，可直接進入觀測：</p>
+<ul>
+<li><strong>Camera</strong>：RGB、深度、語意分割、實例分割等多種資料型別。</li>
+<li><strong>Contact Sensor</strong>：偵測接觸力與接觸事件（如足端著地、碰撞）。</li>
+<li><strong>IMU</strong>：輸出線加速度、角速度與姿態。</li>
+<li><strong>Ray Caster</strong>：以射線投射高效取得地形高度圖或距離量測（比實體光達便宜許多）。</li>
+<li><strong>Frame Transformer</strong>：追蹤剛體／關節座標系之間的相對位姿。</li>
+<li><strong>視覺觸覺感測器（Visuo-Tactile）</strong>：模擬觸覺影像回饋。</li>
+</ul>
+
+<h2 id="運動生成器motion-generators">運動生成器（Motion Generators）<a class="anchor" href="#運動生成器motion-generators" aria-hidden="true">#</a></h2>
+<p>當你希望策略在「任務空間」而非「關節空間」下指令時，運動生成器負責把末端執行器目標轉為關節指令：</p>
+<ul>
+<li><strong>差分逆運動學（Differential IK）</strong>：以雅可比矩陣把末端執行器的位置／姿態增量轉為關節速度，適合位置控制的機械臂任務。</li>
+<li><strong>操作空間控制（Operational Space Control, OSC）</strong>：在任務空間直接控制力／阻抗，適合接觸密集或需柔順（compliant）行為的任務。</li>
+</ul>
+<blockquote>
+<p>使用範例見<a href="tutorials.html#運動生成器">教學系列 · 運動生成器</a>。</p>
+</blockquote>
+<hr>
+<p><em>本頁由 Claude 整理，術語與 API 以官方文檔為準；如發現與最新版不符，請以連結內原文為主。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://isaac-sim.github.io/IsaacLab/main/source/overview/core-concepts/index.html" target="_blank" rel="noopener">Isaac Lab 官方文檔 · Core Concepts</a>。內容如與官方不符，請以官方為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#分層架構">分層架構</a>
+      <a class="toc-h2" href="#app-與-applauncher">App 與 AppLauncher</a>
+      <a class="toc-h2" href="#兩種工作流程">兩種工作流程</a>
+      <a class="toc-h3" href="#manager-based">Manager-Based</a>
+      <a class="toc-h3" href="#direct">Direct</a>
+      <a class="toc-h2" href="#致動器actuators">致動器（Actuators）</a>
+      <a class="toc-h2" href="#感測器sensors">感測器（Sensors）</a>
+      <a class="toc-h2" href="#運動生成器motion-generators">運動生成器</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>安裝與部署 — Isaac Lab 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Isaac Lab</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://isaac-sim.github.io/IsaacLab/main/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+      <div class="nav-group-title">入門</div>
+      <a href="docs.html">總覽文檔</a>
+      <a href="installation.html" class="current">安裝與部署</a>
+      <div class="nav-group-title">概念與教學</div>
+      <a href="concepts.html">核心概念與架構</a>
+      <a href="tutorials.html">教學系列</a>
+      <div class="nav-group-title">環境與訓練</div>
+      <a href="environments.html">可用環境</a>
+      <a href="rl.html">強化學習</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="安裝與部署">安裝與部署<a class="anchor" href="#安裝與部署" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/index.html">Installation</a> 與 <a href="https://isaac-sim.github.io/IsaacLab/main/source/deployment/index.html">Deployment</a> 章節。安裝 Isaac Lab 前<strong>必須先安裝 Isaac Sim</strong>——Isaac Lab 建構於其上。</p>
+</blockquote>
+<hr>
+
+<h2 id="系統需求">系統需求<a class="anchor" href="#系統需求" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr><th>項目</th><th>需求</th></tr>
+</thead>
+<tbody>
+<tr><td>作業系統</td><td>Ubuntu 22.04 或 Windows 11</td></tr>
+<tr><td>記憶體</td><td>至少 32 GB RAM</td></tr>
+<tr><td>GPU</td><td>NVIDIA RTX 系列，至少 16 GB VRAM</td></tr>
+<tr><td>Python</td><td>需與 Isaac Sim 綁定版本一致（Isaac Sim 5.X 為 Python 3.11）</td></tr>
+<tr><td>驅動程式</td><td>Linux 建議 NVIDIA driver 580.65.06 以上</td></tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>版本相容性：</strong>Isaac Sim 是針對特定 Python 版本編譯的，因此 Isaac Lab 使用的 Python 必須與之相符。Isaac Sim 4.2.0 以下版本已停止支援。</p>
+</blockquote>
+
+<h2 id="四種安裝路徑">四種安裝路徑<a class="anchor" href="#四種安裝路徑" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr><th>方式</th><th>Isaac Sim</th><th>Isaac Lab</th><th>適合對象</th><th>難度</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Pip 安裝（推薦）</strong></td><td>pip</td><td>原始碼（git）</td><td>多數使用者、新手</td><td>容易</td></tr>
+<tr><td><strong>二進位安裝</strong></td><td>預建二進位包</td><td>原始碼（git）</td><td>避開 pip 或較舊系統（如 Ubuntu 20.04）</td><td>中等</td></tr>
+<tr><td><strong>完整原始碼建置</strong></td><td>原始碼</td><td>原始碼</td><td>需要修改 Isaac Sim 本身</td><td>進階</td></tr>
+<tr><td><strong>僅 pip 套件</strong></td><td>pip</td><td>pip</td><td>只做外部擴充，不需訓練／範例</td><td>特殊用途</td></tr>
+</tbody>
+</table>
+
+<h2 id="pip-安裝推薦流程">Pip 安裝（推薦流程）<a class="anchor" href="#pip-安裝推薦流程" aria-hidden="true">#</a></h2>
+<p>以下為官方推薦的最快路徑，以 conda／venv 建立獨立環境後，用 pip 安裝 Isaac Sim，再由原始碼安裝 Isaac Lab。</p>
+<h3 id="1-建立虛擬環境">1. 建立虛擬環境<a class="anchor" href="#1-建立虛擬環境" aria-hidden="true">#</a></h3>
+<pre><code># 以 conda 建立 Python 3.11 環境（版本需與 Isaac Sim 相符）
+conda create -n env_isaaclab python=3.11
+conda activate env_isaaclab
+
+# 升級 pip
+pip install --upgrade pip</code></pre>
+<h3 id="2-以-pip-安裝-isaac-sim">2. 以 pip 安裝 Isaac Sim<a class="anchor" href="#2-以-pip-安裝-isaac-sim" aria-hidden="true">#</a></h3>
+<pre><code># 先安裝對應 CUDA 版本的 PyTorch，再安裝 Isaac Sim 套件組
+pip install torch --index-url https://download.pytorch.org/whl/cu128
+pip install "isaacsim[all,extscache]" --extra-index-url https://pypi.nvidia.com</code></pre>
+<h3 id="3-取得並安裝-isaac-lab">3. 取得並安裝 Isaac Lab<a class="anchor" href="#3-取得並安裝-isaac-lab" aria-hidden="true">#</a></h3>
+<pre><code># 複製原始碼
+git clone https://github.com/isaac-sim/IsaacLab.git
+cd IsaacLab
+
+# 安裝所有 Isaac Lab 擴充與相依（含 RL 框架）
+./isaaclab.sh --install        # Windows：isaaclab.bat --install</code></pre>
+<blockquote>
+<p>若只想安裝特定 RL 框架相依，可用 <code>./isaaclab.sh --install rsl_rl</code>（可替換為 <code>rl_games</code>、<code>skrl</code>、<code>sb3</code>）。</p>
+</blockquote>
+<h3 id="4-驗證安裝">4. 驗證安裝<a class="anchor" href="#4-驗證安裝" aria-hidden="true">#</a></h3>
+<pre><code># 開一個空的模擬視窗
+./isaaclab.sh -p scripts/tutorials/00_sim/create_empty.py
+
+# 跑一個內建訓練（headless、少量環境快速驗證）
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
+    --task Isaac-Cartpole-v0 --headless --num_envs 64</code></pre>
+
+<h2 id="isaaclabsh-常用指令">isaaclab.sh 常用指令<a class="anchor" href="#isaaclabsh-常用指令" aria-hidden="true">#</a></h2>
+<p><code>isaaclab.sh</code>（Windows 為 <code>isaaclab.bat</code>）是與 Isaac Lab 互動的主要入口，會自動使用 Isaac Sim 綁定的 Python 直譯器。</p>
+<table>
+<thead>
+<tr><th>指令</th><th>用途</th></tr>
+</thead>
+<tbody>
+<tr><td><code>-i</code> / <code>--install [框架]</code></td><td>安裝擴充與相依（可指定 RL 框架）</td></tr>
+<tr><td><code>-p</code> / <code>--python &lt;檔案&gt;</code></td><td>以 Isaac Sim 的 Python 執行腳本</td></tr>
+<tr><td><code>-s</code> / <code>--sim</code></td><td>啟動 Isaac Sim 模擬器</td></tr>
+<tr><td><code>-f</code> / <code>--format</code></td><td>對程式碼執行格式化</td></tr>
+<tr><td><code>-t</code> / <code>--test</code></td><td>執行測試</td></tr>
+<tr><td><code>-v</code> / <code>--vscode</code></td><td>產生 VS Code 設定</td></tr>
+<tr><td><code>-h</code> / <code>--help</code></td><td>顯示說明</td></tr>
+</tbody>
+</table>
+
+<h2 id="容器與雲端部署">容器與雲端部署<a class="anchor" href="#容器與雲端部署" aria-hidden="true">#</a></h2>
+<p><a href="https://isaac-sim.github.io/IsaacLab/main/source/deployment/index.html">原文連結</a></p>
+<ul>
+<li><strong>Docker</strong>：官方提供 <code>docker/</code> 目錄與腳本，封裝 Isaac Sim ＋ Isaac Lab，適合可重現的訓練環境與 CI。</li>
+<li><strong>叢集（Cluster）</strong>：支援在 SLURM／PBS 等 HPC 叢集上以容器提交批次訓練。</li>
+<li><strong>CloudXR</strong>：串流互動式渲染以便遠端檢視。</li>
+<li><strong>雲端部署</strong>：可在 AWS、GCP、Azure、阿里雲等雲端 GPU 執行個體部署，搭配 <a href="https://isaac-sim.github.io/IsaacLab/main/source/features/ray.html">Ray</a> 進行分散式訓練與超參數搜尋。</li>
+</ul>
+
+<h2 id="資產快取">資產快取<a class="anchor" href="#資產快取" aria-hidden="true">#</a></h2>
+<p>Isaac Lab 的機器人與場景資產以 USD 形式存於 NVIDIA 的 Nucleus／雲端伺服器。為加速載入並支援離線工作流程，可啟用<strong>資產快取（Asset Caching）</strong>：快取後的資產儲存在本機，減少重複下載，對頻寬受限的環境尤其有用。</p>
+<hr>
+<p><em>本頁由 Claude 整理，指令與版本以官方文檔為準；實際安裝請以連結內原文最新步驟為主。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/index.html" target="_blank" rel="noopener">Isaac Lab 官方文檔 · Installation</a>。內容如與官方不符，請以官方為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#系統需求">系統需求</a>
+      <a class="toc-h2" href="#四種安裝路徑">四種安裝路徑</a>
+      <a class="toc-h2" href="#pip-安裝推薦流程">Pip 安裝（推薦流程）</a>
+      <a class="toc-h3" href="#1-建立虛擬環境">1. 建立虛擬環境</a>
+      <a class="toc-h3" href="#2-以-pip-安裝-isaac-sim">2. 安裝 Isaac Sim</a>
+      <a class="toc-h3" href="#3-取得並安裝-isaac-lab">3. 安裝 Isaac Lab</a>
+      <a class="toc-h3" href="#4-驗證安裝">4. 驗證安裝</a>
+      <a class="toc-h2" href="#isaaclabsh-常用指令">isaaclab.sh 常用指令</a>
+      <a class="toc-h2" href="#容器與雲端部署">容器與雲端部署</a>
+      <a class="toc-h2" href="#資產快取">資產快取</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

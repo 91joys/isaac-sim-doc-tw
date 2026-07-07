@@ -54,12 +54,14 @@
     }
     .site-card:hover { transform: translateY(-4px); box-shadow: 0 16px 44px rgba(10,16,22,0.2); }
     .site-card.isaac { border-top-color: #76b900; }
+    .site-card.isaaclab { border-top-color: #f57c00; }
     .site-card.newton { border-top-color: #1e88e5; }
     .site-card.ndpi { border-top-color: #14a89e; }
     .site-card.warp { border-top-color: #7e57c2; }
     .site-card .logo { font-size: 2.2rem; margin-bottom: 10px; }
     .site-card h2 { margin: 0 0 4px; font-size: 1.5rem; }
     .site-card h2 .hl-isaac { color: #5a8f00; }
+    .site-card h2 .hl-isaaclab { color: #c85a00; }
     .site-card h2 .hl-newton { color: #1565c0; }
     .site-card h2 .hl-ndpi { color: #0b7a72; }
     .site-card h2 .hl-warp { color: #5e35b1; }
@@ -82,6 +84,7 @@
       left: 4px;
     }
     .site-card.isaac li::before { color: #76b900; }
+    .site-card.isaaclab li::before { color: #f57c00; }
     .site-card.newton li::before { color: #1e88e5; }
     .site-card.ndpi li::before { color: #14a89e; }
     .site-card.warp li::before { color: #7e57c2; }
@@ -95,6 +98,7 @@
       color: #fff;
     }
     .site-card.isaac .enter { background: #76b900; color: #10151a; }
+    .site-card.isaaclab .enter { background: #f57c00; color: #10151a; }
     .site-card.newton .enter { background: #1e88e5; }
     .site-card.ndpi .enter { background: #0b7a72; }
     .site-card.warp .enter { background: #5e35b1; }
@@ -143,6 +147,7 @@
   <div class="badges">
     <span class="badge">繁體中文</span>
     <span class="badge">Isaac Sim 6.0.1</span>
+    <span class="badge">Isaac Lab</span>
     <span class="badge">Newton Physics 1.3.0</span>
     <span class="badge">Warp 1.14.0</span>
     <span class="badge">nDPI 5.0</span>
@@ -162,6 +167,20 @@
       <li>逐章附官方原文連結對照</li>
     </ul>
     <span class="enter">進入 Isaac Sim 文檔 →</span>
+  </a>
+
+  <a class="site-card isaaclab" href="isaaclab/index.html">
+    <div class="logo">🦾</div>
+    <h2><span class="hl-isaaclab">Isaac Lab</span> 中文文檔</h2>
+    <p class="tagline">建構於 Isaac Sim 的 GPU 加速機器人學習框架——大規模平行模擬、域隨機化與四大 RL 框架，專為強化學習與從示範學習而生。</p>
+    <ul>
+      <li>總覽文檔：9 章從定位、架構到官方章節對照</li>
+      <li>安裝與部署：四種安裝路徑、容器與雲端</li>
+      <li>核心概念：五層架構、Manager-Based 與 Direct 雙工作流程</li>
+      <li>教學系列：六大主題 20+ 課循序實戰</li>
+      <li>可用環境與強化學習：任務命名慣例、RSL-RL／RL-Games／SKRL／SB3</li>
+    </ul>
+    <span class="enter">進入 Isaac Lab 文檔 →</span>
   </a>
 
   <a class="site-card newton" href="newton/index.html">
@@ -224,7 +243,7 @@
 </section>
 
 <footer class="site-footer">
-  <p>本站內容整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>、<a href="https://newton-physics.github.io/newton/stable/guide/overview.html" target="_blank" rel="noopener">Newton Physics 官方文檔</a> 與 <a href="https://nvidia.github.io/warp/v1.14/index.html" target="_blank" rel="noopener">NVIDIA Warp 官方文檔</a>。內容如與最新版官方文檔不符，請以官方為準。<br>本站為非官方學習資源。</p>
+  <p>本站內容整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>、<a href="https://isaac-sim.github.io/IsaacLab/main/index.html" target="_blank" rel="noopener">Isaac Lab 官方文檔</a>、<a href="https://newton-physics.github.io/newton/stable/guide/overview.html" target="_blank" rel="noopener">Newton Physics 官方文檔</a> 與 <a href="https://nvidia.github.io/warp/v1.14/index.html" target="_blank" rel="noopener">NVIDIA Warp 官方文檔</a>。內容如與最新版官方文檔不符，請以官方為準。<br>本站為非官方學習資源。</p>
 </footer>
 </body>
 </html>
