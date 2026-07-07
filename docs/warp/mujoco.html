@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MuJoCo Warp 總覽與使用 — NVIDIA Warp 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Warp</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://mujoco.readthedocs.io/en/latest/mjwarp/" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="basics.html">基礎入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="runtime.html">執行期核心功能</a>
+        <a href="devices.html">裝置・串流・並行</a>
+        <a href="differentiability.html">可微分性</a>
+        <div class="nav-group-title">進階主題</div>
+        <a href="tiles.html">Tile 程式設計</a>
+        <a href="generics.html">泛型與程式碼生成</a>
+        <a href="interop.html">互操作性</a>
+        <div class="nav-group-title">模組與參考</div>
+        <a href="modules.html">領域模組</a>
+        <a href="faq.html">FAQ・除錯・限制</a>
+        <div class="nav-group-title">MuJoCo Warp</div>
+        <a href="mujoco.html" class="current">MJWarp 總覽與使用</a>
+        <a href="mujoco-tuning.html">MJWarp 效能調校</a>
+        <a href="mujoco-reference.html">MJWarp 差異與 FAQ</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="mjwarp">MuJoCo Warp（MJWarp）總覽與使用<a class="anchor" href="#mjwarp" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自 <a href="https://mujoco.readthedocs.io/en/latest/mjwarp/" target="_blank" rel="noopener">MuJoCo 官方文檔 MJWarp 章節</a>、<a href="https://github.com/google-deepmind/mujoco_warp" target="_blank" rel="noopener">google-deepmind/mujoco_warp</a> GitHub README（v3.10）與 <a href="https://deepwiki.com/google-deepmind/mujoco_warp" target="_blank" rel="noopener">DeepWiki 架構解析</a>。官方入門教學見 <a href="https://colab.research.google.com/github/google-deepmind/mujoco_warp/blob/main/notebooks/tutorial.ipynb" target="_blank" rel="noopener">tutorial notebook（Colab）</a>。</p>
+</blockquote>
+
+<h2 id="what">什麼是 MuJoCo Warp<a class="anchor" href="#what" aria-hidden="true">#</a></h2>
+<p><strong>MuJoCo Warp（MJWarp）</strong>是用 <a href="docs.html">NVIDIA Warp</a> 重新實作的 GPU 加速版 <a href="https://github.com/google-deepmind/mujoco" target="_blank" rel="noopener">MuJoCo</a> 物理模擬器，針對 NVIDIA 硬體與<strong>大規模平行模擬</strong>最佳化，為機器人學研究提供高吞吐、高精度的模擬。它由 <strong>Google DeepMind 與 NVIDIA 共同開發維護</strong>，是 <a href="../newton/index.html">Newton Physics</a> 專案的一部分，以 Apache-2.0 授權開源。</p>
+<p>MJWarp 的所有物理演算法都以 <code>@wp.kernel</code> 撰寫、資料用 <code>wp.array</code> 存放在 GPU 上——也就是說，本站 Warp 文檔介紹的 kernel 編譯模型、<a href="devices.html">CUDA Graph</a>、<a href="interop.html">PyTorch／JAX 互操作</a>等能力，都直接適用於 MJWarp。</p>
+
+<h2 id="ecosystem">在 MuJoCo 生態系中的定位<a class="anchor" href="#ecosystem" aria-hidden="true">#</a></h2>
+<p>MuJoCo 生態系提供多種批次模擬方案，MJWarp 是其中的 CUDA 原生路線：</p>
+<table>
+<thead><tr><th>方案</th><th>技術</th><th>特性</th></tr></thead>
+<tbody>
+<tr><td><code>mujoco.rollout</code></td><td>CPU 多執行緒呼叫 <code>mj_step</code></td><td>核心快、執行緒多的硬體可達高吞吐；但若模擬在 CPU、學習在 GPU（如 RL），host↔device 傳輸可能成為瓶頸</td></tr>
+<tr><td><code>mjx.step</code>（MJX）</td><td>JAX <code>vmap</code>／<code>pmap</code>，XLA 編譯</td><td>可跑 CPU／GPU／TPU 的多執行緒、多裝置模擬</td></tr>
+<tr><td><code>mujoco_warp.step</code>（MJWarp）</td><td>Warp 直接生成 CUDA kernel</td><td>NVIDIA GPU 上的多執行緒、多裝置模擬；<strong>接觸密集場景的擴展性優於 MJX 的 JAX 實作</strong></td></tr>
+</tbody>
+</table>
+<h3 id="vs-mjx">與 MJX（JAX）的比較<a class="anchor" href="#vs-mjx" aria-hidden="true">#</a></h3>
+<p>MJX 透過 JAX／XLA 取得 GPU 加速與自動微分，但也繼承了 JAX 的「sharp bits」；MJWarp 改走 Warp 直生 CUDA kernel 的路線，避開這些限制：</p>
+<table>
+<thead><tr><th>面向</th><th>MJX（JAX）</th><th>MJWarp（Warp）</th></tr></thead>
+<tbody>
+<tr><td>變長陣列</td><td>受 XLA 靜態 shape 限制</td><td>動態配置，原生支援</td></tr>
+<tr><td>條件邏輯</td><td>受 XLA 控制流程約束</td><td>kernel 內可寫自然的 Python 風格分支</td></tr>
+<tr><td>除錯</td><td>tracing／編譯讓除錯複雜</td><td>kernel 內可用標準 Python 除錯</td></tr>
+<tr><td>記憶體模型</td><td>不可變陣列（函數式）</td><td>可變陣列（指令式）</td></tr>
+<tr><td>整合生態</td><td>JAX 生態（Flax、Optax…）</td><td>直接 CUDA、可獨立使用</td></tr>
+</tbody>
+</table>
+<p>MJWarp 同時被整合進 MJX 與 Newton 兩個框架，作為避開 XLA 限制的替代物理後端（MJX 以 <code>impl='warp'</code> 指定）。</p>
+
+<h2 id="when">何時該用 MJWarp？<a class="anchor" href="#when" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>高吞吐（適合）</strong>：MJWarp 為<strong>吞吐量</strong>（單位時間總模擬步數）最佳化，適合強化學習等需要大量樣本的應用。</li>
+<li><strong>低延遲（不適合）</strong>：MuJoCo 為<strong>延遲</strong>（單步耗時）最佳化——同一個模擬，MJWarp 單步預期比 MuJoCo 慢。即時應用（MPC 線上控制、互動式遙操作）請用 MuJoCo。</li>
+<li><strong>複雜場景（部分適合）</strong>：geom 或自由度很多的場景，MJWarp 擴展性優於 MJX、但不如 MuJoCo；<strong>超過約 60 DoF 可能出現明顯效能衰退</strong>。改善進度追蹤於：稀疏 Jacobian <a href="https://github.com/google-deepmind/mujoco_warp/issues/88" target="_blank" rel="noopener">#88</a>、block Cholesky <a href="https://github.com/google-deepmind/mujoco_warp/issues/320" target="_blank" rel="noopener">#320</a>、constraint islands <a href="https://github.com/google-deepmind/mujoco_warp/issues/886" target="_blank" rel="noopener">#886</a>、sleeping islands <a href="https://github.com/google-deepmind/mujoco_warp/issues/887" target="_blank" rel="noopener">#887</a>（緩解手段見<a href="mujoco-tuning.html#large-scenes">大型場景與 sleeping</a>）。</li>
+<li><strong>可微分模擬（不支援）</strong>：MJX 的動力學 API 可經 JAX 自動微分；MJWarp <strong>目前不支援</strong>經 Warp 的<a href="differentiability.html">自動微分</a>，進度見 <a href="https://github.com/google-deepmind/mujoco_warp/issues/500" target="_blank" rel="noopener">#500</a>。需要可微分物理請考慮 MJX 或 <a href="../newton/diffsim.html">Newton 可微分模擬</a>。</li>
+</ul>
+
+<h2 id="install">安裝與快速體驗<a class="anchor" href="#install" aria-hidden="true">#</a></h2>
+<p>MJWarp 需要 NVIDIA GPU 才能發揮模擬速度，但也支援 CPU 執行以便開發與除錯。</p>
+<p><strong>從 PyPI 安裝：</strong></p>
+<pre><code class="language-bash">pip install mujoco-warp
+</code></pre>
+<p><strong>從原始碼安裝</strong>（使用 <a href="https://github.com/astral-sh/uv" target="_blank" rel="noopener">uv</a>）：</p>
+<pre><code class="language-bash">git clone https://github.com/google-deepmind/mujoco_warp.git
+cd mujoco_warp
+uv sync --all-extras
+uv run pytest -n 8        # 跑測試確認一切正常
+</code></pre>
+<p><strong>30 秒體驗</strong>——在本機看跳舞的人形機器人：</p>
+<pre><code class="language-bash">git clone https://github.com/google-deepmind/mujoco_warp.git &amp;&amp; cd mujoco_warp
+python benchmarks/run.py -f unitree_g1_flat --view
+</code></pre>
+<p>或直接在瀏覽器開 <a href="https://colab.research.google.com/github/google-deepmind/mujoco_warp/blob/main/notebooks/tutorial.ipynb" target="_blank" rel="noopener">Colab 教學</a>（免本機安裝）。官方 benchmark 場景涵蓋剛體接觸、可變形體、布料、SDF 等：Unitree G1（平地／高度場）、MyoArm、ALOHA（雜物抓取／鍋具／SDF／布料）、多人形機器人等，皆可用 <code>python benchmarks/run.py -f &lt;名稱&gt; --view</code> 試跑；<a href="https://google-deepmind.github.io/mujoco_warp/nightly/" target="_blank" rel="noopener">每夜效能基準</a>公開發布。</p>
+
+<h2 id="usage">基本用法<a class="anchor" href="#usage" aria-hidden="true">#</a></h2>
+<p>安裝後以 <code>import mujoco_warp as mjw</code> 匯入，struct、函式與 enum 都掛在頂層 <code>mjw</code> 模組。</p>
+<h3 id="structs">Struct：把 Model／Data 搬上 GPU<a class="anchor" href="#structs" aria-hidden="true">#</a></h3>
+<p>執行 MJWarp 函式前，要先用 <code>mjw.put_model</code> 與 <code>mjw.make_data</code>（或 <code>mjw.put_data</code>）把 struct 複製到裝置上：<code>mjModel</code> 上裝置後得到 <code>mjw.Model</code>，<code>mjData</code> 上裝置後得到 <code>mjw.Data</code>。</p>
+<pre><code class="language-python">mjm = mujoco.MjModel.from_xml_string("...")
+mjd = mujoco.MjData(mjm)
+m = mjw.put_model(mjm)
+d = mjw.put_data(mjm, mjd)
+</code></pre>
+<p>MJWarp 版本的 struct 鏡射 MuJoCo 對應結構，但有兩個關鍵差異：</p>
+<ol>
+<li><code>mjw.Model</code> 與 <code>mjw.Data</code> 內含的是已複製到裝置上的 <strong>Warp 陣列</strong>。</li>
+<li>不支援的功能對應欄位<strong>不存在</strong>於 <code>mjw.Model</code>／<code>mjw.Data</code>；若 <code>mjModel</code> 用到不支援的功能，<code>put_model</code> 會直接拋出例外。</li>
+</ol>
+<h3 id="batch">批次大小參數<a class="anchor" href="#batch" aria-hidden="true">#</a></h3>
+<p>MJWarp 為平行模擬最佳化，批次規模由這幾個參數指定：</p>
+<table>
+<thead><tr><th>參數</th><th>意義</th></tr></thead>
+<tbody>
+<tr><td><code>nworld</code></td><td>要平行模擬的世界數</td></tr>
+<tr><td><code>nconmax</code></td><td>每個世界的預期接觸數；所有世界的接觸上限為 <code>nconmax × nworld</code></td></tr>
+<tr><td><code>naconmax</code></td><td><code>nconmax</code> 的替代寫法——<strong>所有世界合計</strong>的接觸上限；兩者都設時 <code>nconmax</code> 被忽略</td></tr>
+<tr><td><code>njmax</code></td><td>每個世界的約束（constraint）數上限</td></tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>語義差異</strong>：單一世界的接觸數可以超過 <code>nconmax</code>，只要全部世界合計不超過 <code>nworld × nconmax</code>；但每個世界的約束數<strong>嚴格受限</strong>於 <code>njmax</code>。<br>
+<strong>XML 不解析</strong>：<code>nconmax</code>／<code>njmax</code> 不會從 XML 的 <code>size/nconmax</code>、<code>size/njmax</code> 讀取（該參數已棄用），必須直接傳給 <code>mjw.make_data</code> 或 <code>mjw.put_data</code>。</p>
+</blockquote>
+<h3 id="functions">函式<a class="anchor" href="#functions" aria-hidden="true">#</a></h3>
+<p>MuJoCo 函式以<strong>同名、但符合 PEP 8 命名</strong>的 MJWarp 函式對外提供（如 <code>mj_step</code> → <code>mjw.step</code>）。主模擬流程（main simulation）的大部分函式與部分前向模擬子元件都可從頂層 <code>mjw</code> 模組取用。</p>
+<h3 id="example">最小範例<a class="anchor" href="#example" aria-hidden="true">#</a></h3>
+<pre><code class="language-python"># 用 100 種不同初速丟一顆球
+import mujoco
+import mujoco_warp as mjw
+import warp as wp
+
+_MJCF = r"""
+&lt;mujoco&gt;
+  &lt;worldbody&gt;
+    &lt;body&gt;
+      &lt;freejoint/&gt;
+      &lt;geom size=".15" mass="1" type="sphere"/&gt;
+    &lt;/body&gt;
+  &lt;/worldbody&gt;
+&lt;/mujoco&gt;
+"""
+
+mjm = mujoco.MjModel.from_xml_string(_MJCF)
+m = mjw.put_model(mjm)
+d = mjw.make_data(mjm, nworld=100)
+
+# 初始化各世界的速度
+wp.copy(d.qvel, wp.array([[float(i) / 100, 0, 0, 0, 0, 0] for i in range(100)], dtype=float))
+
+# 模擬物理
+mjw.step(m, d)
+
+print(f'qpos:\n{d.qpos.numpy()}')
+</code></pre>
+<h3 id="cli">命令列工具<a class="anchor" href="#cli" aria-hidden="true">#</a></h3>
+<pre><code class="language-bash"># 效能基準測試
+mjwarp-testspeed benchmark/humanoid/humanoid.xml
+
+# 互動式模擬檢視器
+mjwarp-viewer benchmark/humanoid/humanoid.xml
+
+# 效能剖析：輸出完整 event trace
+mjwarp-testspeed benchmarks/humanoid/humanoid.xml --event_trace
+</code></pre>
+<p><code>mjwarp-testspeed</code> 有豐富的選項（<code>--help</code> 查看），調校時常用的 <code>--measure_alloc</code>、<code>--memory</code>、<code>--nvmax</code> 見<a href="mujoco-tuning.html">效能調校</a>。開發者若要為 MJWarp 寫 Warp kernel，官方提供 <a href="https://github.com/google-deepmind/mujoco_warp/tree/main/contrib/kernel_analyzer" target="_blank" rel="noopener">kernel_analyzer</a> VS Code 外掛（PR 上也會自動執行相同檢查）。</p>
+
+<h2 id="integration">整合 MJWarp：選一條路<a class="anchor" href="#integration" aria-hidden="true">#</a></h2>
+<p>多數情況下 MJWarp 可以直接當作 MuJoCo 的 drop-in 替代品安裝使用；若要接學習框架：</p>
+<table>
+<thead><tr><th>偏好</th><th>方案</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td>JAX</td><td><a href="https://mujoco.readthedocs.io/en/stable/mjx.html" target="_blank" rel="noopener">MJX</a>（<code>impl='warp'</code>）</td><td>經 MJX 的 JAX API 使用 MJWarp；機器人 ML 範例見 <a href="https://github.com/google-deepmind/mujoco_playground" target="_blank" rel="noopener">MuJoCo Playground</a></td></tr>
+<tr><td>PyTorch</td><td><a href="https://github.com/isaac-sim/IsaacLab/tree/feature/newton" target="_blank" rel="noopener">Isaac Lab</a>（經 <a href="../newton/index.html">Newton</a>）</td><td>強大、高度可擴充的多物理模擬，深度整合 NVIDIA 生態系</td></tr>
+<tr><td>PyTorch（輕量）</td><td><a href="https://github.com/mujocolab/mjlab" target="_blank" rel="noopener">mjlab</a></td><td>把 Isaac Lab 的 manager-based API 直接架在 MJWarp 上，依賴極少、可直接存取原生 MuJoCo 資料結構</td></tr>
+</tbody>
+</table>
+
+<h2 id="parity">功能相容性<a class="anchor" href="#parity" aria-hidden="true">#</a></h2>
+<p>MJWarp 支援 MuJoCo 絕大多數主模擬功能，目前的例外（v3.10）：</p>
+<ul>
+<li><strong>積分器</strong>：不支援 <code>IMPLICITFAST</code> 的 midpoint 積分功能。</li>
+<li><strong>求解器</strong>：<code>PGS</code> 與 <code>noslip</code> 尚未支援。</li>
+<li><strong>致動器／感測器</strong>：<code>PLUGIN</code> 型別尚未支援。</li>
+<li><strong>Flex（可變形體）</strong>：實驗性——尚未全部實作或最佳化。</li>
+<li><strong>可微分性</strong>：尚不可用（<a href="https://github.com/google-deepmind/mujoco_warp/issues/500" target="_blank" rel="noopener">#500</a> 追蹤中）。</li>
+</ul>
+<p>把用到不支援功能的 <code>mjModel</code> 交給 <code>put_model</code> 會拋出例外。最新的相容性清單以 <a href="https://github.com/google-deepmind/mujoco_warp#mujoco-api-compatibility" target="_blank" rel="noopener">GitHub README</a> 為準。其餘行為層面的細節差異（warmstart、選項、碰撞器……）整理於 <a href="mujoco-reference.html">MJWarp 差異與 FAQ</a>。</p>
+
+<h2 id="architecture">架構速覽<a class="anchor" href="#architecture" aria-hidden="true">#</a></h2>
+<p>依 <a href="https://deepwiki.com/google-deepmind/mujoco_warp" target="_blank" rel="noopener">DeepWiki</a> 的解析，MJWarp 架構由三個核心原則貫穿：</p>
+<h3 id="host-device">1. Host／Device 分離<a class="anchor" href="#host-device" aria-hidden="true">#</a></h3>
+<p>使用者照常用 MuJoCo 工具鏈編譯 MJCF XML 得到 <code>mujoco.MjModel</code>／<code>MjData</code>，再經 <code>io</code> 模組的 <code>put_model</code>／<code>put_data</code>／<code>make_data</code> 搬上 GPU、以 <code>get_data_into</code> 取回結果。<code>Model</code> 是不可變的靜態組態、<code>Data</code> 是可變的時變狀態；模擬迴圈完全留在裝置上，把昂貴的 CPU↔GPU 傳輸降到最少。</p>
+<h3 id="batched-exec">2. 批次平行執行<a class="anchor" href="#batched-exec" aria-hidden="true">#</a></h3>
+<p>所有 <code>Data</code> 陣列的第一維都是 <code>nworld</code>：單一共用的 <code>Model</code> 配上 N 份獨立世界的狀態，kernel 以 <code>worldid</code> 作為第一個執行緒索引啟動（<code>wp.launch(dim=(nworld, ...))</code>），每個執行緒（區塊）處理一個獨立模擬——這是 RL、蒙地卡羅與參數掃描高效平行化的基礎。</p>
+<h3 id="reference-compat">3. 與 MuJoCo 參考實作對齊<a class="anchor" href="#reference-compat" aria-hidden="true">#</a></h3>
+<p>MJWarp 維持與 MuJoCo C 實作的演算法相容性，測試套件在多樣場景下對照 MuJoCo 驗證結果——在拿到 GPU 效能的同時保證物理正確。</p>
+<h3 id="modules-map">模組地圖<a class="anchor" href="#modules-map" aria-hidden="true">#</a></h3>
+<table>
+<thead><tr><th>子系統</th><th>模組</th><th>內容</th></tr></thead>
+<tbody>
+<tr><td>公開 API</td><td><code>__init__.py</code>・CLI</td><td><code>step</code>、<code>forward</code>、<code>kinematics</code>…；<code>mjwarp-viewer</code>、<code>mjwarp-testspeed</code></td></tr>
+<tr><td>核心</td><td><code>io.py</code>・<code>types.py</code></td><td><code>put_model</code>／<code>put_data</code>／<code>make_data</code>／<code>get_data_into</code>；<code>Model</code>、<code>Data</code>、<code>Contact</code>、<code>Constraint</code>、<code>Option</code></td></tr>
+<tr><td>物理管線</td><td><code>forward.py</code>・<code>smooth.py</code>・<code>passive.py</code>・<code>support.py</code></td><td>步進與積分（euler／rk4／implicit）；運動學、CRB、RNE；重力、彈簧、阻尼；Jacobian 與力學輔助</td></tr>
+<tr><td>碰撞</td><td><code>collision_driver.py</code>・<code>collision_primitive.py</code></td><td>broadphase／narrowphase 協調與基元碰撞</td></tr>
+<tr><td>約束</td><td><code>constraint.py</code>・<code>solver.py</code></td><td>等式／極限／摩擦約束生成；CG／Newton 求解與 linesearch</td></tr>
+<tr><td>觀測</td><td><code>sensor.py</code>・<code>ray.py</code></td><td>感測器（pos／vel／acc 階段）；BVH 加速 ray casting</td></tr>
+</tbody>
+</table>
+
+<footer class="page-footer">
+  <p>本頁整理自 MuJoCo 官方文檔（latest）與 mujoco_warp GitHub（v3.10）。內容以官方為準。下一步：<a href="mujoco-tuning.html">MJWarp 效能調校 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#what">什麼是 MuJoCo Warp</a>
+      <a href="#ecosystem">生態系定位</a>
+      <a href="#vs-mjx" class="toc-h3">與 MJX 比較</a>
+      <a href="#when">何時該用 MJWarp</a>
+      <a href="#install">安裝與快速體驗</a>
+      <a href="#usage">基本用法</a>
+      <a href="#structs" class="toc-h3">Struct</a>
+      <a href="#batch" class="toc-h3">批次大小參數</a>
+      <a href="#example" class="toc-h3">最小範例</a>
+      <a href="#cli" class="toc-h3">命令列工具</a>
+      <a href="#integration">整合 MJWarp</a>
+      <a href="#parity">功能相容性</a>
+      <a href="#architecture">架構速覽</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

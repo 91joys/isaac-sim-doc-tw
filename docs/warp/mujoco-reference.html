@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MuJoCo Warp 差異與 FAQ — NVIDIA Warp 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Warp</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://mujoco.readthedocs.io/en/latest/mjwarp/" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="basics.html">基礎入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="runtime.html">執行期核心功能</a>
+        <a href="devices.html">裝置・串流・並行</a>
+        <a href="differentiability.html">可微分性</a>
+        <div class="nav-group-title">進階主題</div>
+        <a href="tiles.html">Tile 程式設計</a>
+        <a href="generics.html">泛型與程式碼生成</a>
+        <a href="interop.html">互操作性</a>
+        <div class="nav-group-title">模組與參考</div>
+        <a href="modules.html">領域模組</a>
+        <a href="faq.html">FAQ・除錯・限制</a>
+        <div class="nav-group-title">MuJoCo Warp</div>
+        <a href="mujoco.html">MJWarp 總覽與使用</a>
+        <a href="mujoco-tuning.html">MJWarp 效能調校</a>
+        <a href="mujoco-reference.html" class="current">MJWarp 差異與 FAQ</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="reference">MJWarp 與 MuJoCo 的差異・FAQ<a class="anchor" href="#reference" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方文檔 <a href="https://mujoco.readthedocs.io/en/latest/mjwarp/#differences-from-mujoco" target="_blank" rel="noopener">Differences from MuJoCo</a> 與 <a href="https://mujoco.readthedocs.io/en/latest/mjwarp/#frequently-asked-questions" target="_blank" rel="noopener">Frequently Asked Questions</a> 章節。功能層級的相容性清單見<a href="mujoco.html#parity">總覽頁</a>。</p>
+</blockquote>
+
+<h2 id="differences">與 MuJoCo 的行為差異<a class="anchor" href="#differences" aria-hidden="true">#</a></h2>
+<h3 id="warmstart">Warmstart<a class="anchor" href="#warmstart" aria-hidden="true">#</a></h3>
+<p>未停用 warmstart 時，MJWarp 求解器<strong>一律</strong>用 <code>qacc_warmstart</code> 初始化加速度；MuJoCo 則會比較 <code>qacc_smooth</code> 與 <code>qacc_warmstart</code> 再決定用哪個。</p>
+<h3 id="factorization">慣性矩陣分解<a class="anchor" href="#factorization" aria-hidden="true">#</a></h3>
+<p>稠密計算時，MJWarp 的慣性矩陣分解 <code>qLD</code> 用 Warp 的 <code>L'L</code> Cholesky（<a href="https://nvidia.github.io/warp/language_reference/_generated/warp._src.lang.tile_cholesky.html" target="_blank" rel="noopener">wp.tile_cholesky</a>）計算，與 MuJoCo 的反向 <code>L'DL</code> 例程（<code>mj_factorM</code>）結果<strong>不會逐位一致</strong>。</p>
+<h3 id="options">選項（Option）差異<a class="anchor" href="#options" aria-hidden="true">#</a></h3>
+<p><code>mjw.Option</code> 欄位對應 <code>mjOption</code>，例外：</p>
+<ul>
+<li><code>impratio</code> 以其倒數平方根 <code>impratio_invsqrt</code> 儲存。</li>
+<li>求解器 <code>tolerance</code> 被鉗制在最小值 <code>1e-6</code>。</li>
+<li>接觸 override 參數 <code>o_margin</code>、<code>o_solref</code>、<code>o_solimp</code>、<code>o_friction</code> 不提供。</li>
+</ul>
+<p><code>disableflags</code>：<code>mjDSBL_MIDPHASE</code> 與 <code>mjDSBL_AUTORESET</code> 不提供；<code>mjDSBL_NATIVECCD</code> 的作用改為「把預設 box-box 碰撞器從 CCD 換成基元碰撞器」。<br>
+<code>enableflags</code>：<code>mjENBL_OVERRIDE</code> 與 <code>mjENBL_FWDINV</code> 不提供。</p>
+<p><strong>MJWarp 獨有選項</strong>：</p>
+<table>
+<thead><tr><th>選項</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><code>broadphase</code></td><td>broadphase 演算法類型（<code>mjw.BroadphaseType</code>）</td></tr>
+<tr><td><code>broadphase_filter</code></td><td>broadphase 使用的過濾方式（<code>mjw.BroadphaseFilter</code>）</td></tr>
+<tr><td><code>graph_conditional</code></td><td>使用 CUDA graph conditional</td></tr>
+<tr><td><code>run_collision_detection</code></td><td>是否執行碰撞偵測例程</td></tr>
+<tr><td><code>contact_sensor_maxmatch</code></td><td>接觸感測器匹配的接觸數上限（見<a href="mujoco-tuning.html#contact-sensor">效能調校</a>）</td></tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>流體模型</strong>：修改 <code>density</code>、<code>viscosity</code> 或 <code>wind</code> 後可能需要更新 <code>Model.has_fluid</code>。<br>
+<strong>Graph capture</strong>：修改 <code>mjw.Option</code> 欄位後，可能需要重新 capture graph 設定才會生效。</p>
+</blockquote>
+<h3 id="sdf">SDF plugin<a class="anchor" href="#sdf" aria-hidden="true">#</a></h3>
+<p>SDF 碰撞支援 plugin：用 <code>@wp.func</code> 寫距離函式與其梯度，再覆寫模組層級的 hook。以 MuJoCo 的 <a href="https://github.com/google-deepmind/mujoco/blob/main/model/plugin/sdf/bowl.xml" target="_blank" rel="noopener">bowl.xml</a> 為例（節錄）：</p>
+<pre><code class="language-python">import mujoco_warp as mjw
+import warp as wp
+
+@wp.func
+def bowl(p: wp.vec3, attr: wp.vec3) -> float:
+    """碗形的 signed distance function。attr = (height, radius, thickness)"""
+    height, radius, thick = attr[0], attr[1], attr[2]
+    width = wp.sqrt(radius * radius - height * height)
+    q0 = wp.sqrt(p[0] * p[0] + p[1] * p[1])   # q = (norm_xy(p), p.z)
+    q1 = p[2]
+    if height * q0 &lt; width * q1:
+        dist = wp.sqrt((q0 - width) ** 2.0 + (q1 - height) ** 2.0)
+    else:
+        dist = wp.abs(wp.sqrt(q0 * q0 + q1 * q1) - radius)
+    return dist - thick
+
+@wp.func
+def bowl_sdf_grad(p: wp.vec3, attr: wp.vec3) -> wp.vec3:
+    """有限差分近似 SDF 梯度"""
+    eps = float(1e-6)
+    f0 = bowl(p, attr)
+    return wp.vec3(
+        (bowl(wp.vec3(p[0] + eps, p[1], p[2]), attr) - f0) / eps,
+        (bowl(wp.vec3(p[0], p[1] + eps, p[2]), attr) - f0) / eps,
+        (bowl(wp.vec3(p[0], p[1], p[2] + eps), attr) - f0) / eps,
+    )
+
+# 註冊：覆寫模組層級 hook
+@wp.func
+def user_sdf(p: wp.vec3, attr: wp.vec3, sdf_type: int) -> float:
+    return bowl(p, attr)
+
+@wp.func
+def user_sdf_grad(p: wp.vec3, attr: wp.vec3, sdf_type: int) -> wp.vec3:
+    return bowl_sdf_grad(p, attr)
+
+mjw._src.collision_sdf.user_sdf = user_sdf
+mjw._src.collision_sdf.user_sdf_grad = user_sdf_grad
+</code></pre>
+<h3 id="callbacks">物理 callback<a class="anchor" href="#callbacks" aria-hidden="true">#</a></h3>
+<p>MuJoCo 用<strong>全域函式指標</strong>提供物理 callback；MJWarp 改為<strong>逐模型</strong>的 Python 函式，掛在 <code>mjw.Model</code> 實例的 <code>Model.callback</code> 上。可用的 callback：</p>
+<table>
+<thead><tr><th>Callback</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><code>control</code></td><td>自訂控制律，寫入 <code>Data.ctrl</code></td></tr>
+<tr><td><code>passive</code></td><td>自訂被動力，寫入 <code>Data.qfrc_passive</code></td></tr>
+<tr><td><code>act_dyn</code></td><td>自訂致動器動態，寫入 <code>Data.act_dot</code></td></tr>
+<tr><td><code>act_gain</code></td><td>自訂致動器增益，寫入 <code>Data.actuator_force</code></td></tr>
+<tr><td><code>act_bias</code></td><td>自訂致動器偏置，寫入 <code>Data.actuator_force</code></td></tr>
+<tr><td><code>sensor</code></td><td>自訂感測器，寫入 <code>Data.sensordata</code>；額外接收 <code>stage</code> 引數</td></tr>
+<tr><td><code>contactfilter</code></td><td>自訂接觸過濾，寫入 <code>Data.contact</code></td></tr>
+</tbody>
+</table>
+<pre><code class="language-python">@wp.kernel
+def _ctrl_callback(ctrl_out: wp.array2d(dtype=float)):
+    worldid = wp.tid()
+    ctrl_out[worldid, 0] = 2.0
+
+def ctrl_callback(m, d):
+    wp.launch(_ctrl_callback, dim=(d.nworld,), outputs=[d.ctrl])
+
+m = mjw.put_model(mjm)
+d = mjw.make_data(mjm)
+m.callback.control = ctrl_callback
+mjw.step(m, d)
+assert d.ctrl.numpy()[0, 0] == 2.0
+</code></pre>
+<h3 id="boxbox">Box-box 碰撞<a class="anchor" href="#boxbox" aria-hidden="true">#</a></h3>
+<p>box-box 預設走通用凸體碰撞管線（GJK／EPA）。設定 <code>NATIVECCD</code> 停用旗標可改用移植自 <code>engine_collision_box.c</code> 的專用基元碰撞器：</p>
+<pre><code class="language-python">m.opt.disableflags |= mjw.DisableBit.NATIVECCD
+</code></pre>
+<p>專用碰撞器最多產生 <strong>8</strong> 個接觸點（凸體管線最多 4 個），對箱體堆疊與操作任務的接觸穩定性可能有幫助。</p>
+<h3 id="ccd-margin">CCD margin<a class="anchor" href="#ccd-margin" aria-hidden="true">#</a></h3>
+<p>某些 CCD 碰撞器不支援非零的 geom／pair margin，<code>put_model</code> 會拋 <code>NotImplementedError</code>：</p>
+<table>
+<thead><tr><th>Geom 配對</th><th>情境</th><th>解法</th></tr></thead>
+<tbody>
+<tr><td>box-box、box-mesh、mesh-mesh</td><td><code>MULTICCD</code> 啟用（預設開）</td><td>margin 設 0 或停用 <code>MULTICCD</code></td></tr>
+<tr><td>box-box</td><td><code>NATIVECCD</code> 啟用（預設開）</td><td>margin 設 0 或停用 <code>NATIVECCD</code></td></tr>
+</tbody>
+</table>
+<h3 id="render-diff">渲染器定位差異<a class="anchor" href="#render-diff" aria-hidden="true">#</a></h3>
+<p>MJWarp 的批次渲染器與 MuJoCo 渲染器目的不同——它是<strong>高吞吐、低擬真</strong>的 single-hit raycaster。支援：簡單 Lambertian 漫反射著色、基本點光源／方向光、貼圖、陰影；不支援：全域光照等進階光效、物理式材質（PBR）。</p>
+
+<h2 id="faq">FAQ<a class="anchor" href="#faq" aria-hidden="true">#</a></h2>
+<h3 id="faq-frameworks">學習框架<a class="anchor" href="#faq-frameworks" aria-hidden="true">#</a></h3>
+<p><strong>MJWarp 能配 JAX 用嗎？</strong>可以，經 <a href="interop.html">Warp 的 JAX 互操作</a>；另外 MJX 以 <code>impl='warp'</code> 提供 MJWarp 部分 API 的 JAX 介面。</p>
+<p><strong>MJWarp 能配 PyTorch 用嗎？</strong>可以，經 <a href="interop.html">Warp 的 PyTorch 互操作</a>。</p>
+<p><strong>怎麼用 MJWarp 物理訓練策略？</strong>範例：<a href="https://github.com/isaac-sim/IsaacLab/tree/feature/newton" target="_blank" rel="noopener">Isaac Lab</a>（經 Newton API）、<a href="https://github.com/mujocolab/mjlab" target="_blank" rel="noopener">mjlab</a>（PyTorch 直接訓練）、<a href="https://github.com/google-deepmind/mujoco_playground" target="_blank" rel="noopener">MuJoCo Playground</a>（經 MJX API）。</p>
+<h3 id="faq-features">功能<a class="anchor" href="#faq-features" aria-hidden="true">#</a></h3>
+<p><strong>MJWarp 可微分嗎？</strong>不行。目前無法經 Warp 的<a href="differentiability.html">自動微分</a>取得梯度，進度見 <a href="https://github.com/google-deepmind/mujoco_warp/issues/500" target="_blank" rel="noopener">#500</a>。</p>
+<p><strong>支援多 GPU 嗎？</strong>支援，用 Warp 的 <a href="devices.html"><code>wp.ScopedDevice</code></a>：</p>
+<pre><code class="language-python"># 每張 GPU 各建一個 graph
+graph = {}
+for device in wp.get_cuda_devices():
+    with wp.ScopedDevice(device):
+        m = mjw.put_model(mjm)
+        d = mjw.make_data(mjm)
+        with wp.ScopedCapture(device) as capture:
+            mjw.step(m, d)
+        graph[device] = capture.graph
+
+# 在每張 GPU 上啟動 graph
+for device in wp.get_cuda_devices():
+    wp.capture_launch(graph[device])
+</code></pre>
+<p>RL 分散式訓練實例見 <a href="https://mujocolab.github.io/mjlab/main/source/training/distributed_training.html" target="_blank" rel="noopener">mjlab distributed training</a>。</p>
+<p><strong>GPU 上結果有決定性嗎？</strong>沒有。GPU 的非決定性 atomic 運算會造成順序或微小數值差異；要決定性結果請 <code>wp.set_device("cpu")</code> 改跑 CPU。GPU 決定性的開發追蹤於 <a href="https://github.com/google-deepmind/mujoco_warp/issues/562" target="_blank" rel="noopener">#562</a>。</p>
+<p><strong>方向（orientation）怎麼表示？</strong>單位四元數，遵循 MuJoCo 慣例 <code>w, x, y, z</code>（scalar, vector）。注意：MJWarp 用 Warp 內建的 <code>wp.quaternion</code> 型別，但<strong>不採用</strong> Warp 的 <code>x, y, z, w</code> 慣例與運算，而是自行實作遵循 MuJoCo 慣例的四元數例程（見 <a href="https://github.com/google-deepmind/mujoco_warp/blob/main/mujoco_warp/_src/math.py" target="_blank" rel="noopener">math.py</a>）。</p>
+<p><strong>有 named access／bind API 嗎？</strong>還沒有，追蹤於 <a href="https://github.com/google-deepmind/mujoco_warp/issues/884" target="_blank" rel="noopener">#884</a>。</p>
+<p><strong>沒有碰撞為什麼也回報接觸？</strong>凡是對任何碰撞感測器有貢獻的唯一 geom 配對，都會回報 1 個接觸——即使該配對並未真的碰撞。MuJoCo／MJX 的碰撞感測器是在計算感測資料時另外呼叫碰撞例程；MJWarp 則在主碰撞管線裡一併計算並把感測器資料存進 contacts。接觸感測器對「實際影響物理的接觸」回報的資訊是正確的。</p>
+<p><strong>Jacobian 為什麼一定是稠密的？</strong>稀疏 Jacobian 尚未實作，<code>Data</code> 的 <code>ten_J</code>、<code>actuator_moment</code>、<code>flexedge_J</code>、<code>efc.J</code> 一律是稠密矩陣（<a href="https://github.com/google-deepmind/mujoco_warp/issues/88" target="_blank" rel="noopener">#88</a> 追蹤中）。</p>
+<p><strong>陣列 shape 為什麼和 mjModel／mjData 不同？</strong>批次模擬下，許多 <code>mjw.Data</code> 欄位帶 <code>Data.nworld</code> 前導維度；部分 <code>mjw.Model</code> 欄位帶大小為 1 的前導維度（表示可被<a href="mujoco-tuning.html#batched-fields">批次參數覆寫</a>做 domain randomization）。另外 <code>Model.qM</code>、<code>Data.efc.J</code>、<code>Data.efc.D</code> 等欄位有 padding 以加速 GPU 載入。</p>
+<p><strong>MJWarp 和 MuJoCo 數值結果為什麼不同？</strong>MJWarp 用 <code>float32</code>，MuJoCo 的 <code>mjtNum</code> 預設是 double；求解器設定（含迭代）、碰撞偵測與小摩擦值都可能對浮點表示差異敏感。遇到非預期結果（含 NaN）請開 GitHub issue。</p>
+<p><strong>qM 稀疏性為什麼與 MuJoCo／MJX 不一致？</strong>語義不同：MuJoCo 的慣性矩陣永遠稀疏，<code>mjtJacobian</code> 影響的是約束 Jacobian；MJWarp（與 MJX）的約束 Jacobian 永遠稠密，<code>mjtJacobian</code> 被轉用來控制慣性矩陣的稠密／稀疏表示。且 <code>AUTO</code> 的自動稀疏門檻為 GPU 最佳化設在 <code>nv &gt; 32</code>（MuJoCo／MJX 是 <code>nv &gt;= 60</code>）；<code>DENSE</code>／<code>SPARSE</code> 明確設定則與兩者一致。此行為未來可能改變。</p>
+<p><strong>怎麼修模擬執行期警告？</strong>模擬中記憶體需求超過既有配置時會出警告：</p>
+<ul>
+<li><code>nconmax</code>／<code>njmax</code> 超限 → 調大 <code>make_data</code>／<code>put_data</code> 對應引數。</li>
+<li><code>Option.ccd_iterations</code> 超限（凸體碰撞迭代不足）→ 調大該設定；注意必須改在<strong>交給 <code>put_model</code> 與 <code>make_data</code>／<code>put_data</code> 的那個 <code>mjModel</code></strong> 上。</li>
+<li><code>Option.contact_sensor_maxmatch</code> 超限 → 調大這個 MJWarp 專屬設定，或重構感測器匹配條件（已知兩個 geom 時直接指定 <code>geom1</code>／<code>geom2</code>）。</li>
+<li><code>height field collision overflow</code>（高度場潛在接觸數超過 <code>mjMAXCONPAIR</code>，部分接觸被忽略）→ 降低高度場解析度，或縮小與高度場互動的 geom。</li>
+</ul>
+<h3 id="faq-compile">編譯<a class="anchor" href="#faq-compile" aria-hidden="true">#</a></h3>
+<p><strong>怎麼縮短編譯時間？</strong>減少需要走通用凸體碰撞管線的碰撞器種類（清單見 <a href="https://github.com/google-deepmind/mujoco_warp/blob/main/mujoco_warp/_src/collision_convex.py" target="_blank" rel="noopener">collision_convex.py</a> 的 <code>_CONVEX_COLLISION_PAIRS</code>）；管線編譯時間的改善追蹤於 <a href="https://github.com/google-deepmind/mujoco_warp/issues/813" target="_blank" rel="noopener">#813</a>。</p>
+<p><strong>升級 MJWarp 後物理行為不對？</strong>Warp 快取可能與新程式碼不相容，除錯時先清掉：刪除 <code>~/.cache/warp</code> 目錄，或：</p>
+<pre><code class="language-python">import warp as wp
+wp.clear_kernel_cache()
+</code></pre>
+<p><strong>能提前編譯（AOT）而不是執行期編譯嗎？</strong>可以，見 Warp 的 <a href="generics.html">AOT 編譯工作流程</a>。</p>
+
+<footer class="page-footer">
+  <p>本頁整理自 MuJoCo 官方文檔（latest）。內容以官方為準。回到 <a href="mujoco.html">MJWarp 總覽</a>或 <a href="index.html">Warp 首頁</a>。</p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#differences">與 MuJoCo 的行為差異</a>
+      <a href="#warmstart" class="toc-h3">Warmstart</a>
+      <a href="#factorization" class="toc-h3">慣性矩陣分解</a>
+      <a href="#options" class="toc-h3">選項差異</a>
+      <a href="#sdf" class="toc-h3">SDF plugin</a>
+      <a href="#callbacks" class="toc-h3">物理 callback</a>
+      <a href="#boxbox" class="toc-h3">Box-box 碰撞</a>
+      <a href="#ccd-margin" class="toc-h3">CCD margin</a>
+      <a href="#render-diff" class="toc-h3">渲染器定位</a>
+      <a href="#faq">FAQ</a>
+      <a href="#faq-frameworks" class="toc-h3">學習框架</a>
+      <a href="#faq-features" class="toc-h3">功能</a>
+      <a href="#faq-compile" class="toc-h3">編譯</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

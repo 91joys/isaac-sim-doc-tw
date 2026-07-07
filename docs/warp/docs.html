@@ -36,6 +36,10 @@
         <div class="nav-group-title">模組與參考</div>
         <a href="modules.html">領域模組</a>
         <a href="faq.html">FAQ・除錯・限制</a>
+        <div class="nav-group-title">MuJoCo Warp</div>
+        <a href="mujoco.html">MJWarp 總覽與使用</a>
+        <a href="mujoco-tuning.html">MJWarp 效能調校</a>
+        <a href="mujoco-reference.html">MJWarp 差異與 FAQ</a>
     </nav>
   </aside>
   <main class="content">
@@ -107,7 +111,7 @@ print(c.numpy())            # 自動同步並取回 CPU
 <h2 id="生態系">生態系：誰在用 Warp<a class="anchor" href="#生態系" aria-hidden="true">#</a></h2>
 <ul>
 <li><strong><a href="https://github.com/newton-physics/newton" target="_blank" rel="noopener">Newton Physics</a></strong>：GPU 加速可微分物理引擎（Disney Research／Google DeepMind／NVIDIA），整個引擎以 Warp 撰寫——本站另有 <a href="../newton/index.html">Newton 中文文檔</a>。</li>
-<li><strong><a href="https://github.com/google-deepmind/mujoco_warp" target="_blank" rel="noopener">MuJoCo Warp</a></strong>：Google DeepMind 與 NVIDIA 維護的 GPU 最佳化 MuJoCo 物理模擬器。</li>
+<li><strong><a href="https://github.com/google-deepmind/mujoco_warp" target="_blank" rel="noopener">MuJoCo Warp</a></strong>：Google DeepMind 與 NVIDIA 維護的 GPU 最佳化 MuJoCo 物理模擬器——本站有完整中文整理：<a href="mujoco.html">總覽與使用</a>、<a href="mujoco-tuning.html">效能調校</a>、<a href="mujoco-reference.html">差異與 FAQ</a>。</li>
 <li><strong><a href="https://github.com/rewarped/rewarped" target="_blank" rel="noopener">Rewarped</a></strong>:平行可微分多物理模擬的強化學習平台。</li>
 <li><strong><a href="https://github.com/Autodesk/XLB" target="_blank" rel="noopener">XLB</a></strong>：Autodesk 維護的 Lattice Boltzmann 流體求解器（Warp 後端）。</li>
 <li><strong><a href="https://github.com/zeshunzong/warp-mpm" target="_blank" rel="noopener">warp-mpm</a></strong>：MPM 模擬器，用於 PhysGaussian 等生成動力學研究。</li>
@@ -142,6 +146,7 @@ print(c.numpy())            # 自動同步並取回 CPU
 <tr><td><a href="interop.html">互操作性</a></td><td><a href="https://nvidia.github.io/warp/v1.14/user_guide/interoperability.html">Interoperability</a>（含 <a href="https://nvidia.github.io/warp/v1.14/user_guide/interoperability_pytorch.html">PyTorch</a>／<a href="https://nvidia.github.io/warp/v1.14/user_guide/interoperability_jax.html">JAX</a>）</td></tr>
 <tr><td><a href="modules.html">領域模組</a></td><td><a href="https://nvidia.github.io/warp/v1.14/domain_modules/sparse.html">Sparse Matrices</a>、<a href="https://nvidia.github.io/warp/v1.14/domain_modules/fem.html">FEM Toolkit</a>、<a href="https://nvidia.github.io/warp/v1.14/domain_modules/render.html">Rendering</a></td></tr>
 <tr><td><a href="faq.html">FAQ・除錯・限制</a></td><td><a href="https://nvidia.github.io/warp/v1.14/user_guide/faq.html">FAQ</a>、<a href="https://nvidia.github.io/warp/v1.14/user_guide/debugging.html">Debugging</a>、<a href="https://nvidia.github.io/warp/v1.14/user_guide/limitations.html">Limitations</a>、<a href="https://nvidia.github.io/warp/v1.14/deep_dive/profiling.html">Profiling</a></td></tr>
+<tr><td><a href="mujoco.html">MuJoCo Warp（三章）</a></td><td><a href="https://mujoco.readthedocs.io/en/latest/mjwarp/">MuJoCo 官方文檔 MJWarp 章節</a>、<a href="https://github.com/google-deepmind/mujoco_warp">mujoco_warp GitHub</a></td></tr>
 </tbody>
 </table>
 <p>官方另有 <a href="https://nvidia.github.io/warp/v1.14/api_reference/warp.html" target="_blank" rel="noopener">API Reference</a> 與 <a href="https://nvidia.github.io/warp/v1.14/language_reference/builtins.html" target="_blank" rel="noopener">Built-Ins 語言參考</a>（kernel 內可用的全部內建函式），屬查表性質，本站不另翻譯。</p>

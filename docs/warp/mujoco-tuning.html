@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MuJoCo Warp 效能調校 — NVIDIA Warp 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Warp</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://mujoco.readthedocs.io/en/latest/mjwarp/" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="basics.html">基礎入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="runtime.html">執行期核心功能</a>
+        <a href="devices.html">裝置・串流・並行</a>
+        <a href="differentiability.html">可微分性</a>
+        <div class="nav-group-title">進階主題</div>
+        <a href="tiles.html">Tile 程式設計</a>
+        <a href="generics.html">泛型與程式碼生成</a>
+        <a href="interop.html">互操作性</a>
+        <div class="nav-group-title">模組與參考</div>
+        <a href="modules.html">領域模組</a>
+        <a href="faq.html">FAQ・除錯・限制</a>
+        <div class="nav-group-title">MuJoCo Warp</div>
+        <a href="mujoco.html">MJWarp 總覽與使用</a>
+        <a href="mujoco-tuning.html" class="current">MJWarp 效能調校</a>
+        <a href="mujoco-reference.html">MJWarp 差異與 FAQ</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="tuning">MJWarp 效能調校與批次模擬<a class="anchor" href="#tuning" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方文檔 <a href="https://mujoco.readthedocs.io/en/latest/mjwarp/#performance-tuning" target="_blank" rel="noopener">Performance Tuning</a>、<a href="https://mujoco.readthedocs.io/en/latest/mjwarp/#batched-model-fields" target="_blank" rel="noopener">Batched Model Fields</a> 與 <a href="https://mujoco.readthedocs.io/en/latest/mjwarp/#batch-rendering" target="_blank" rel="noopener">Batch Rendering</a> 章節。先讀 <a href="mujoco.html">MJWarp 總覽與使用</a>。</p>
+</blockquote>
+
+<h2 id="graph">CUDA Graph capture<a class="anchor" href="#graph" aria-hidden="true">#</a></h2>
+<p><code>mjw.step</code> 這類 MJWarp 函式內部由一大串 kernel launch 組成，直接呼叫時 Warp 會逐一啟動。若函式會被重複呼叫（模擬迴圈幾乎必然如此），建議把整組操作捕捉成 <a href="devices.html">CUDA graph</a>：</p>
+<pre><code class="language-python">with wp.ScopedCapture() as capture:
+    mjw.step(m, d)
+
+# 之後重複啟動 graph——通常比直接呼叫函式快非常多
+wp.capture_launch(capture.graph)
+</code></pre>
+<p>細節見 <a href="https://nvidia.github.io/warp/modules/runtime.html#graph-api-reference" target="_blank" rel="noopener">Warp Graph API 參考</a>。</p>
+
+<h2 id="batch-sizes">批次上限：nconmax／naconmax／njmax<a class="anchor" href="#batch-sizes" aria-hidden="true">#</a></h2>
+<p>接觸與約束上限在建立 <code>mjw.Data</code> 時（<code>make_data</code>／<code>put_data</code>）指定，<strong>記憶體與計算量都隨這些值線性成長</strong>——原則是「在不溢出的前提下越小越好」。好的值高度依賴環境，實務上靠試誤法迭代：</p>
+<ul>
+<li><code>mjwarp-testspeed --measure_alloc</code>：印出每步的實際接觸數與約束數。</li>
+<li><code>mjwarp-viewer</code>：互動操作場景，觀察是否出現 overflow 錯誤。</li>
+</ul>
+
+<h2 id="solver">求解器迭代次數<a class="anchor" href="#solver" aria-hidden="true">#</a></h2>
+<p>MuJoCo 預設的 <code>iterations</code>（求解迭代）與 <code>ls_iterations</code>（linesearch 迭代）上限通常已有合理效能。調低 <code>Option.iterations</code>／<code>Option.ls_iterations</code> 可能提升效能，但應該是調完接觸／約束上限之後的<strong>次要手段</strong>——調太低會讓約束求解器無法收斂，導致模擬不準或不穩定。</p>
+<blockquote>
+<p><strong>與 MJX 的差異</strong>：在 MJX（JAX）這些求解器參數是控制效能的關鍵；MJWarp 則在所有世界都收斂後可以<strong>提前退出</strong>（early exit）省掉多餘計算，所以這些設定對效能的影響相對小。</p>
+</blockquote>
+
+<h2 id="contact-sensor">接觸感測器匹配上限<a class="anchor" href="#contact-sensor" aria-hidden="true">#</a></h2>
+<p>含<a href="https://mujoco.readthedocs.io/en/latest/XMLreference.html#sensor-contact" target="_blank" rel="noopener">接觸感測器</a>的場景有一個「每個感測器最多匹配幾個接觸」的參數 <code>Option.contact_sensor_maxmatch</code>——同樣是在不超限的前提下越小越好；超過上限的匹配接觸會被忽略。可以直接設定或用 XML 自訂數值欄位：</p>
+<pre><code class="language-python">model.opt.contact_sensor_maxmatch = 16
+</code></pre>
+<pre><code class="language-xml">&lt;custom&gt;
+  &lt;numeric name="contact_sensor_maxmatch" data="16"/&gt;
+&lt;/custom&gt;
+</code></pre>
+
+<h2 id="memory">記憶體<a class="anchor" href="#memory" aria-hidden="true">#</a></h2>
+<p>世界數很大時，模擬吞吐常被記憶體需求限制。最佳化考量：</p>
+<ul>
+<li><strong>CCD 碰撞器比基元（primitive）碰撞器耗記憶體</strong>（各配對用哪種碰撞器見 MuJoCo 的 <a href="https://mujoco.readthedocs.io/en/latest/computation/index.html#copairwise" target="_blank" rel="noopener">pair-wise colliders 表</a>）；<code>multiccd</code> 又比 CCD 更耗。</li>
+<li>CCD 記憶體需求隨 <code>Option.ccd_iterations</code> 線性成長。</li>
+<li>含 mesh geom 且啟用 <code>multiccd</code> 的場景，記憶體隨「所有 mesh 中每面最大頂點數」與「每頂點最大邊數」線性成長。</li>
+<li><code>mjwarp-testspeed --memory</code> 回報總記憶體用量，以及 <code>Model</code>／<code>Data</code> 中吃記憶體的大戶欄位；CCD 與約束求解器的 inline 配置列為 <code>Other memory</code>。</li>
+<li><strong>降低 CCD 上限</strong>：<code>make_data</code>／<code>put_data</code> 的 <code>nccdmax</code>／<code>naccdmax</code> 參數可設得比 <code>nconmax</code>／<code>naconmax</code> 小，只需涵蓋「CCD 碰撞器產生的接觸」上限。例：10 個世界共 80 個接觸——mesh-mesh 30（CCD）、橢球-橢球 10（CCD）、球-球 40（基元），則 <code>nconmax</code>／<code>naconmax</code> 至少設 8／80（broadphase 可能需要更多），<code>nccdmax</code>／<code>naccdmax</code> 設 3／30 即可。</li>
+</ul>
+<blockquote>
+<p><strong>每碰撞器接觸數差異</strong>：部分 MJWarp 碰撞器的最大接觸數與 MuJoCo 不同——<code>PLANE&lt;&gt;MESH</code>：4 vs 3；<code>HFieldCCD</code>：4 vs <code>mjMAXCONPAIR</code>。<br>
+<strong>稀疏性</strong>：稀疏 Jacobian 可望大幅省記憶體，進度見 <a href="https://github.com/google-deepmind/mujoco_warp/issues/88" target="_blank" rel="noopener">#88</a>。</p>
+</blockquote>
+
+<h2 id="large-scenes">大型場景：sleeping 與 islands<a class="anchor" href="#large-scenes" aria-hidden="true">#</a></h2>
+<p>總自由度（<code>nv</code>）很多的場景計算昂貴，但常常大部分物體是靜止的。MJWarp 可以把靜止物體<strong>睡眠（sleep）</strong>，將其排除在多數計算的工作集之外；並把 body 分組成獨立的 <strong>island</strong>——island 內所有 body 都靜止時整個 island 一起入睡。目前碰撞管線與約束求解器都受益於 sleeping，未來會有更多元件支援。</p>
+<h3 id="compact">Compact solver（緊湊求解器）<a class="anchor" href="#compact" aria-hidden="true">#</a></h3>
+<p>針對「總 DoF 多、但活躍 DoF 少（通常 &lt; 64，例如兩支帶夾爪的手臂 16 DoF ＋ 8 個活動物體 48 DoF）」的場景，MJWarp 提供利用睡眠機制的 compact solver：</p>
+<ol>
+<li>由活躍 island 求出每個世界的<strong>活躍 DoF 集合</strong>。</li>
+<li>把活躍 DoF <strong>壓實（compact）</strong>進一塊已知最大尺寸（<code>nvmax</code>）的連續稠密工作區。</li>
+<li>在壓實空間上用固定尺寸的 GPU tile 運算（如 blocked Cholesky 分解）執行 Newton 約束求解。</li>
+<li>把結果<strong>散回（scatter）</strong>全域狀態，凍結非活躍 DoF。</li>
+</ol>
+<p>固定尺寸的壓實工作區避免了 GPU 執行緒發散，並能吃到為固定 tile 尺寸最佳化的高效能 tensor／矩陣運算（參見 <a href="tiles.html">Tile 程式設計</a>）。啟用步驟：</p>
+<pre><code class="language-xml">&lt;!-- 1. 啟用 Newton 求解器；2. 啟用 sleep --&gt;
+&lt;option solver="Newton"&gt;
+  &lt;flag sleep="enable"/&gt;
+&lt;/option&gt;
+</code></pre>
+<pre><code class="language-python"># 或經 MjSpec
+spec = mujoco.MjSpec()
+spec.option.solver = mujoco.mjtSolver.mjSOL_NEWTON
+spec.option.enableflags |= mujoco.mjtEnableBit.mjENBL_SLEEP
+
+# 3. 配置 Data 時指定任一世界的最大預期活躍 DoF 數（nvmax）
+d = mjw.make_data(mjm, nworld=2048, nvmax=64)
+</code></pre>
+<pre><code class="language-bash"># 命令列
+mjwarp-testspeed scene.xml --nvmax=64
+</code></pre>
+<p><code>nvmax</code> 未指定時預設為完整 DoF 數（<code>nv</code>）；把它設成活躍 DoF 的緊上界能顯著降低 GPU 記憶體用量並提升吞吐。</p>
+<blockquote>
+<p><strong>提示</strong>：考慮把 sleep 容忍度從預設 <code>0.0001</code> 調高（XML <code>sleep_tolerance="0.01"</code> 或 <code>spec.option.sleep_tolerance = 0.01</code>），讓物體更快入睡。</p>
+</blockquote>
+
+<h2 id="batched-fields">批次 Model 欄位（Domain Randomization）<a class="anchor" href="#batched-fields" aria-hidden="true">#</a></h2>
+<p>為了讓不同世界用不同的模型參數，許多 <code>mjw.Model</code> 欄位帶有<strong>前導批次維度</strong>。預設維度為 1（<code>field.shape[0] == 1</code>），所有世界共用同一組值；可以用前導維度大於 1 的 <code>wp.array</code> 覆寫欄位，索引方式為模除：<code>field[worldid % field.shape[0]]</code>。</p>
+<blockquote>
+<p><strong>Graph capture 注意</strong>：欄位陣列（shape）必須在 <code>wp.ScopedCapture</code> <strong>之前</strong>覆寫——重新指派不會反映到已捕捉的 graph。</p>
+</blockquote>
+<pre><code class="language-python"># 作法一：capture 前直接覆寫 shape 與值
+m.dof_damping = wp.array([[0.1], [0.2]], dtype=float)
+
+with wp.ScopedCapture() as capture:
+    mjw.step(m, d)
+
+# 作法二：capture 前只覆寫 shape，capture 後用 wp.copy 更新「值」
+m.dof_damping = wp.empty((2, 1), dtype=float)
+
+with wp.ScopedCapture() as capture:
+    mjw.step(m, d)
+
+dof_damping = wp.array([[0.1], [0.2]], dtype=float)
+wp.copy(m.dof_damping, dof_damping)   # 用 m.dof_damping = ... 重新指派則不會更新 graph
+</code></pre>
+<h3 id="modify">修改欄位<a class="anchor" href="#modify" aria-hidden="true">#</a></h3>
+<p>修改 <code>mjModel</code> 欄位的建議流程是改對應的 <code>mjSpec</code> 再重新編譯出新 <code>mjModel</code>——但編譯需要 host 呼叫：每個新欄位實例 1 次，<code>nworld</code> 份就是 <code>nworld</code> 次。某些欄位可以不經編譯直接改、支援裝置上更新（哪些欄位安全見 <a href="https://mujoco.readthedocs.io/en/latest/programming/simulation.html#sichange" target="_blank" rel="noopener">mjModel changes</a>；裝置上更新的擴充追蹤於 <a href="https://github.com/google-deepmind/mujoco_warp/issues/893" target="_blank" rel="noopener">#893</a>）。</p>
+
+<h2 id="per-world-meshes">Per-world meshes（每世界不同網格）<a class="anchor" href="#per-world-meshes" aria-hidden="true">#</a></h2>
+<p>Per-world meshes 讓不同世界模擬不同的 mesh，實現異質世界。工作流程：</p>
+<ol>
+<li>建一個 <code>mjSpec</code>，內含<strong>全部</strong> mesh 資產，以及所有變體中所需的<strong>最大</strong> geom 槽位數。</li>
+<li>逐一變異 spec 並 <code>spec.compile()</code>，編譯出每個變體。</li>
+<li>編譯<strong>基準（base）</strong>模型，用它建立 <code>mjw.Model</code>。</li>
+<li>用「從各變體收集來的每世界陣列」覆寫相關的 <code>mjw.Model</code> 欄位。</li>
+</ol>
+<p><strong>Geom 層級隨機化範例</strong>（1 個 body、1 個 geom、2 個 mesh 資產；世界 0-1 用 <code>mesh_a</code>、世界 2-3 用 <code>mesh_b</code>）：</p>
+<pre><code class="language-python">nworld = 4
+
+# 基準 spec：1 個 mesh geom＋全部 mesh 資產
+spec = mujoco.MjSpec()
+mesh_a = spec.add_mesh(); mesh_a.name = "mesh_a"
+mesh_a.uservert = [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
+mesh_b = spec.add_mesh(); mesh_b.name = "mesh_b"
+mesh_b.uservert = [0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 2]
+
+body = spec.worldbody.add_body(); body.pos = [0, 0, 1]
+body.add_freejoint()
+geom = body.add_geom(); geom.name = "obj"
+geom.type = mujoco.mjtGeom.mjGEOM_MESH
+
+# 編譯各變體，再還原並編譯基準模型
+geom.meshname = "mesh_a"; mjm_a = spec.compile()
+geom.meshname = "mesh_b"; mjm_b = spec.compile()
+geom.meshname = "mesh_a"; mjm = spec.compile()
+
+m = mjw.put_model(mjm)
+d = mjw.make_data(mjm, nworld=nworld)
+
+# 從各變體收集每世界的幾何／慣性欄位，覆寫到 mjw.Model
+geom_id = mujoco.mj_name2id(mjm, mujoco.mjtObj.mjOBJ_GEOM, "obj")
+variants = [mjm_a, mjm_b]
+assignment = [0, 0, 1, 1]          # 每個世界用哪個變體
+
+dataid = np.tile(mjm.geom_dataid, (nworld, 1))
+geom_size = np.zeros((nworld, mjm.ngeom, 3))
+# ...（geom_aabb、geom_rbound、geom_pos、body_mass、body_subtreemass、
+#      body_inertia、body_invweight0、body_ipos、body_iquat 同理配置）
+
+for w in range(nworld):
+    ref = variants[assignment[w]]
+    dataid[w, geom_id] = ref.geom_dataid[geom_id]
+    geom_size[w] = ref.geom_size
+    # ...（其餘欄位同理，從 ref 逐世界複製）
+
+m.geom_dataid = wp.array(dataid, dtype=int)
+m.geom_size = wp.array(geom_size, dtype=wp.vec3)
+# ...（其餘欄位以下表的 dtype 覆寫）
+</code></pre>
+<p><strong>Body 層級隨機化</strong>（不同世界的 body 有不同數量的 geom）作法相同，但基準 <code>mjModel</code> 必須帶著<strong>所有變體中最大數量的 geom 槽位</strong>；某變體用不到的槽位可以停用（<code>contype=0</code>、<code>conaffinity=0</code>、<code>dataid=-1</code>），但必須保留在基準模型的 body 裡。完整程式碼見<a href="https://mujoco.readthedocs.io/en/latest/mjwarp/#per-world-meshes" target="_blank" rel="noopener">官方文檔</a>。</p>
+<p><strong>必須覆寫的批次欄位</strong>：</p>
+<table>
+<thead><tr><th>欄位</th><th>dtype</th><th>Shape</th></tr></thead>
+<tbody>
+<tr><td><code>geom_dataid</code></td><td><code>int</code></td><td><code>(nworld, ngeom)</code></td></tr>
+<tr><td><code>geom_size</code></td><td><code>wp.vec3</code></td><td><code>(nworld, ngeom)</code></td></tr>
+<tr><td><code>geom_aabb</code></td><td><code>wp.vec3</code></td><td><code>(nworld, ngeom, 2)</code></td></tr>
+<tr><td><code>geom_rbound</code></td><td><code>float</code></td><td><code>(nworld, ngeom)</code></td></tr>
+<tr><td><code>geom_pos</code></td><td><code>wp.vec3</code></td><td><code>(nworld, ngeom)</code></td></tr>
+<tr><td><code>body_mass</code></td><td><code>float</code></td><td><code>(nworld, nbody)</code></td></tr>
+<tr><td><code>body_subtreemass</code></td><td><code>float</code></td><td><code>(nworld, nbody)</code></td></tr>
+<tr><td><code>body_inertia</code></td><td><code>wp.vec3</code></td><td><code>(nworld, nbody)</code></td></tr>
+<tr><td><code>body_invweight0</code></td><td><code>wp.vec2</code></td><td><code>(nworld, nbody)</code></td></tr>
+<tr><td><code>body_ipos</code></td><td><code>wp.vec3</code></td><td><code>(nworld, nbody)</code></td></tr>
+<tr><td><code>body_iquat</code></td><td><code>wp.quat</code></td><td><code>(nworld, nbody)</code></td></tr>
+</tbody>
+</table>
+
+<h2 id="rendering">批次渲染（Batch Rendering）<a class="anchor" href="#rendering" aria-hidden="true">#</a></h2>
+<p>MJWarp 內建高吞吐<strong>批次光線追蹤渲染器</strong>，建構於 <a href="runtime.html">Warp 的 BVH 加速結構</a>之上，可平行渲染多世界、多相機——在 NVIDIA GPU 上以每秒數百萬影格的速度渲染 MuJoCo 場景。主要能力：</p>
+<ul>
+<li><strong>Mesh 渲染＋貼圖</strong>：BVH 加速、完整材質貼圖支援；另有高度場（heightfield）與 <a href="https://mujoco.readthedocs.io/en/latest/XMLreference.html#deformable-flex" target="_blank" rel="noopener">flex</a> 可變形體渲染。</li>
+<li><strong>光照與陰影</strong>：動態光源、可設定陰影；可做 domain randomization：<code>light_active</code>、<code>light_type</code>、<code>light_castshadow</code>、<code>light_xpos</code>、<code>light_xdir</code>。</li>
+<li><strong>異質多相機</strong>：每個世界多台相機，每台相機可有不同解析度（<code>cam_resolution</code>）、視野（<code>cam_fovy</code>、<code>cam_sensorsize</code>、<code>cam_intrinsic</code>）與輸出模式（<code>cam_output</code>）。</li>
+<li><strong>Domain randomization</strong>：可搭配<a href="#batched-fields">批次 Model 欄位</a>：<code>geom_matid</code>、<code>geom_size</code>、<code>geom_rgba</code>、<code>mat_texid</code>、<code>mat_texrepeat</code>、<code>mat_rgba</code>。</li>
+<li><strong>BVH 加速 ray casting</strong>：<code>mjw.ray</code>／<code>mjw.rays</code> 與 <a href="https://mujoco.readthedocs.io/en/latest/XMLreference.html#sensor-rangefinder" target="_blank" rel="noopener">rangefinder 感測器</a>。</li>
+</ul>
+<h3 id="render-usage">基本用法<a class="anchor" href="#render-usage" aria-hidden="true">#</a></h3>
+<p>渲染與 ray casting 需要 <code>mjw.RenderContext</code>——內含 BVH 結構、渲染專用欄位與輸出緩衝：</p>
+<pre><code class="language-python">rc = mjw.create_render_context(
+    mjm,
+    nworld=1,
+    cam_res=(256, 256),           # 覆寫相機解析度（或逐相機清單）
+    render_rgb=True,              # 輸出 RGB（或逐相機清單）
+    render_depth=True,            # 輸出深度（或逐相機清單）
+    use_textures=True,            # 套用材質貼圖
+    use_shadows=False,            # 陰影投射（較慢）
+    enabled_geom_groups=[0, 1],   # 只渲染 group 0、1 的 geom
+    cam_active=[True, False],     # 逐相機啟用／停用
+    flex_render_smooth=True,      # flex 可變形體平滑著色
+)
+</code></pre>
+<p>每個參數都可全域或逐相機套用，也能從 XML 解析（或經 <code>mjSpec</code> 設定）：</p>
+<pre><code class="language-xml">&lt;camera name="front_camera" pos="3 0 2" xyaxes="0 1 0 -0.6 0 0.8"
+        resolution="64 64" output="rgb depth"/&gt;
+</code></pre>
+<p>渲染時先呼叫 <code>mjw.refit_bvh</code> 更新 BVH 樹，再呼叫 <code>mjw.render</code> 寫入輸出緩衝：</p>
+<pre><code class="language-python">mjw.refit_bvh(m, d, rc)
+mjw.render(m, d, rc)
+</code></pre>
+<p>輸出緩衝以 <code>(nworld, npixel)</code> 形狀堆疊所有相機的像素，RGB 打包成一個 <code>uint32</code>；<code>RenderContext.rgb_adr</code>／<code>depth_adr</code> 提供逐相機索引。便利函式 <code>mjw.get_rgb</code>／<code>mjw.get_depth</code> 直接回傳指定相機、全部世界批次的整形後資料：</p>
+<pre><code class="language-python">nworld, cam_index = 1, 0
+resolution = rc.cam_res.numpy()[cam_index]
+rgb_data = wp.zeros((nworld, resolution[1], resolution[0]), dtype=wp.vec3)
+mjw.get_rgb(rc, rgb_data=rgb_data, cam_id=cam_index)
+</code></pre>
+<h3 id="render-notes">基準與注意事項<a class="anchor" href="#render-notes" aria-hidden="true">#</a></h3>
+<ul>
+<li>渲染基準：<code>mjwarp-testspeed benchmarks/primitives.xml --function=render</code>；多場景結果見<a href="https://github.com/google-deepmind/mujoco_warp/pull/1113" target="_blank" rel="noopener">發布基準</a>。</li>
+<li><strong>Mesh</strong>：渲染計算量隨 mesh 複雜度（頂點數、面數）成長——同尺寸下基元幾何比 mesh／高度場吞吐更高。</li>
+<li><strong>縮放</strong>：渲染隨解析度（總像素數）與相機數線性擴展。</li>
+<li>完整範例見 <a href="https://colab.research.google.com/github/google-deepmind/mujoco_warp/blob/main/notebooks/tutorial.ipynb" target="_blank" rel="noopener">tutorial notebook</a>；渲染器的取捨與限制見<a href="mujoco-reference.html#render-diff">差異頁</a>。</li>
+</ul>
+
+<footer class="page-footer">
+  <p>本頁整理自 MuJoCo 官方文檔（latest）。內容以官方為準。下一步：<a href="mujoco-reference.html">MJWarp 差異與 FAQ →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#graph">CUDA Graph capture</a>
+      <a href="#batch-sizes">批次上限調校</a>
+      <a href="#solver">求解器迭代次數</a>
+      <a href="#contact-sensor">接觸感測器匹配</a>
+      <a href="#memory">記憶體</a>
+      <a href="#large-scenes">大型場景與 sleeping</a>
+      <a href="#compact" class="toc-h3">Compact solver</a>
+      <a href="#batched-fields">批次 Model 欄位</a>
+      <a href="#modify" class="toc-h3">修改欄位</a>
+      <a href="#per-world-meshes">Per-world meshes</a>
+      <a href="#rendering">批次渲染</a>
+      <a href="#render-usage" class="toc-h3">基本用法</a>
+      <a href="#render-notes" class="toc-h3">基準與注意事項</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

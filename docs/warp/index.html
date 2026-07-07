@@ -120,6 +120,24 @@
         <p>與其他 GPU 框架的比較、wp.synchronize() 時機、除錯工具、效能分析與語言限制清單。</p>
         <span class="go">前往 →</span>
       </a>
+      <a class="card" href="mujoco.html">
+        <div class="icon">🤖</div>
+        <h3>MuJoCo Warp 總覽與使用</h3>
+        <p>DeepMind × NVIDIA 的 GPU 加速 MuJoCo：生態系定位、與 MJX 比較、安裝、put_model／make_data／step 工作流程與架構速覽。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="mujoco-tuning.html">
+        <div class="icon">🏎️</div>
+        <h3>MuJoCo Warp 效能調校</h3>
+        <p>CUDA Graph、nconmax／njmax 調校、sleeping 與 compact solver、批次 Model 欄位（domain randomization）與批次光線追蹤渲染。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="mujoco-reference.html">
+        <div class="icon">📋</div>
+        <h3>MuJoCo Warp 差異與 FAQ</h3>
+        <p>與 MuJoCo 的行為差異（warmstart、選項、碰撞器）、SDF plugin、物理 callback，以及多 GPU、決定性、float32 等常見問題。</p>
+        <span class="go">前往 →</span>
+      </a>
     </div>
   </section>
 
@@ -133,6 +151,7 @@
       <li><a href="differentiability.html">可微分性</a>：用 <code>wp.Tape()</code> 讓梯度反向流過整段模擬。</li>
       <li><a href="interop.html">互操作性</a>：把 Warp kernel 接進 PyTorch／JAX 訓練管線。</li>
       <li>依方向深入：<a href="tiles.html">Tile 程式設計</a>（效能）、<a href="devices.html">多 GPU 與 CUDA Graph</a>（規模化）、<a href="modules.html">領域模組</a>（FEM／稀疏矩陣），或到 <a href="faq.html">FAQ</a> 查限制與除錯技巧。</li>
+      <li>做機器人模擬／強化學習：閱讀 <a href="mujoco.html">MuJoCo Warp 總覽與使用</a>，再依需求進到<a href="mujoco-tuning.html">效能調校</a>與<a href="mujoco-reference.html">差異與 FAQ</a>。</li>
     </ol>
   </section>
 </main>
