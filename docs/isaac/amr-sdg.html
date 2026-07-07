@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Replicator 教學：AMR 導航隨機化與資料擷取 — Isaac Sim 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Isaac Sim</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/replicator_tutorials/tutorial_replicator_amr_navigation.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與設定</a>
+        <a href="gui.html">GUI 介面參考</a>
+        <div class="nav-group-title">教學系列</div>
+        <a href="tutorial.html">Script Editor 教學</a>
+        <a href="extension.html">Extension 教學</a>
+        <a href="standalone.html">Standalone Python 教學</a>
+        <a href="imu.html">IMU 感測器教學</a>
+        <a href="amr-sdg.html" class="current">AMR 導航 SDG 教學</a>
+        <div class="nav-group-title">專題章節</div>
+        <a href="robots.html">機器人：匯入・設定・模擬</a>
+        <a href="sensors.html">感測器</a>
+        <a href="physics.html">物理模擬</a>
+        <a href="ros2.html">ROS 2 整合</a>
+        <a href="sdg.html">合成資料生成</a>
+        <a href="isaaclab.html">Isaac Lab／數位孿生</a>
+        <a href="devtools.html">開發工具與擴充開發</a>
+        <div class="nav-group-title">參考</div>
+        <a href="reference.html">資產、USD 與參考資訊</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="amr-sdg">Replicator 教學——AMR 導航隨機化與資料擷取<a class="anchor" href="#amr-sdg" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://docs.isaacsim.omniverse.nvidia.com/6.0.1/replicator_tutorials/tutorial_replicator_amr_navigation.html" target="_blank" rel="noopener">Randomization in Simulation – AMR Navigation</a> 教學（Isaac Sim 6.0.1）的中文整理。這是<a href="sdg.html">合成資料生成</a>章節的<strong>實戰進階教學</strong>：讓一台 AMR（自主移動機器人）在隨機化的環境中導航，並在「模擬事件」發生時擷取合成資料——與固定觸發、固定場景的入門範例相比，更貼近真實專案的 SDG 管線。</p>
+</blockquote>
+
+<h2 id="objectives">學習目標與前置知識<a class="anchor" href="#objectives" aria-hidden="true">#</a></h2>
+<p>本教學示範如何把 Isaac Sim 模擬場景與 <code>omni.replicator</code> 擴充功能組合起來，用多種隨機化技巧擷取合成資料。你將學會：</p>
+<ul>
+<li>用 <strong>USD／Isaac Sim API 實作場景隨機化</strong>：隨機化資產姿態、切換不同的背景環境。</li>
+<li>在<strong>特定模擬事件</strong>發生時（而不是固定間隔）用 Replicator 收集合成資料。</li>
+<li><strong>動態建立與銷毀 render product</strong> 以提升執行期效能。</li>
+<li>在同一個模擬實例中建立與銷毀 Replicator 擷取圖（capture graph）。</li>
+</ul>
+<p><strong>前置知識</strong>：USD／Isaac Sim 場景建立與操作 API、<a href="https://docs.omniverse.nvidia.com/extensions/latest/ext_replicator.html" target="_blank" rel="noopener">omni.replicator</a> 與其 <a href="https://docs.omniverse.nvidia.com/extensions/latest/ext_replicator/writer_examples.html" target="_blank" rel="noopener">Writer</a>、OmniGraph 基礎（導航實作用到）、以及 <a href="standalone.html">Standalone 應用</a>或 <a href="tutorial.html">Script Editor</a> 執行模擬的方式。</p>
+
+<h2 id="scenario">情境總覽<a class="anchor" href="#scenario" aria-hidden="true">#</a></h2>
+<p>教學使用 <strong>Nova Carter</strong> 機器人，配備 OmniGraph 導航堆疊（<strong>不含避障功能</strong>）。整個資料生成迴圈如下：</p>
+<ol>
+<li>導航堆疊持續把機器人推向指定的目標 Xform（<code>&lt;..&gt;/targetXform</code>）——目標被放在隨機化的目標物（dolly 推車）位置上。</li>
+<li>機器人<strong>接近目標物</strong>時，觸發 SDG 管線，從兩顆主相機感測器擷取資料。</li>
+<li>擷取完成後<strong>重新隨機化</strong>目標物，模擬繼續。</li>
+<li>每擷取 <code>env_interval</code> 幀就<strong>更換背景環境</strong>；達到 <code>num_frames</code> 後應用程式結束。</li>
+</ol>
+<p>資料來源是 Nova Carter 的左右相機（<code>stereo_cam_&lt;left/right&gt;_sensor_frame/camera_sensor_&lt;left/right&gt;</code>），用 Replicator 收集 <strong>LdrColor</strong>（RGB）annotator 資料。預設寫到 <code>&lt;工作目錄&gt;/_out_nav_sdg_demo</code>，執行 <code>num_frames=9</code> 次、每 <code>env_interval=3</code> 幀換一次環境。背景環境依 <code>DEFAULT_ENV_URLS</code> 輪替；清單裡的 <code>None</code> 表示不載入 USD 環境，改在 <code>/Environment</code> 下用 Replicator 的 dome light＋帶碰撞體的平面組出<strong>通用（generic）環境</strong>。</p>
+<blockquote>
+<p><strong><code>use_temp_rp</code> 旗標</strong>是本教學的效能重點：只在擷取資料時啟用 render product，平時停用——避免不擷取時仍持續渲染感測器視角的開銷，大幅加速模擬。</p>
+</blockquote>
+
+<h2 id="run">執行方式<a class="anchor" href="#run" aria-hidden="true">#</a></h2>
+<h3 id="run-standalone">Standalone 應用<a class="anchor" href="#run-standalone" aria-hidden="true">#</a></h3>
+<p>以隨附腳本作為獨立應用執行（Windows 用 <code>python.bat</code> 取代 <code>python.sh</code>）：</p>
+<pre><code class="language-bash">./python.sh standalone_examples/replicator/amr_navigation.py
+
+# 帶全部參數的範例
+./python.sh standalone_examples/replicator/amr_navigation.py --use_temp_rp --num_frames 9 --env_interval 3
+</code></pre>
+<table>
+<thead><tr><th>參數</th><th>說明</th><th>預設</th></tr></thead>
+<tbody>
+<tr><td><code>--use_temp_rp</code></td><td>使用臨時 render product（僅擷取時啟用）</td><td><code>False</code></td></tr>
+<tr><td><code>--num_frames</code></td><td>要擷取的幀數</td><td><code>9</code></td></tr>
+<tr><td><code>--env_interval</code></td><td>每幾幀更換一次背景環境</td><td><code>3</code></td></tr>
+<tr><td><code>--env_urls</code></td><td>完全取代 <code>DEFAULT_ENV_URLS</code>；填 <code>None</code> 表示通用環境</td><td>—</td></tr>
+</tbody>
+</table>
+<p>Standalone 版的進入點：<code>SimulationApp</code> 啟動後建立 <code>NavSDGDemo</code> 並呼叫 <code>start()</code>，主迴圈持續 <code>update()</code> 直到示範結束：</p>
+<pre><code class="language-python">out_dir = os.path.join(os.getcwd(), "_out_nav_sdg_demo", "")
+selected_env_urls = args.env_urls if args.env_urls is not None else DEFAULT_ENV_URLS
+nav_demo = NavSDGDemo()
+nav_demo.start(
+    num_frames=args.num_frames,
+    out_dir=out_dir,
+    env_urls=selected_env_urls,
+    env_interval=args.env_interval,
+    use_temp_rp=args.use_temp_rp,
+    seed=22,
+)
+
+while simulation_app.is_running() and nav_demo.is_running():
+    simulation_app.update()
+
+simulation_app.close()
+</code></pre>
+<h3 id="run-editor">Script Editor<a class="anchor" href="#run-editor" aria-hidden="true">#</a></h3>
+<p>同一個 <code>NavSDGDemo</code> 類別也能貼進 <a href="tutorial.html">Script Editor</a> 執行，差異在於：</p>
+<ul>
+<li>不建立 <code>SimulationApp</code>（編輯器已在執行中），參數改用常數 <code>NUM_FRAMES</code>／<code>ENV_INTERVAL</code>／<code>USE_TEMP_RP</code>。</li>
+<li>入口改為 <code>asyncio.ensure_future(nav_demo.run_async(...))</code>——<code>run_async</code> 內部建立 <code>asyncio.Event</code>，<code>start()</code> 後等待完成訊號（<code>clear()</code> 時 set）。</li>
+<li>SDG 步驟走<strong>非同步</strong>路徑：<code>await rep.orchestrator.step_async(...)</code>，避免凍結編輯器 UI。腳本用 <code>builtins.ISAAC_LAUNCHED_FROM_TERMINAL</code> 判斷目前執行環境，自動選同步或非同步版本。</li>
+</ul>
+<p>完整的兩份腳本（Standalone Script／Script Editor Script）見<a href="https://docs.isaacsim.omniverse.nvidia.com/6.0.1/replicator_tutorials/tutorial_replicator_amr_navigation.html#implementation" target="_blank" rel="noopener">官方 Implementation 節</a>，以下解析共同的核心實作。</p>
+
+<h2 id="class">NavSDGDemo 類別與屬性<a class="anchor" href="#class" aria-hidden="true">#</a></h2>
+<p>整個示範包在 <code>NavSDGDemo</code> 類別裡，類別常數指向用到的資產與路徑：</p>
+<pre><code class="language-python">class NavSDGDemo:
+    """Demonstration of synthetic data generation using an AMR navigating towards a target."""
+
+    CARTER_URL = "/Isaac/Samples/Replicator/OmniGraph/nova_carter_nav_only.usd"
+    DOLLY_URL = "/Isaac/Props/Dolly/dolly.usd"
+    PROPS_URL = "/Isaac/Props/YCB/Axis_Aligned_Physics"
+    LEFT_CAMERA_REL_PATH = "sensors/front_hawk/left/camera_left"
+    RIGHT_CAMERA_REL_PATH = "sensors/front_hawk/right/camera_right"
+    ENVIRONMENT_SCOPE_PATH = "/Environment"
+</code></pre>
+<table>
+<thead><tr><th>屬性</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><code>_carter_chassis</code>・<code>_carter_nav_target</code></td><td>追蹤 Nova Carter 底盤（目前位置）與導航圖中的目標 Xform</td></tr>
+<tr><td><code>_dolly</code></td><td>目標物推車——既是導航目標的落點，也用來計算與 Carter 的距離</td></tr>
+<tr><td><code>_dolly_light</code></td><td>每幀隨機化、放在推車上方的球形光</td></tr>
+<tr><td><code>_props</code></td><td>每幀灑在推車上方、以物理落下的道具 prim 清單（YCB 物件）</td></tr>
+<tr><td><code>_cycled_env_urls</code></td><td>輪替的背景環境路徑（含 <code>None</code>＝通用 Replicator 環境）</td></tr>
+<tr><td><code>_env_interval</code></td><td>每幾幀更換背景環境</td></tr>
+<tr><td><code>_timeline</code>・<code>_timeline_sub</code></td><td>控制模擬時間軸（play／pause）；timeline tick 訂閱是觸發 SDG 的回饋迴圈</td></tr>
+<tr><td><code>_stage_event_sub</code></td><td>訂閱 stage 關閉事件——開新 stage 時自動清理示範狀態</td></tr>
+<tr><td><code>_trigger_distance</code></td><td>Carter 與推車間觸發 SDG 的距離，每次擷取後重新隨機化（1.75–2.5）</td></tr>
+<tr><td><code>_num_frames</code>・<code>_frame_counter</code></td><td>追蹤並在達到指定幀數後停止</td></tr>
+<tr><td><code>_writer</code>・<code>_render_products</code></td><td>寫資料到磁碟的 Writer；掛在左右相機上的兩個 render product</td></tr>
+<tr><td><code>_use_temp_rp</code></td><td><code>True</code> 時非擷取期間停用 render product</td></tr>
+<tr><td><code>_in_running_state</code></td><td>示範是否仍在執行（供主迴圈／<code>is_running()</code> 查詢）</td></tr>
+</tbody>
+</table>
+<p>類別常數 <code>ENVIRONMENT_SCOPE_PATH</code> 讓「引用的 USD 環境」與「通用備援環境」都放在同一個 <code>/Environment</code> scope 之下，兩者間的切換因此走同一條更新路徑。</p>
+
+<h2 id="workflow">工作流程：start 與事件迴圈<a class="anchor" href="#workflow" aria-hidden="true">#</a></h2>
+<p>主流程由 <code>start()</code> 與 <code>_on_timeline_event</code> 回呼組成。<code>start()</code> 解析環境清單、建立含導航物理場景、Nova Carter（含導航圖與目標 Xform）、推車、隨機化光源與道具的新場景，設定 SDG，播放時間軸，並註冊兩個事件訂閱：</p>
+<pre><code class="language-python">def start(self, num_frames=10, out_dir=None, env_urls=None,
+          env_interval=3, use_temp_rp=False, seed=None) -> None:
+    """Start the SDG demo with the given configuration."""
+    print(f"[SDG] Starting")
+    if seed is not None:
+        rep.set_global_seed(seed)
+        random.seed(seed)
+    selected_env_urls = env_urls if env_urls is not None else DEFAULT_ENV_URLS
+    self._num_frames = num_frames
+    self._out_dir = out_dir if out_dir is not None else os.path.join(os.getcwd(), "_out_nav_sdg_demo")
+    self._cycled_env_urls = cycle(selected_env_urls)
+    self._env_interval = env_interval
+    self._use_temp_rp = use_temp_rp
+    self._frame_counter = 0
+    self._trigger_distance = 2.0
+    self._load_env()
+    self._randomize_dolly_pose()
+    self._randomize_dolly_light()
+    self._randomize_prop_poses()
+    self._setup_sdg()
+    self._timeline = omni.timeline.get_timeline_interface()
+    self._timeline.play()
+    self._timeline_sub = carb.eventdispatcher.get_eventdispatcher().observe_event(
+        event_name=omni.timeline.GLOBAL_EVENT_CURRENT_TIME_TICKED,
+        on_event=self._on_timeline_event,
+        observer_name="amr_navigation.NavSDGDemo._on_timeline_event",
+    )
+    self._stage_event_sub = carb.eventdispatcher.get_eventdispatcher().observe_event(
+        event_name=omni.usd.get_context().stage_event_name(omni.usd.StageEventType.CLOSING),
+        on_event=self._on_stage_closing_event,
+        observer_name="amr_navigation.NavSDGDemo._on_stage_closing_event",
+    )
+    self._in_running_state = True
+</code></pre>
+<p><code>_on_timeline_event</code> 在<strong>每個 timeline tick</strong> 檢查 Carter 與推車的 2D 距離——夠近就暫停模擬、觸發 SDG。這就是「<strong>事件驅動擷取</strong>」：由模擬狀態決定何時拍照，而非固定間隔：</p>
+<pre><code class="language-python">def _on_timeline_event(self, e: carb.eventdispatcher.Event):
+    """Check distance to dolly and trigger SDG capture when close enough."""
+    carter_loc = self._carter_chassis.GetAttribute("xformOp:translate").Get()
+    dolly_loc = self._dolly.GetAttribute("xformOp:translate").Get()
+    dist = (Gf.Vec2f(dolly_loc[0], dolly_loc[1]) - Gf.Vec2f(carter_loc[0], carter_loc[1])).GetLength()
+    if dist &lt; self._trigger_distance:
+        print(f"[SDG] Starting SDG for frame no. {self._frame_counter}")
+        self._timeline.pause()
+        if self._is_running_in_script_editor():
+            import asyncio
+            task = asyncio.ensure_future(self._run_sdg_async())
+            task.add_done_callback(self._on_sdg_done)
+        else:
+            self._run_sdg()
+            self._setup_next_frame()
+</code></pre>
+
+<h2 id="scene">場景建立與環境切換<a class="anchor" href="#scene" aria-hidden="true">#</a></h2>
+<p><code>_load_env()</code> 建立新 stage 後依序放入：</p>
+<ul>
+<li><strong>物理場景</strong>：<code>rep.functional.physics.create_physics_scene("/PhysicsScene", enableCCD=True, broadphaseType="MBP", enableGPUDynamics=False)</code>——為導航調校的設定。</li>
+<li><strong>背景環境</strong>：<code>self._load_environment(next(self._cycled_env_urls))</code>。</li>
+<li><strong>Nova Carter</strong>：以 reference 載入 <code>nova_carter_nav_only.usd</code> 到 <code>/NavWorld</code>，走訪子節點找出 <code>targetXform</code>（導航目標）與 <code>chassis_link</code>（目前位置）。</li>
+<li><strong>推車（dolly）</strong>：載入後對其幾何 prim 逐一 <code>rep.functional.physics.apply_rigid_body()</code> 加上剛體／碰撞。</li>
+<li><strong>光源</strong>：<code>rep.functional.create.sphere_light(intensity=250000, radius=0.3, ...)</code>。</li>
+<li><strong>道具</strong>：用 <code>omni.client.list()</code> 列出 YCB 資產資料夾的 <code>.usd</code>，輪替取 15 個以 reference 掛到 <code>/NavWorld/Props/</code> 下。</li>
+</ul>
+<p><code>_load_environment(env_url)</code> 是環境切換的統一入口：先刪掉舊的 <code>/Environment</code>，再重建——<code>env_url</code> 有值就 reference 載入該 USD 場景；是 <code>None</code> 就組出通用環境：</p>
+<pre><code class="language-python">def _load_environment(self, env_url: str | None) -> None:
+    """Load the next environment under a shared scope."""
+    if self._stage.GetPrimAtPath(self.ENVIRONMENT_SCOPE_PATH):
+        omni.kit.commands.execute("DeletePrimsCommand", paths=[self.ENVIRONMENT_SCOPE_PATH])
+
+    rep.functional.create.scope(name="Environment")
+    if env_url:
+        assets_root_path = get_assets_root_path()
+        rep.functional.create.reference(
+            usd_path=assets_root_path + env_url, parent=self.ENVIRONMENT_SCOPE_PATH, name="Scene"
+        )
+        return
+
+    # env_url 為 None：通用環境 = dome light + 帶碰撞體的地板
+    rep.functional.create.dome_light(intensity=500, parent=self.ENVIRONMENT_SCOPE_PATH, name="DomeLight")
+    ground = rep.functional.create.plane(
+        parent=self.ENVIRONMENT_SCOPE_PATH, name="GroundPlane", scale=(100, 100, 1)
+    )
+    rep.functional.physics.apply_collider(ground)
+</code></pre>
+
+<h2 id="randomize">隨機化<a class="anchor" href="#randomize" aria-hidden="true">#</a></h2>
+<p>每次擷取前用三個函式隨機化場景——注意這裡示範的是<strong>直接用 USD API 隨機化</strong>（設定 <code>xformOp</code> 屬性），與 Replicator 的宣告式隨機化 API 互補：</p>
+<ul>
+<li><code>_randomize_dolly_pose</code>：在 ±6m 範圍內抽樣推車位置，要求與 Carter 至少相距 4m（最多重試 100 次）；找到後把<strong>導航目標</strong>也設到推車位置，再隨機化朝向。</li>
+<li><code>_randomize_dolly_light</code>：把光源放到推車上方 3m，顏色隨機。</li>
+<li><code>_randomize_prop_poses</code>：把道具逐一疊放在推車上方（水平隨機偏移、垂直每個墊高 0.2），模擬開始後自然掉落。</li>
+</ul>
+<pre><code class="language-python">def _randomize_dolly_pose(self) -> None:
+    """Set random dolly position ensuring minimum distance from Carter."""
+    min_dist_from_carter = 4
+    carter_loc = self._carter_chassis.GetAttribute("xformOp:translate").Get()
+    for _ in range(100):
+        x, y = random.uniform(-6, 6), random.uniform(-6, 6)
+        dist = (Gf.Vec2f(x, y) - Gf.Vec2f(carter_loc[0], carter_loc[1])).GetLength()
+        if dist &gt; min_dist_from_carter:
+            self._dolly.GetAttribute("xformOp:translate").Set((x, y, 0))
+            self._carter_nav_target.GetAttribute("xformOp:translate").Set((x, y, 0))
+            break
+    self._dolly.GetAttribute("xformOp:rotateXYZ").Set((0, 0, random.uniform(-180, 180)))
+</code></pre>
+
+<h2 id="sdg-pipeline">SDG 管線：Writer 與 render product<a class="anchor" href="#sdg-pipeline" aria-hidden="true">#</a></h2>
+<p><code>_setup_sdg()</code> 做四件事：</p>
+<ol>
+<li><code>rep.orchestrator.set_capture_on_play(False)</code>——關閉「播放即擷取」，改由我們手動控制擷取時機。</li>
+<li>把 DLSS 設成 Quality 模式（<code>rtx/post/dlss/execMode = 2</code>）取得最佳 SDG 影像品質（選項：0 Performance／1 Balanced／2 Quality／3 Auto）。</li>
+<li>調整相機：<code>fStop = 0</code> 取得明亮銳利的影像；<code>omni:sensor:tickRate = 0</code> 強制 autotrigger。</li>
+<li>初始化 <code>DiskBackend</code>（輸出目錄）＋ <code>BasicWriter</code>（<code>rgb=True</code>），並建立 render product。</li>
+</ol>
+<blockquote>
+<p><strong>注意（multi-tick rendering 的暫時性解法）</strong>：在多 tick 渲染下，感測器各自的 tick 排程可能與 <code>rep.orchestrator.step_async</code> 脫鉤，導致 Writer 收不到影格；把 front_hawk 左右相機的 <code>omni:sensor:tickRate</code> 設為 0（autotrigger）能讓它們與 orchestrator 保持同步。此 workaround 預期未來版本會移除，詳見官方 <a href="https://docs.isaacsim.omniverse.nvidia.com/6.0.1/sensors/isaacsim_sensors_multitick_rendering.html" target="_blank" rel="noopener">Multi-Tick Rendering</a>。</p>
+</blockquote>
+<p>兩個 render product 掛在左右相機上（1024×1024），<code>use_temp_rp</code> 開啟時先停用、只在擷取時啟用：</p>
+<pre><code class="language-python">def _setup_sdg_render_products(self) -> None:
+    """Create and attach render products for left and right cameras."""
+    left_camera_path = self._carter_chassis.GetPath().AppendPath(self.LEFT_CAMERA_REL_PATH)
+    rp_left = rep.create.render_product(str(left_camera_path), (1024, 1024),
+                                        name="left_sensor", force_new=True)
+    right_camera_path = self._carter_chassis.GetPath().AppendPath(self.RIGHT_CAMERA_REL_PATH)
+    rp_right = rep.create.render_product(str(right_camera_path), (1024, 1024),
+                                         name="right_sensor", force_new=True)
+    self._render_products = [rp_left, rp_right]
+    # 效能考量：非使用期間可停用 render product，只在 SDG 時重新啟用
+    if self._use_temp_rp:
+        self._disable_render_products()
+    self._writer.attach(self._render_products)
+
+def _enable_render_products(self) -> None:
+    for rp in self._render_products:
+        rp.hydra_texture.set_updates_enabled(True)
+
+def _disable_render_products(self) -> None:
+    for rp in self._render_products:
+        rp.hydra_texture.set_updates_enabled(False)
+</code></pre>
+<p>實際擷取一步呼叫 <code>rep.orchestrator.step(rt_subframes=16)</code>——<code>rt_subframes</code> 讓渲染器在擷取前多累積子影格，改善光線追蹤品質（Script Editor 走 <code>step_async</code> 版本）：</p>
+<pre><code class="language-python">def _run_sdg(self) -> None:
+    """Execute one SDG capture step synchronously."""
+    if self._use_temp_rp:
+        self._enable_render_products()
+    rep.orchestrator.step(rt_subframes=16)
+    if self._use_temp_rp:
+        self._disable_render_products()
+</code></pre>
+<p>對應地，<code>_clear_sdg_render_products()</code> 會 detach writer、<code>rp.destroy()</code> 銷毀所有 render product，並刪除 <code>/Replicator</code> prim——這就是「在同一個模擬實例中建立與銷毀擷取圖」的作法。</p>
+
+<h2 id="next-frame">下一幀與收尾<a class="anchor" href="#next-frame" aria-hidden="true">#</a></h2>
+<p>SDG 完成後 <code>_setup_next_frame()</code> 準備下一幀：遞增幀數計數器；重新隨機化推車、光源與道具；達到 <code>env_interval</code> 就換背景環境；抽一個新的觸發距離（1.75–2.5）；重新播放時間軸並重掛 timeline 訂閱。若已達 <code>_num_frames</code>，先確保資料完整寫入磁碟（<code>rep.orchestrator.wait_until_complete()</code>，Script Editor 用 async 版本）再 <code>clear()</code> 收尾：</p>
+<pre><code class="language-python">def _setup_next_frame(self) -> None:
+    """Prepare scene for next frame or finish if all frames captured."""
+    self._frame_counter += 1
+    if self._frame_counter &gt;= self._num_frames:
+        print(f"[SDG] Finished")
+        # 清理狀態前，先確定資料已寫入磁碟
+        if self._is_running_in_script_editor():
+            import asyncio
+            task = asyncio.ensure_future(rep.orchestrator.wait_until_complete_async())
+            task.add_done_callback(lambda t: self.clear())
+        else:
+            rep.orchestrator.wait_until_complete()
+            self.clear()
+        return
+
+    self._randomize_dolly_pose()
+    self._randomize_dolly_light()
+    self._randomize_prop_poses()
+    if self._frame_counter % self._env_interval == 0:
+        self._load_next_env()
+    # 為下一幀抽一個新的隨機觸發距離
+    self._trigger_distance = random.uniform(1.75, 2.5)
+    self._timeline.play()
+    self._timeline_sub = carb.eventdispatcher.get_eventdispatcher().observe_event(
+        event_name=omni.timeline.GLOBAL_EVENT_CURRENT_TIME_TICKED,
+        on_event=self._on_timeline_event,
+        observer_name="amr_navigation.NavSDGDemo._on_timeline_event",
+    )
+</code></pre>
+
+<h2 id="takeaways">可帶走的模式<a class="anchor" href="#takeaways" aria-hidden="true">#</a></h2>
+<p>這個教學值得抄進自己專案的幾個模式：</p>
+<ul>
+<li><strong>事件驅動擷取</strong>：關掉 <code>capture_on_play</code>，用 timeline tick 訂閱檢查模擬狀態（距離、碰撞、任務階段…），條件成立才 <code>pause()</code> → <code>orchestrator.step()</code>——資料集只收「有意義的瞬間」。</li>
+<li><strong>臨時 render product</strong>：<code>rp.hydra_texture.set_updates_enabled(False)</code> 是低成本的開關，機器人巡航的漫長過程不必陪著渲染兩顆 1024×1024 相機。</li>
+<li><strong>統一的環境 scope</strong>：把可替換的內容都放在同一個 scope（<code>/Environment</code>）下，換場景＝刪 scope＋重建，USD 環境與程式生成環境走同一條路。</li>
+<li><strong>USD API 隨機化 × Replicator 擷取</strong>：隨機化不一定要用 Replicator 的分佈 API——普通的 <code>random</code>＋<code>GetAttribute().Set()</code> 同樣有效，且更容易表達「與機器人至少距離 4m」這類含約束的邏輯。</li>
+<li><strong>雙模式腳本</strong>：用 <code>builtins.ISAAC_LAUNCHED_FROM_TERMINAL</code> 區分 Standalone／Script Editor，同一類別同時支援同步與 async 兩種執行路徑。</li>
+<li><strong>可重現性</strong>：<code>rep.set_global_seed(seed)</code>＋<code>random.seed(seed)</code> 讓整條隨機化管線可重現（範例用 <code>seed=22</code>）。</li>
+</ul>
+<p>延伸閱讀：<a href="sdg.html">合成資料生成章節</a>（Replicator 核心概念、Writer 與 annotator）、官方姊妹作 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/replicator_tutorials/tutorial_replicator_ur10_palletizing.html" target="_blank" rel="noopener">UR10 棧板堆疊隨機化</a>（機械手臂版的事件驅動 SDG）。</p>
+
+<hr>
+<p><em>本頁為官方文檔中文教學導覽，內容以官方為準。</em></p>
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/6.0.1/replicator_tutorials/tutorial_replicator_amr_navigation.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>（6.0.1）。內容如與官方不符，請以官方為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#objectives">學習目標與前置知識</a>
+      <a class="toc-h2" href="#scenario">情境總覽</a>
+      <a class="toc-h2" href="#run">執行方式</a>
+      <a class="toc-h3" href="#run-standalone">Standalone 應用</a>
+      <a class="toc-h3" href="#run-editor">Script Editor</a>
+      <a class="toc-h2" href="#class">NavSDGDemo 類別與屬性</a>
+      <a class="toc-h2" href="#workflow">工作流程與事件迴圈</a>
+      <a class="toc-h2" href="#scene">場景建立與環境切換</a>
+      <a class="toc-h2" href="#randomize">隨機化</a>
+      <a class="toc-h2" href="#sdg-pipeline">SDG 管線</a>
+      <a class="toc-h2" href="#next-frame">下一幀與收尾</a>
+      <a class="toc-h2" href="#takeaways">可帶走的模式</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>
