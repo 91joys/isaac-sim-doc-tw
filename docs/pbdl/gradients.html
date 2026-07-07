@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>改良梯度與快速主題 — PBDL 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">PBDL</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽（緒論）</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://physicsbaseddeeplearning.org/intro.html" target="_blank" rel="noopener">原書 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+      <div class="nav-group-title">緒論</div>
+      <a href="docs.html">總覽（緒論）</a>
+      <div class="nav-group-title">核心方法</div>
+      <a href="surrogates.html">神經代理與算子</a>
+      <a href="physical-losses.html">物理損失項（PINN）</a>
+      <a href="diffphys.html">可微分物理</a>
+      <div class="nav-group-title">進階主題</div>
+      <a href="probabilistic.html">機率式與生成學習</a>
+      <a href="rl.html">強化學習</a>
+      <a href="gradients.html" class="current">改良梯度與快速主題</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="改良梯度與快速主題">改良梯度與快速主題<a class="anchor" href="#改良梯度與快速主題" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>本頁導讀原書 <a href="https://physicsbaseddeeplearning.org/physgrad.html">Improved Gradients（Scale-Invariance）</a> 一章與其後的「快速主題」與展望：為什麼標準梯度下降在物理問題上表現不佳，以及尺度不變、反梯度、半反梯度等改良方法。</p>
+</blockquote>
+<hr>
+
+<h2 id="核心問題病態梯度">核心問題：病態梯度<a class="anchor" href="#核心問題病態梯度" aria-hidden="true">#</a></h2>
+<p>標準<strong>梯度下降（GD）</strong>在物理化學習上常表現很差，因為物理系統在不同維度上的<strong>敏感度差異巨大</strong>。若輸出中有一個縮放因子 <code>α</code>，損失中的更新會以 <code>α²</code> 縮放，造成極度病態（poorly conditioned）的最佳化地形——等高線被拉得又長又扁，GD 在一個方向上龜速爬行，卻在另一方向上不斷過衝（overshoot）。</p>
+<h3 id="標準-gd-的三個缺陷">標準 GD 的三個缺陷<a class="anchor" href="#標準-gd-的三個缺陷" aria-hidden="true">#</a></h3>
+<p>更新式 <code>Δx = −η · ∂L/∂x</code> 有三個根本問題：</p>
+<ol>
+<li><strong>單位不一致</strong>：參數收到的更新帶有錯誤的物理量綱。</li>
+<li><strong>敏感度放大</strong>：輸出的微小變化造成參數的巨大更新（反之亦然），導致梯度消失／爆炸。</li>
+<li><strong>平坦收斂</strong>：接近最佳點時梯度趨近於零，最後階段收斂極慢。</li>
+</ol>
+
+<h2 id="尺度不變的解法">尺度不變的解法<a class="anchor" href="#尺度不變的解法" aria-hidden="true">#</a></h2>
+<p>原書指出「常規梯度對物理問題可能是次佳選擇」，並介紹一系列<strong>尺度不變（scale-invariant）</strong>的替代更新，核心共通原則是：<strong>用某種「反演（inversion）」把梯度方向依函數敏感度重新縮放</strong>，恢復標準 GD 所缺的一致性。</p>
+<table>
+<thead>
+<tr><th>方法</th><th>更新方向</th><th>特點與代價</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>擬牛頓法（Quasi-Newton）</strong></td><td>用（近似）逆 Hessian</td><td>正確處理單位與敏感度；但需二階導、且 Hessian 要可逆、昂貴</td></tr>
+<tr><td><strong>反梯度（Inverse Gradients, IG）</strong></td><td><code>Δx = ∂x/∂y · Δy</code></td><td>自動依敏感度縮放——不敏感的方向給更大步；但要求雅可比是方陣且可逆</td></tr>
+<tr><td><strong>反向模擬器（Inverse Simulators）</strong></td><td>用完整非線性反演 <code>P⁻¹</code></td><td>捕捉高階效應、真正尺度不變、無量綱問題；是理想但需要可反演的物理</td></tr>
+<tr><td><strong>半反梯度（Half-Inverse Gradients）</strong></td><td>介於 GD 與完全反演之間</td><td>在網路權重與物理狀態之間取折衷，兼顧穩定與可行性</td></tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>關鍵洞見：</strong>這些方法都在做同一件事——<em>用反演把梯度依函數敏感度重新縮放</em>，在維持朝最小值前進的同時，取得標準 GD 所欠缺的尺度一致性。原書另比較了 Adam、牛頓法等優化器，並以熱傳導等例子示範。</p>
+</blockquote>
+
+<h2 id="優化器比較的要點">優化器比較的要點<a class="anchor" href="#優化器比較的要點" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>Adam</strong>：以逐座標的自適應縮放部分緩解病態，是實務常見的穩健預設，但仍非真正尺度不變。</li>
+<li><strong>牛頓／擬牛頓</strong>：理論上處理曲率最好，但二階資訊昂貴、在高維神經網路上不易直接套用。</li>
+<li><strong>物理化更新（IG／反向模擬器）</strong>：在<em>物理狀態</em>那一段用反演，配合<a href="diffphys.html">可微分物理</a>，能顯著改善收斂。</li>
+</ul>
+
+<h2 id="快速主題與展望">快速主題與展望<a class="anchor" href="#快速主題與展望" aria-hidden="true">#</a></h2>
+<p>原書末段以「快速前進（Fast Forward）」形式簡介幾個延伸主題，並以展望收束：</p>
+<table>
+<thead>
+<tr><th>主題</th><th>內容</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>模型降階（Model Reduction）</strong></td><td>以低維表示加速高維模擬，與學習型代理相輔相成</td></tr>
+<tr><td><strong>無網格／無網格法（Meshless）</strong></td><td>不依賴固定網格的離散化與學習方法</td></tr>
+<tr><td><strong>生成對抗網路（GAN）</strong></td><td>另一類生成式模型在物理問題上的應用（與<a href="probabilistic.html">機率式學習</a>互補）</td></tr>
+<tr><td><strong>展望與符號</strong></td><td>對領域未來的觀察，以及全書的參考文獻與符號表</td></tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>全書小結：</strong>PBDL 的主線是把「模擬」與「學習」由鬆到緊地結合——從<a href="surrogates.html">監督式代理</a>、<a href="physical-losses.html">物理損失</a>到<a href="diffphys.html">可微分物理</a>，再輔以<a href="probabilistic.html">生成式</a>與<a href="rl.html">RL</a>方法，並用改良梯度讓這一切訓練得更好。作者視之為未來「科學基礎模型」的基礎。</p>
+</blockquote>
+<hr>
+<p><em>本頁由 Claude 整理，內容以原書為準；如發現與最新版不符，請以連結內原文為主。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://physicsbaseddeeplearning.org/physgrad.html" target="_blank" rel="noopener">Physics-Based Deep Learning · Improved Gradients</a> 及其後章節。內容如與原書不符，請以原書為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#核心問題病態梯度">核心問題：病態梯度</a>
+      <a class="toc-h3" href="#標準-gd-的三個缺陷">標準 GD 的三個缺陷</a>
+      <a class="toc-h2" href="#尺度不變的解法">尺度不變的解法</a>
+      <a class="toc-h2" href="#優化器比較的要點">優化器比較的要點</a>
+      <a class="toc-h2" href="#快速主題與展望">快速主題與展望</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

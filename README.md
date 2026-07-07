@@ -45,6 +45,15 @@ docs/
 │   ├── interop.html    互操作性（PyTorch、JAX、DLPack）
 │   ├── modules.html    領域模組（sparse、fem、render）
 │   └── faq.html        FAQ・除錯・限制
+├── pbdl/           ← Physics-Based Deep Learning 中文導讀（Thuerey 團隊專書）
+│   ├── index.html      PBDL 首頁
+│   ├── docs.html       總覽（緒論）：方法框架、正／反問題、常用 PDE
+│   ├── surrogates.html 神經代理與算子（監督式學習）
+│   ├── physical-losses.html 物理損失項（PINN）
+│   ├── diffphys.html   可微分物理
+│   ├── probabilistic.html 機率式與生成學習（擴散、流匹配）
+│   ├── rl.html         強化學習（PPO 控制 PDE）
+│   └── gradients.html  改良梯度與快速主題
 └── ndpi/           ← nDPI 中文文檔（nDPI 5.0）
     ├── index.html      nDPI 首頁
     ├── docs.html       總覽文檔
@@ -69,6 +78,7 @@ docs/
 - [Isaac Lab 官方文檔](https://isaac-sim.github.io/IsaacLab/main/index.html)（main）
 - [Newton Physics 官方文檔](https://newton-physics.github.io/newton/stable/guide/overview.html)（1.3.0，CC-BY-4.0）
 - [NVIDIA Warp 官方文檔](https://nvidia.github.io/warp/v1.14/index.html)（1.14.0）
+- [Physics-Based Deep Learning](https://physicsbaseddeeplearning.org/intro.html)（N. Thuerey 等，TUM Physics-based Simulation Group，v0.3）
 - [ntop/nDPI 官方 GitHub](https://github.com/ntop/nDPI) 與 [DeepWiki](https://deepwiki.com/ntop/nDPI)（nDPI 5.0，索引 2025-12-05）
 
 內容如與最新版官方文檔不符，請以官方為準。本站為非官方學習資源。

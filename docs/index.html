@@ -58,6 +58,7 @@
     .site-card.newton { border-top-color: #1e88e5; }
     .site-card.ndpi { border-top-color: #14a89e; }
     .site-card.warp { border-top-color: #7e57c2; }
+    .site-card.pbdl { border-top-color: #e5326e; }
     .site-card .logo { font-size: 2.2rem; margin-bottom: 10px; }
     .site-card h2 { margin: 0 0 4px; font-size: 1.5rem; }
     .site-card h2 .hl-isaac { color: #5a8f00; }
@@ -65,6 +66,7 @@
     .site-card h2 .hl-newton { color: #1565c0; }
     .site-card h2 .hl-ndpi { color: #0b7a72; }
     .site-card h2 .hl-warp { color: #5e35b1; }
+    .site-card h2 .hl-pbdl { color: #b4245a; }
     .site-card .tagline { color: #57606a; font-size: 0.95rem; margin: 0 0 16px; }
     .site-card ul {
       margin: 0 0 18px;
@@ -88,6 +90,7 @@
     .site-card.newton li::before { color: #1e88e5; }
     .site-card.ndpi li::before { color: #14a89e; }
     .site-card.warp li::before { color: #7e57c2; }
+    .site-card.pbdl li::before { color: #e5326e; }
     .enter {
       display: inline-block;
       align-self: flex-start;
@@ -102,6 +105,7 @@
     .site-card.newton .enter { background: #1e88e5; }
     .site-card.ndpi .enter { background: #0b7a72; }
     .site-card.warp .enter { background: #5e35b1; }
+    .site-card.pbdl .enter { background: #e5326e; }
     .section {
       max-width: 1020px;
       margin: 56px auto;
@@ -150,6 +154,7 @@
     <span class="badge">Isaac Lab</span>
     <span class="badge">Newton Physics 1.3.0</span>
     <span class="badge">Warp 1.14.0</span>
+    <span class="badge">Physics-Based DL</span>
     <span class="badge">nDPI 5.0</span>
     <span class="badge">非官方學習資源</span>
   </div>
@@ -211,6 +216,20 @@
     <span class="enter">進入 Warp 文檔 →</span>
   </a>
 
+  <a class="site-card pbdl" href="pbdl/index.html">
+    <div class="logo">🌊</div>
+    <h2><span class="hl-pbdl">Physics-Based DL</span> 中文導讀</h2>
+    <p class="tagline">把數值模擬與深度學習「橋接」起來——慕尼黑工大 Thuerey 團隊開源專書的中文導讀，PDE、流體與反問題的深度學習方法地圖。</p>
+    <ul>
+      <li>總覽（緒論）：三大整合方式、正／反問題與常用 PDE</li>
+      <li>核心方法：神經代理、物理損失（PINN）、可微分物理</li>
+      <li>進階：機率式與生成學習（擴散、流匹配）、強化學習</li>
+      <li>優化：尺度不變性、反梯度與半反梯度</li>
+      <li>逐章附原書連結對照</li>
+    </ul>
+    <span class="enter">進入 PBDL 導讀 →</span>
+  </a>
+
   <a class="site-card ndpi" href="ndpi/index.html">
     <div class="logo">📡</div>
     <h2><span class="hl-ndpi">nDPI</span> 中文文檔</h2>
@@ -243,7 +262,7 @@
 </section>
 
 <footer class="site-footer">
-  <p>本站內容整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>、<a href="https://isaac-sim.github.io/IsaacLab/main/index.html" target="_blank" rel="noopener">Isaac Lab 官方文檔</a>、<a href="https://newton-physics.github.io/newton/stable/guide/overview.html" target="_blank" rel="noopener">Newton Physics 官方文檔</a> 與 <a href="https://nvidia.github.io/warp/v1.14/index.html" target="_blank" rel="noopener">NVIDIA Warp 官方文檔</a>。內容如與最新版官方文檔不符，請以官方為準。<br>本站為非官方學習資源。</p>
+  <p>本站內容整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>、<a href="https://isaac-sim.github.io/IsaacLab/main/index.html" target="_blank" rel="noopener">Isaac Lab 官方文檔</a>、<a href="https://newton-physics.github.io/newton/stable/guide/overview.html" target="_blank" rel="noopener">Newton Physics 官方文檔</a> 與 <a href="https://nvidia.github.io/warp/v1.14/index.html" target="_blank" rel="noopener">NVIDIA Warp 官方文檔</a> 與 <a href="https://physicsbaseddeeplearning.org/intro.html" target="_blank" rel="noopener">Physics-Based Deep Learning</a>。內容如與最新版官方文檔不符，請以官方為準。<br>本站為非官方學習資源。</p>
 </footer>
 </body>
 </html>

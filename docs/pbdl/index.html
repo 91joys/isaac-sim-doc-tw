@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>物理化深度學習（PBDL）中文文檔</title>
+  <meta name="description" content="Physics-Based Deep Learning（PBDL）中文導讀：把數值模擬與深度學習結合的完整方法地圖——監督式代理、物理損失（PINN）、可微分物理、生成式模型、強化學習與改良梯度。">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">PBDL</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html" class="active">首頁</a>
+    <a href="docs.html">總覽（緒論）</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://physicsbaseddeeplearning.org/intro.html" target="_blank" rel="noopener">原書 ↗</a>
+  </nav>
+</header>
+
+<main class="content-full">
+  <section class="hero">
+    <h1><span class="hl">物理化深度學習</span><br>Physics-Based Deep Learning</h1>
+    <p class="sub">把數值模擬與深度學習「橋接」起來的完整方法地圖——中文導讀慕尼黑工業大學 Thuerey 團隊的開源專書，涵蓋監督式代理、物理損失（PINN）、可微分物理、生成式模型、強化學習與改良梯度，逐章附原書連結對照。</p>
+    <div class="badges">
+      <span class="badge">依據原書 v0.3</span>
+      <span class="badge">科學計算 × 深度學習</span>
+      <span class="badge">PDE · 流體 · 反問題</span>
+      <span class="badge">繁體中文導讀</span>
+    </div>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="docs.html">從緒論開始</a>
+      <a class="btn btn-ghost" href="diffphys.html">直接看可微分物理</a>
+    </div>
+  </section>
+
+  <div class="cards">
+    <a class="card" href="docs.html">
+      <div class="icon">📖</div>
+      <h3>總覽（緒論）</h3>
+      <p>什麼是 PBDL、為何要橋接模擬與學習、三大整合方式與正／反問題分類、常用 PDE（Burgers、Navier-Stokes）與符號慣例，以及全書章節地圖。</p>
+      <span class="go">前往閱讀 →</span>
+    </a>
+    <a class="card" href="surrogates.html">
+      <div class="icon">🧠</div>
+      <h3>神經代理與算子</h3>
+      <p>以監督式學習訓練神經網路代理（surrogate）與神經算子（operator）；資料生成、網路架構、翼型（airfoil）案例與監督式方法的優缺點。</p>
+      <span class="go">前往閱讀 →</span>
+    </a>
+    <a class="card" href="physical-losses.html">
+      <div class="icon">🎯</div>
+      <h3>物理損失項（PINN）</h3>
+      <p>把 PDE 殘差當成軟約束加進損失，用自動微分算導數；物理資訊神經網路（PINN）的兩種變體、適用時機與侷限。</p>
+      <span class="go">前往閱讀 →</span>
+    </a>
+    <a class="card" href="diffphys.html">
+      <div class="icon">⚙️</div>
+      <h3>可微分物理</h3>
+      <p>把數值求解器變成可反向傳播的算子鏈；梯度如何穿過模擬、與 PINN 的本質差異、隱式微分與反問題泛化——PBDL 的核心利器。</p>
+      <span class="go">前往閱讀 →</span>
+    </a>
+    <a class="card" href="probabilistic.html">
+      <div class="icon">🎲</div>
+      <h3>機率式與生成學習</h3>
+      <p>學分佈而非單一解：正規化流、分數匹配、去噪擴散、流匹配；不確定性、後驗取樣、以模擬為基礎的推論與圖上擴散。</p>
+      <span class="go">前往閱讀 →</span>
+    </a>
+    <a class="card" href="rl.html">
+      <div class="icon">🕹️</div>
+      <h3>強化學習</h3>
+      <p>把 PDE 控制視為 RL 問題：PPO 的 actor-critic 架構、Burgers 方程控制範例，以及與可微分物理在長程依賴上的比較。</p>
+      <span class="go">前往閱讀 →</span>
+    </a>
+  </div>
+
+  <section class="section" id="sections">
+    <h2>全部章節</h2>
+    <p>依原書架構組織的中文導讀，每頁附完整原書章節連結對照。</p>
+    <div class="feature-grid">
+      <a class="card" href="docs.html">
+        <div class="icon">📖</div>
+        <h3>總覽（緒論）</h3>
+        <p>方法框架、正／反問題、常用 PDE 與符號、全書章節地圖。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="surrogates.html">
+        <div class="icon">🧠</div>
+        <h3>神經代理與算子</h3>
+        <p>監督式訓練、網路架構、翼型案例與優缺點。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="physical-losses.html">
+        <div class="icon">🎯</div>
+        <h3>物理損失項（PINN）</h3>
+        <p>PDE 殘差軟約束、兩種變體、適用與侷限。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="diffphys.html">
+        <div class="icon">⚙️</div>
+        <h3>可微分物理</h3>
+        <p>算子鏈梯度、與 PINN 差異、隱式微分、反問題。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="probabilistic.html">
+        <div class="icon">🎲</div>
+        <h3>機率式與生成學習</h3>
+        <p>擴散、分數匹配、流匹配、後驗推論與圖擴散。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="rl.html">
+        <div class="icon">🕹️</div>
+        <h3>強化學習</h3>
+        <p>PPO 控制 PDE、Burgers 範例、與 DP 比較。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="gradients.html">
+        <div class="icon">📉</div>
+        <h3>改良梯度與快速主題</h3>
+        <p>尺度不變性、反梯度、半反梯度、優化器比較與快速主題。</p>
+        <span class="go">前往 →</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>建議閱讀路徑</h2>
+    <ol>
+      <li><a href="docs.html">總覽（緒論）</a>：先建立「監督式 → 物理損失 → 可微分物理」由鬆到緊的整合光譜，以及正／反問題的分類。</li>
+      <li><a href="surrogates.html">神經代理與算子</a>：從最傳統的監督式學習入手，理解資料驅動代理的能與不能。</li>
+      <li><a href="physical-losses.html">物理損失項（PINN）</a> → <a href="diffphys.html">可微分物理</a>：對照兩種「把物理放進訓練」的做法，理解為何 DP 能泛化到整類反問題。</li>
+      <li>依興趣深入：<a href="probabilistic.html">機率式與生成學習</a>（不確定性）、<a href="rl.html">強化學習</a>（控制）、<a href="gradients.html">改良梯度</a>（優化）。</li>
+    </ol>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>本站為 <a href="https://physicsbaseddeeplearning.org/intro.html" target="_blank" rel="noopener">Physics-Based Deep Learning（PBDL）</a> 一書的非官方繁體中文導讀，原書由 N. Thuerey、B. Holzschuh、P. Holl、G. Kohl、M. Lino、Q. Liu、P. Schnell、F. Trost 等人撰寫（TUM Physics-based Simulation Group）。內容如與原書不符，請以原書為準。</p>
+</footer>
+<script src="assets/script.js"></script>
+</body>
+</html>

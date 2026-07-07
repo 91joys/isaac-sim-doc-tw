@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>可微分物理 — PBDL 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">PBDL</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽（緒論）</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://physicsbaseddeeplearning.org/intro.html" target="_blank" rel="noopener">原書 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+      <div class="nav-group-title">緒論</div>
+      <a href="docs.html">總覽（緒論）</a>
+      <div class="nav-group-title">核心方法</div>
+      <a href="surrogates.html">神經代理與算子</a>
+      <a href="physical-losses.html">物理損失項（PINN）</a>
+      <a href="diffphys.html" class="current">可微分物理</a>
+      <div class="nav-group-title">進階主題</div>
+      <a href="probabilistic.html">機率式與生成學習</a>
+      <a href="rl.html">強化學習</a>
+      <a href="gradients.html">改良梯度與快速主題</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="可微分物理differentiable-physics">可微分物理（Differentiable Physics）<a class="anchor" href="#可微分物理differentiable-physics" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>本頁導讀原書 <a href="https://physicsbaseddeeplearning.org/diffphys.html">Differentiable Physics</a> 一章：讓數值求解器<strong>本身可反向傳播</strong>，成為深度學習計算圖的一部分。這是 PBDL 耦合光譜中最緊、也最強大的一端，是全書的核心。</p>
+</blockquote>
+<hr>
+
+<h2 id="核心概念">核心概念<a class="anchor" href="#核心概念" aria-hidden="true">#</a></h2>
+<p><strong>可微分物理（DP）</strong>的做法是：不把物理求解器丟掉，而是<strong>賦予它計算梯度的能力</strong>，讓梯度能一路反向傳播穿過整個模擬。用原書的話說，DP「用既有的數值求解器來強化並改進 AI 系統」，而非以神經網路取代求解器。</p>
+<p>一個物理求解器可被分解成一連串<strong>可微分算子</strong>：</p>
+<div class="math">u(t+Δt) = P_m ∘ … ∘ P_2 ∘ P_1 ( u(t) )</div>
+<p>每個算子 <code>P_i</code> 都能計算「雅可比—向量積（Jacobian-vector product）」。反向傳播時，梯度依鏈鎖法則沿這條算子鏈往回傳——和訓練神經網路完全一樣。</p>
+
+<h2 id="梯度如何穿過求解器">梯度如何穿過求解器<a class="anchor" href="#梯度如何穿過求解器" aria-hidden="true">#</a></h2>
+<p>關鍵洞見是：<strong>我們從不建構完整的雅可比矩陣</strong>，而是用反向模式微分（reverse-mode AD）高效計算「轉置雅可比 × 向量」的乘積。對一個反問題，總梯度由三部分組合：</p>
+<ul>
+<li><strong>損失對最終狀態的梯度</strong>：通常很簡單（例如與目標的差）。</li>
+<li><strong>物理對控制參數的雅可比</strong>：編碼求解器輸出如何隨輸入變化。</li>
+<li><strong>時間累積</strong>：每個時間步的貢獻加總，得到總梯度。</li>
+</ul>
+
+<h2 id="與-pinn-的本質差異">與 PINN 的本質差異<a class="anchor" href="#與-pinn-的本質差異" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr><th></th><th>PINN（物理損失）</th><th>可微分物理（DP）</th></tr>
+</thead>
+<tbody>
+<tr><td>物理如何進入</td><td>把方程當成<strong>殘差損失</strong></td><td>把<strong>真正的求解器</strong>保留在迴圈中</td></tr>
+<tr><td>求解器去留</td><td>訓練後多半丟棄</td><td>訓練中與訓練後都持續運作</td></tr>
+<tr><td>解決範圍</td><td>單一反問題</td><td>學會解「一整類」反問題</td></tr>
+<tr><td>泛化</td><td>換條件常需重訓</td><td>對解族泛化，推論高效</td></tr>
+</tbody>
+</table>
+<blockquote>
+<p>原書強調：DP「與物理資訊神經網路有本質差異」——與其用深度學習去解<em>單一</em>反問題，不如用可微分物理訓練出能<strong>非常高效地解一大類反問題</strong>的網路。</p>
+</blockquote>
+
+<h2 id="為何要單體算子">為何要「單體算子」<a class="anchor" href="#為何要單體算子" aria-hidden="true">#</a></h2>
+<p>DP 不直接把求解器拆成框架最底層的張量運算，而是分解成有物理意義的<strong>單體算子（monolithic operators）</strong>。好處：</p>
+<ul>
+<li>避免儲存大量不必要的中間狀態，省記憶體。</li>
+<li>能對特定運算沿用專門的數值方法（多重網格、共軛梯度等）。</li>
+</ul>
+<p>代價則是：需要對數值方法與物理問題有更深入的理解。</p>
+
+<h2 id="隱式梯度計算">隱式梯度計算<a class="anchor" href="#隱式梯度計算" aria-hidden="true">#</a></h2>
+<p>對某些複雜運算（如流體壓力投影要解的 <strong>Poisson 方程</strong>），DP 採用<strong>隱函數定理（implicit function theorem）</strong>做隱式微分：與其反傳穿過迭代求解器的每一步，不如解析地推導出——梯度只需<strong>用相同的方程、換一組邊界條件再解一次</strong>即可。這讓反向傳播能重用前向求解器，而不必儲存中間迭代狀態。</p>
+
+<h2 id="典型用法與網路整合">典型用法與網路整合<a class="anchor" href="#典型用法與網路整合" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>反問題</strong>：由目標狀態反推初始條件、材料參數或最佳控制。</li>
+<li><strong>求解器修正器（solver-in-the-loop）</strong>：神經網路在每步模擬後修正離散化誤差或未解析物理，因求解器可微分，網路能「看見」自己的修正如何影響後續多步的演化，進而學到穩定、長程的修正策略。</li>
+<li><strong>與監督式結合</strong>：DP 損失可與資料損失並用，兼顧物理一致性與擬合。</li>
+</ul>
+<blockquote>
+<p><strong>小結：</strong>可微分物理把「模擬」變成神經網路可以學習穿越的一層。它是 PBDL 最有威力的工具，代價是需要一個可微分的求解器（如 ΦFlow、JAX 實作）與對數值方法的掌握。控制類問題也可改用<a href="rl.html">強化學習</a>，兩者的取捨見該頁。</p>
+</blockquote>
+<hr>
+<p><em>本頁由 Claude 整理，內容以原書為準；如發現與最新版不符，請以連結內原文為主。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://physicsbaseddeeplearning.org/diffphys.html" target="_blank" rel="noopener">Physics-Based Deep Learning · Differentiable Physics</a>。內容如與原書不符，請以原書為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#核心概念">核心概念</a>
+      <a class="toc-h2" href="#梯度如何穿過求解器">梯度如何穿過求解器</a>
+      <a class="toc-h2" href="#與-pinn-的本質差異">與 PINN 的本質差異</a>
+      <a class="toc-h2" href="#為何要單體算子">為何要單體算子</a>
+      <a class="toc-h2" href="#隱式梯度計算">隱式梯度計算</a>
+      <a class="toc-h2" href="#典型用法與網路整合">典型用法與網路整合</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>物理損失項（PINN） — PBDL 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">PBDL</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽（緒論）</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://physicsbaseddeeplearning.org/intro.html" target="_blank" rel="noopener">原書 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+      <div class="nav-group-title">緒論</div>
+      <a href="docs.html">總覽（緒論）</a>
+      <div class="nav-group-title">核心方法</div>
+      <a href="surrogates.html">神經代理與算子</a>
+      <a href="physical-losses.html" class="current">物理損失項（PINN）</a>
+      <a href="diffphys.html">可微分物理</a>
+      <div class="nav-group-title">進階主題</div>
+      <a href="probabilistic.html">機率式與生成學習</a>
+      <a href="rl.html">強化學習</a>
+      <a href="gradients.html">改良梯度與快速主題</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="物理損失項與-pinn">物理損失項與 PINN<a class="anchor" href="#物理損失項與-pinn" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>本頁導讀原書 <a href="https://physicsbaseddeeplearning.org/physicalloss.html">Physical Loss Terms</a> 一章：把 PDE 本身當成損失中的「軟約束」，讓網路在沒有大量標註資料的情況下也能學到符合物理的解。這是耦合光譜中的「中段」。</p>
+</blockquote>
+<hr>
+
+<h2 id="核心想法">核心想法<a class="anchor" href="#核心想法" aria-hidden="true">#</a></h2>
+<p><strong>物理資訊神經網路（Physics-Informed Neural Networks, PINN）</strong>利用自動微分，把物理知識直接寫進訓練目標。對一個形如下式的 PDE：</p>
+<div class="math">u_t = F(u_x , u_xx , …)</div>
+<p>其中 <code>u</code> 是待求場、下標表示對時間／空間的偏導。我們定義<strong>殘差（residual）</strong>：</p>
+<div class="math">R = u_t − F(u_x , u_xx , …)</div>
+<p>正確的解應使 <code>R = 0</code>。於是訓練目標結合<strong>監督項</strong>與<strong>物理殘差項</strong>：</p>
+<div class="math">arg min<sub>θ</sub>  Σ ‖ u(x;θ) − u* ‖²  +  λ · Σ ‖ R(x;θ) ‖²</div>
+<p>之所以可行，是因為全連接網路天生支援對輸入座標求導（autodiff），因此能算出殘差所需的各階時間／空間導數。<code>λ</code> 用來平衡兩項的權重。</p>
+
+<h2 id="兩種變體">兩種變體<a class="anchor" href="#兩種變體" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr><th>變體</th><th>表示方式</th><th>導數怎麼算</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>變體一：離散網格</strong></td><td>用 CNN／圖網路在明確的計算網格上表示場</td><td>以傳統有限差分等離散化計算殘差</td></tr>
+<tr><td><strong>變體二：隱式場表示</strong></td><td>用全連接網路把「空間座標」當輸入、直接輸出該點的場值</td><td>以 autodiff 對座標微分，得到連續的殘差</td></tr>
+</tbody>
+</table>
+<p>變體二是最常被稱作「PINN」的形式：網路本身就是一個連續、可微分的場函數 <code>u(x, t; θ)</code>。</p>
+
+<h2 id="適用時機">適用時機<a class="anchor" href="#適用時機" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>觀測稀疏的反問題</strong>：只有少量量測時，物理殘差提供了強力的正則化，PINN 幾乎不需要大量訓練資料就能填補。</li>
+<li><strong>已知控制方程、想求單一解</strong>：例如重建某個特定流場或推斷某組參數。</li>
+</ul>
+
+<h2 id="侷限與陷阱">侷限與陷阱<a class="anchor" href="#侷限與陷阱" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>只是「軟」約束</strong>：殘差項不保證收斂到零，最終解可能仍違反物理。</li>
+<li><strong>難處理複雜解流形</strong>：面對豐富的時間動力學或多樣的解族（solution families）時，最佳化容易變得病態。</li>
+<li><strong>每個問題重訓一次</strong>：典型 PINN 針對<em>單一</em>反問題最佳化，換一組邊界條件往往要重訓——這正是<a href="diffphys.html">可微分物理</a>想突破的地方。</li>
+<li><strong>權重敏感</strong>：<code>λ</code> 與各損失項的相對尺度不好調，牽涉到<a href="gradients.html">病態梯度</a>問題。</li>
+</ul>
+<blockquote>
+<p><strong>與可微分物理的分界：</strong>PINN 把方程當成<em>殘差損失</em>，訓練完通常就丟掉求解器；可微分物理則<em>保留真正的求解器在迴圈中</em>，能學會解「一整類」反問題。下一章詳談。</p>
+</blockquote>
+<hr>
+<p><em>本頁由 Claude 整理，內容以原書為準；如發現與最新版不符，請以連結內原文為主。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://physicsbaseddeeplearning.org/physicalloss.html" target="_blank" rel="noopener">Physics-Based Deep Learning · Physical Loss Terms</a>。內容如與原書不符，請以原書為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#核心想法">核心想法</a>
+      <a class="toc-h2" href="#兩種變體">兩種變體</a>
+      <a class="toc-h2" href="#適用時機">適用時機</a>
+      <a class="toc-h2" href="#侷限與陷阱">侷限與陷阱</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

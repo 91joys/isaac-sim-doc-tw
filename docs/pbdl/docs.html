@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>總覽（緒論） — PBDL 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">PBDL</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html" class="active">總覽（緒論）</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://physicsbaseddeeplearning.org/intro.html" target="_blank" rel="noopener">原書 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+      <div class="nav-group-title">緒論</div>
+      <a href="docs.html" class="current">總覽（緒論）</a>
+      <div class="nav-group-title">核心方法</div>
+      <a href="surrogates.html">神經代理與算子</a>
+      <a href="physical-losses.html">物理損失項（PINN）</a>
+      <a href="diffphys.html">可微分物理</a>
+      <div class="nav-group-title">進階主題</div>
+      <a href="probabilistic.html">機率式與生成學習</a>
+      <a href="rl.html">強化學習</a>
+      <a href="gradients.html">改良梯度與快速主題</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="physics-based-deep-learning-總覽緒論">Physics-Based Deep Learning 總覽（緒論）<a class="anchor" href="#physics-based-deep-learning-總覽緒論" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>本頁為 <a href="https://physicsbaseddeeplearning.org/intro.html">Physics-Based Deep Learning</a> 一書緒論與 <a href="https://physicsbaseddeeplearning.org/overview.html">Overview</a> 的中文導讀。原書為附可執行 Jupyter Notebook 的實作導向專書（v0.3，GenAI 版）。</p>
+</blockquote>
+<hr>
+<h2 id="目錄">目錄<a class="anchor" href="#目錄" aria-hidden="true">#</a></h2>
+<ol>
+<li><a href="#1-什麼是-pbdl">什麼是 PBDL</a></li>
+<li><a href="#2-為何橋接模擬與學習">為何橋接模擬與學習</a></li>
+<li><a href="#3-三大整合方式">三大整合方式</a></li>
+<li><a href="#4-正問題與反問題">正問題與反問題</a></li>
+<li><a href="#5-常用-pde-與符號慣例">常用 PDE 與符號慣例</a></li>
+<li><a href="#6-全書章節地圖">全書章節地圖</a></li>
+<li><a href="#7-範圍與實作環境">範圍與實作環境</a></li>
+</ol>
+<hr>
+
+<h2 id="1-什麼是-pbdl">1. 什麼是 PBDL<a class="anchor" href="#1-什麼是-pbdl" aria-hidden="true">#</a></h2>
+<p><a href="https://physicsbaseddeeplearning.org/intro.html">原文連結</a></p>
+<p><strong>物理化深度學習（Physics-Based Deep Learning, PBDL）</strong>研究的是：如何把<strong>物理模型（尤其是以偏微分方程 PDE 描述的數值模擬）</strong>與<strong>深度學習</strong>結合起來，一起解決科學與工程中的模擬問題。核心理念不是「用神經網路取代數值方法」，而是<strong>橋接兩個世界</strong>——讓深度學習借助 PDE 所編碼的領域知識，也讓傳統求解器借助神經網路的靈活與速度。</p>
+<p>原書涵蓋的 PBDL 方法類別包括：</p>
+<ul>
+<li><strong>神經代理與算子（Neural surrogates &amp; operators）</strong>：以資料訓練快速的替身模型。</li>
+<li><strong>物理損失項（Physical loss terms，PINN）</strong>：把 PDE 殘差當成約束放進損失。</li>
+<li><strong>可微分物理（Differentiable physics）</strong>：讓求解器可反向傳播，與網路緊密耦合。</li>
+<li><strong>機率式／生成學習</strong>：擴散模型、流匹配等，處理不確定性與多解。</li>
+<li><strong>強化學習</strong>：用於控制類問題。</li>
+<li><strong>改良梯度</strong>：針對物理問題病態梯度的優化技巧。</li>
+<li><strong>進階架構</strong>：適用非結構化網格的神經網路。</li>
+</ul>
+<p>作者群把這些方法定位為新興「科學基礎模型（scientific foundation models）」的基石。</p>
+
+<h2 id="2-為何橋接模擬與學習">2. 為何橋接模擬與學習<a class="anchor" href="#2-為何橋接模擬與學習" aria-hidden="true">#</a></h2>
+<p>純資料驅動的深度學習雖靈活，但常忽略我們早已透過數百年物理研究掌握的規律；傳統數值模擬雖精確，卻昂貴且難以處理反問題與參數化不確定性。PBDL 主張<strong>把兩者的長處合起來</strong>：</p>
+<ul>
+<li>用<strong>物理模型</strong>提供歸納偏置（inductive bias），減少對資料量的依賴、提升泛化與可信度。</li>
+<li>用<strong>神經網路</strong>加速昂貴的求解、修正數值誤差，或補足模型中未解析的項（歷史上稱為 closure、homogenization、parametrization 問題）。</li>
+</ul>
+<blockquote>
+<p>神經網路也能扮演<strong>求解器修正器（solver corrector）</strong>：在每一步模擬後修正離散化誤差或未解析的物理，這正是可微分物理最有威力的用法之一。</p>
+</blockquote>
+
+<h2 id="3-三大整合方式">3. 三大整合方式<a class="anchor" href="#3-三大整合方式" aria-hidden="true">#</a></h2>
+<p>原書依「物理模型與神經網路耦合的緊密程度」把方法分成三大類，由鬆到緊：</p>
+<table>
+<thead>
+<tr><th>方式</th><th>物理如何進入</th><th>耦合程度</th><th>對應章節</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>監督式（Supervised）</strong></td><td>只用（真實或模擬產生的）資料訓練網路，訓練時不再與物理互動——經典機器學習做法</td><td>鬆</td><td><a href="surrogates.html">神經代理與算子</a></td></tr>
+<tr><td><strong>物理損失（Loss-terms / PINN）</strong></td><td>把物理動力學寫成損失中的可微分項，用梯度反覆評估 PDE 約束</td><td>中</td><td><a href="physical-losses.html">物理損失項</a></td></tr>
+<tr><td><strong>可微分物理（Differentiable / Hybrid）</strong></td><td>完整的物理模擬與網路輸出交錯運算，需要可微分求解器；耦合最緊</td><td>緊</td><td><a href="diffphys.html">可微分物理</a></td></tr>
+</tbody>
+</table>
+<p>這條「由鬆到緊」的光譜是全書的主軸：越往右，網路越能與真實的物理過程互動，泛化能力與物理一致性通常越好，但實作也越需要對數值方法的理解。</p>
+
+<h2 id="4-正問題與反問題">4. 正問題與反問題<a class="anchor" href="#4-正問題與反問題" aria-hidden="true">#</a></h2>
+<p>除了整合方式，問題本身也可分為兩類：</p>
+<ul>
+<li><strong>正問題（Forward problems）</strong>：已知系統與初始／邊界條件，預測狀態或其時間演化（例如給定初始流場，預測下一時刻）。</li>
+<li><strong>反問題（Inverse problems）</strong>：由觀測回推參數化或狀態（例如由稀疏量測反推材料參數、初始條件或最佳控制力）。反問題通常更難、更病態，也是 PBDL（尤其可微分物理）最能發揮的地方。</li>
+</ul>
+
+<h2 id="5-常用-pde-與符號慣例">5. 常用 PDE 與符號慣例<a class="anchor" href="#5-常用-pde-與符號慣例" aria-hidden="true">#</a></h2>
+<p>全書以兩個 PDE 作為反覆出現的範例：</p>
+<h3 id="burgers-方程">Burgers 方程<a class="anchor" href="#burgers-方程" aria-hidden="true">#</a></h3>
+<p>一維、含黏滯項的非線性對流方程，是研究衝擊波與非線性的最小範例：</p>
+<div class="math">∂u/∂t + u · ∂u/∂x = ν · ∂²u/∂x²</div>
+<p>其中 <code>u</code> 為速度場、<code>ν</code> 為黏滯係數。它足夠簡單可快速實驗，又保有非線性帶來的困難。</p>
+<h3 id="navier-stokes-方程">Navier-Stokes 方程<a class="anchor" href="#navier-stokes-方程" aria-hidden="true">#</a></h3>
+<p>描述不可壓縮流體的動量與連續方程，是流體模擬的核心：</p>
+<div class="math">∂u/∂t + (u · ∇)u = −(1/ρ)∇p + ν∇²u ,  ∇ · u = 0</div>
+<p>其中壓力投影（求解 Poisson 方程 <code>∇²p = …</code>）是可微分物理中隱式微分的經典場景。</p>
+<h3 id="符號慣例">符號慣例<a class="anchor" href="#符號慣例" aria-hidden="true">#</a></h3>
+<table>
+<thead>
+<tr><th>符號</th><th>意義</th></tr>
+</thead>
+<tbody>
+<tr><td><code>u</code></td><td>待求解的物理場（如速度）；下標表偏導，如 <code>u_t</code>、<code>u_xx</code></td></tr>
+<tr><td><code>P</code> / <code>P_i</code></td><td>物理求解器（或其分解出的算子），<code>u(t+Δt)=P(u(t))</code></td></tr>
+<tr><td><code>R</code></td><td>PDE 殘差（PINN 用），理想解使 <code>R=0</code></td></tr>
+<tr><td><code>θ</code></td><td>神經網路參數</td></tr>
+<tr><td><code>L</code></td><td>損失函數</td></tr>
+</tbody>
+</table>
+
+<h2 id="6-全書章節地圖">6. 全書章節地圖<a class="anchor" href="#6-全書章節地圖" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr><th>原書單元</th><th>本站對應</th><th>主題</th></tr>
+</thead>
+<tbody>
+<tr><td>Introduction</td><td>本頁</td><td>緒論、方法框架、模型與方程</td></tr>
+<tr><td>Neural Surrogates &amp; Operators</td><td><a href="surrogates.html">神經代理與算子</a></td><td>監督式訓練、架構、翼型案例</td></tr>
+<tr><td>Physical Losses</td><td><a href="physical-losses.html">物理損失項（PINN）</a></td><td>PDE 殘差軟約束、Helmholtz 分解</td></tr>
+<tr><td>Differentiable Physics</td><td><a href="diffphys.html">可微分物理</a></td><td>算子鏈梯度、NN 整合、反問題</td></tr>
+<tr><td>Probabilistic Learning</td><td><a href="probabilistic.html">機率式與生成學習</a></td><td>分數匹配、去噪、流匹配、圖擴散</td></tr>
+<tr><td>Reinforcement Learning</td><td><a href="rl.html">強化學習</a></td><td>PPO、Burgers 控制</td></tr>
+<tr><td>Improved Gradients</td><td><a href="gradients.html">改良梯度與快速主題</a></td><td>尺度不變性、半反梯度、優化器</td></tr>
+<tr><td>Fast Forward Topics / End Matter</td><td><a href="gradients.html#快速主題與展望">改良梯度與快速主題</a></td><td>模型降階、無網格法、GAN、展望</td></tr>
+</tbody>
+</table>
+
+<h2 id="7-範圍與實作環境">7. 範圍與實作環境<a class="anchor" href="#7-範圍與實作環境" aria-hidden="true">#</a></h2>
+<p>原書聚焦於<strong>以稠密場（dense field-based，Eulerian）表示</strong>的模擬，範例以下列框架實作：</p>
+<ul>
+<li><strong>PyTorch</strong>、<strong>TensorFlow</strong>、<strong>JAX</strong>：主流深度學習與自動微分框架。</li>
+<li><strong>ΦFlow（PhiFlow）</strong>：作者團隊開發、面向可微分模擬的框架。</li>
+</ul>
+<p>原書<strong>刻意不涵蓋</strong> Lagrangian（粒子式）方法與真實世界實驗資料，以聚焦核心概念。每章多附可直接執行的 Jupyter Notebook。</p>
+<blockquote>
+<p><strong>引用：</strong>原書可於 <a href="https://physicsbaseddeeplearning.org/intro.html">physicsbaseddeeplearning.org</a> 免費線上閱讀，並提供 PDF 與 arXiv 版本。本站僅為中文導讀，深入細節與程式碼請以原書為準。</p>
+</blockquote>
+<hr>
+<p><em>本頁由 Claude 整理，內容以原書為準；如發現與最新版不符，請以連結內原文為主。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://physicsbaseddeeplearning.org/intro.html" target="_blank" rel="noopener">Physics-Based Deep Learning</a>（Introduction、Overview）。內容如與原書不符，請以原書為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#目錄">目錄</a>
+      <a class="toc-h2" href="#1-什麼是-pbdl">1. 什麼是 PBDL</a>
+      <a class="toc-h2" href="#2-為何橋接模擬與學習">2. 為何橋接模擬與學習</a>
+      <a class="toc-h2" href="#3-三大整合方式">3. 三大整合方式</a>
+      <a class="toc-h2" href="#4-正問題與反問題">4. 正問題與反問題</a>
+      <a class="toc-h2" href="#5-常用-pde-與符號慣例">5. 常用 PDE 與符號慣例</a>
+      <a class="toc-h3" href="#burgers-方程">Burgers 方程</a>
+      <a class="toc-h3" href="#navier-stokes-方程">Navier-Stokes 方程</a>
+      <a class="toc-h3" href="#符號慣例">符號慣例</a>
+      <a class="toc-h2" href="#6-全書章節地圖">6. 全書章節地圖</a>
+      <a class="toc-h2" href="#7-範圍與實作環境">7. 範圍與實作環境</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

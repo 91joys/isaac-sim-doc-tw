@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>機率式與生成學習 — PBDL 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">PBDL</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽（緒論）</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://physicsbaseddeeplearning.org/intro.html" target="_blank" rel="noopener">原書 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+      <div class="nav-group-title">緒論</div>
+      <a href="docs.html">總覽（緒論）</a>
+      <div class="nav-group-title">核心方法</div>
+      <a href="surrogates.html">神經代理與算子</a>
+      <a href="physical-losses.html">物理損失項（PINN）</a>
+      <a href="diffphys.html">可微分物理</a>
+      <div class="nav-group-title">進階主題</div>
+      <a href="probabilistic.html" class="current">機率式與生成學習</a>
+      <a href="rl.html">強化學習</a>
+      <a href="gradients.html">改良梯度與快速主題</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="機率式與生成學習">機率式與生成學習<a class="anchor" href="#機率式與生成學習" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>本頁導讀原書 <a href="https://physicsbaseddeeplearning.org/probmodels-intro.html">Probabilistic Learning</a> 一章：不再只求單一「正確解」，而是<strong>學習整個機率分佈</strong>。這讓我們能表達不確定性、處理多解，並用擴散、流匹配等生成式方法做以模擬為基礎的推論。</p>
+</blockquote>
+<hr>
+
+<h2 id="為何需要機率式模型">為何需要機率式模型<a class="anchor" href="#為何需要機率式模型" aria-hidden="true">#</a></h2>
+<p>傳統確定性方法假設「唯一解」，但真實系統充滿不確定性——來自量測雜訊、模型近似與離散化誤差。機率式模型改為<strong>輸出分佈而非單一值</strong>，能區分罕見與常見情形。原書區分兩類不確定性：</p>
+<ul>
+<li><strong>偶然不確定性（Aleatoric）</strong>：資料本身固有的雜訊，無法靠更多資料消除。</li>
+<li><strong>認知不確定性（Epistemic）</strong>：模型知識不足造成的，原則上可用更多資料／更好的模型縮小。</li>
+</ul>
+<p>當一個反問題本質上<strong>多解</strong>（多個輸入都能解釋同一觀測）時，確定性模型會學到「平均」而失真；生成式模型則能忠實呈現所有合理解。</p>
+
+<h2 id="核心應用反問題與模擬式推論">核心應用：反問題與模擬式推論<a class="anchor" href="#核心應用反問題與模擬式推論" aria-hidden="true">#</a></h2>
+<p>這類方法特別擅長<strong>反問題</strong>——由觀測推斷未知參數或狀態。透過貝氏定理：</p>
+<div class="math">p(θ | x) ∝ p(x | θ) · p(θ)</div>
+<p><strong>以模擬為基礎的推論（Simulation-Based Inference, SBI）</strong>僅用模擬產生的資料，訓練一個條件密度估計器來逼近後驗 <code>p(θ|x)</code>，藉此<strong>避開昂貴、且受維度詛咒所苦的似然（likelihood）計算</strong>。訓練完成後推論很快、對維度較不敏感；代價是前期需要大量計算，且缺乏嚴格的理論保證。</p>
+
+<h2 id="涵蓋的子主題">涵蓋的子主題<a class="anchor" href="#涵蓋的子主題" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr><th>子主題</th><th>重點</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>學習機率分佈</strong></td><td>正規化流（normalizing flows）：以可逆變換把簡單分佈映射到複雜分佈</td></tr>
+<tr><td><strong>分數匹配（Score matching）</strong></td><td>學習對數機率密度的梯度（score），不必知道歸一化常數</td></tr>
+<tr><td><strong>去噪擴散（Denoising / diffusion）</strong></td><td>逐步加噪再學習反向去噪，生成高品質樣本</td></tr>
+<tr><td><strong>流匹配（Flow matching）</strong></td><td>學習連續時間的機率流，訓練更穩定、取樣更快</td></tr>
+<tr><td><strong>加入物理約束</strong></td><td>把 PDE／守恆律融入生成過程，使樣本物理上合理</td></tr>
+<tr><td><strong>以可微分模擬解反問題</strong></td><td>把<a href="diffphys.html">可微分物理</a>與生成模型結合做後驗取樣</td></tr>
+<tr><td><strong>時間預測與穩定性</strong></td><td>自迴歸生成長序列時的穩定性考量</td></tr>
+<tr><td><strong>圖上擴散（Graph diffusion）</strong></td><td>在非結構化網格／圖上做擴散生成</td></tr>
+</tbody>
+</table>
+
+<h2 id="與其他方法的關係">與其他方法的關係<a class="anchor" href="#與其他方法的關係" aria-hidden="true">#</a></h2>
+<ul>
+<li>相對<a href="surrogates.html">監督式代理</a>：不再輸出單點預測，而是可取樣的分佈。</li>
+<li>相對<a href="diffphys.html">可微分物理</a>：兩者可結合——用可微分求解器把物理約束注入擴散／流匹配的取樣過程，得到「既多樣又守物理」的解。</li>
+</ul>
+<blockquote>
+<p><strong>小結：</strong>當問題有不確定性或多解、或你需要的是「一組可能的解」而非單一答案時，機率式與生成學習是對的工具。它也是原書 v0.3「GenAI 版」新增的重點。</p>
+</blockquote>
+<hr>
+<p><em>本頁由 Claude 整理，內容以原書為準；如發現與最新版不符，請以連結內原文為主。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://physicsbaseddeeplearning.org/probmodels-intro.html" target="_blank" rel="noopener">Physics-Based Deep Learning · Probabilistic Learning</a>。內容如與原書不符，請以原書為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#為何需要機率式模型">為何需要機率式模型</a>
+      <a class="toc-h2" href="#核心應用反問題與模擬式推論">核心應用：反問題與 SBI</a>
+      <a class="toc-h2" href="#涵蓋的子主題">涵蓋的子主題</a>
+      <a class="toc-h2" href="#與其他方法的關係">與其他方法的關係</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

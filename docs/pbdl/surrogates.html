@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>神經代理與算子 — PBDL 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">PBDL</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽（緒論）</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://physicsbaseddeeplearning.org/intro.html" target="_blank" rel="noopener">原書 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+      <div class="nav-group-title">緒論</div>
+      <a href="docs.html">總覽（緒論）</a>
+      <div class="nav-group-title">核心方法</div>
+      <a href="surrogates.html" class="current">神經代理與算子</a>
+      <a href="physical-losses.html">物理損失項（PINN）</a>
+      <a href="diffphys.html">可微分物理</a>
+      <div class="nav-group-title">進階主題</div>
+      <a href="probabilistic.html">機率式與生成學習</a>
+      <a href="rl.html">強化學習</a>
+      <a href="gradients.html">改良梯度與快速主題</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="神經代理與算子監督式學習">神經代理與算子（監督式學習）<a class="anchor" href="#神經代理與算子監督式學習" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>本頁導讀原書 <a href="https://physicsbaseddeeplearning.org/supervised.html">Supervised Training</a> 一章：以最經典的監督式學習，訓練能取代或加速模擬的神經網路。這是 PBDL 光譜中耦合最鬆、也最容易上手的一端。</p>
+</blockquote>
+<hr>
+
+<h2 id="核心想法">核心想法<a class="anchor" href="#核心想法" aria-hidden="true">#</a></h2>
+<p><strong>神經代理（surrogate）</strong>的目標很直接：用一批「輸入 → 輸出」的資料（來自真實量測或數值模擬），訓練神經網路去逼近這個映射，之後就能以極低成本取代昂貴的模擬。訓練過程<strong>不與物理求解器互動</strong>，純粹是監督式回歸：</p>
+<div class="math">arg min<sub>θ</sub>  Σ ‖ f(x ; θ) − y ‖²</div>
+<p>其中 <code>f(·;θ)</code> 是網路、<code>x</code> 是輸入（如邊界條件、參數或前一時刻場）、<code>y</code> 是模擬給出的目標場。</p>
+
+<h2 id="代理surrogate-與算子operator">代理（surrogate）與算子（operator）<a class="anchor" href="#代理surrogate-與算子operator" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>神經代理</strong>：學習<em>特定</em>參數化下的輸入到輸出映射，例如給定翼型形狀預測其周圍流場。</li>
+<li><strong>神經算子（neural operator）</strong>：學習<em>函數空間到函數空間</em>的映射（如 FNO、DeepONet 一類），目標是對不同解析度與離散化都能泛化，逼近的是 PDE 的「解算子」本身。</li>
+</ul>
+
+<h2 id="資料生成與訓練">資料生成與訓練<a class="anchor" href="#資料生成與訓練" aria-hidden="true">#</a></h2>
+<p>監督式方法的品質幾乎完全取決於資料：</p>
+<ul>
+<li><strong>資料來源</strong>：通常以傳統數值求解器大量產生（input, output）配對；資料的涵蓋範圍決定了代理的可用範圍。</li>
+<li><strong>正規化</strong>：物理量常有極大量級差異，訓練前需妥善正規化，否則損失被大數值場主導。</li>
+<li><strong>訓練目標</strong>：多為 L2／L1 場誤差；評估時關注在<em>未見參數</em>上的泛化。</li>
+</ul>
+
+<h2 id="網路架構">網路架構<a class="anchor" href="#網路架構" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr><th>架構</th><th>適用場景</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>CNN / U-Net</strong></td><td>規則網格上的稠密場預測；U-Net 的多尺度結構很適合流場</td></tr>
+<tr><td><strong>神經算子（FNO 等）</strong></td><td>希望跨解析度泛化、逼近解算子</td></tr>
+<tr><td><strong>圖神經網路（GNN）</strong></td><td>非結構化網格與不規則幾何</td></tr>
+</tbody>
+</table>
+
+<h2 id="案例翼型流場預測">案例：翼型流場預測<a class="anchor" href="#案例翼型流場預測" aria-hidden="true">#</a></h2>
+<p>原書以<strong>翼型（airfoil）周圍雷諾平均（RANS）流場</strong>為監督式案例：輸入為翼型形狀與來流條件，輸出為速度與壓力場。以 U-Net 訓練後，網路能在毫秒級給出接近 CFD 的結果，展示了代理模型在設計搜尋、最佳化迴圈中的價值。</p>
+
+<h2 id="優點與侷限">優點與侷限<a class="anchor" href="#優點與侷限" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr><th>優點</th><th>侷限</th></tr>
+</thead>
+<tbody>
+<tr><td>實作簡單、與現成深度學習工具鏈相容</td><td>需要大量標註資料，資料生成本身昂貴</td></tr>
+<tr><td>推論極快，適合放進最佳化／設計迴圈</td><td>對訓練分佈外（out-of-distribution）輸入外推能力差</td></tr>
+<tr><td>不需可微分求解器</td><td>不保證物理一致性（可能違反守恆律）</td></tr>
+<tr><td>可作為更複雜方法的基線</td><td>長時間自迴歸預測易累積誤差</td></tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>小結：</strong>監督式代理是起點與基線。當你發現「資料不夠」或「預測不守物理」時，就是往<a href="physical-losses.html">物理損失</a>與<a href="diffphys.html">可微分物理</a>前進的訊號。</p>
+</blockquote>
+<hr>
+<p><em>本頁由 Claude 整理，內容以原書為準；如發現與最新版不符，請以連結內原文為主。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://physicsbaseddeeplearning.org/supervised.html" target="_blank" rel="noopener">Physics-Based Deep Learning · Supervised Training</a>。內容如與原書不符，請以原書為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#核心想法">核心想法</a>
+      <a class="toc-h2" href="#代理surrogate-與算子operator">代理與算子</a>
+      <a class="toc-h2" href="#資料生成與訓練">資料生成與訓練</a>
+      <a class="toc-h2" href="#網路架構">網路架構</a>
+      <a class="toc-h2" href="#案例翼型流場預測">案例：翼型流場預測</a>
+      <a class="toc-h2" href="#優點與侷限">優點與侷限</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

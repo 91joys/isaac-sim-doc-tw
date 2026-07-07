@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>強化學習 — PBDL 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">PBDL</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽（緒論）</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://physicsbaseddeeplearning.org/intro.html" target="_blank" rel="noopener">原書 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+      <div class="nav-group-title">緒論</div>
+      <a href="docs.html">總覽（緒論）</a>
+      <div class="nav-group-title">核心方法</div>
+      <a href="surrogates.html">神經代理與算子</a>
+      <a href="physical-losses.html">物理損失項（PINN）</a>
+      <a href="diffphys.html">可微分物理</a>
+      <div class="nav-group-title">進階主題</div>
+      <a href="probabilistic.html">機率式與生成學習</a>
+      <a href="rl.html" class="current">強化學習</a>
+      <a href="gradients.html">改良梯度與快速主題</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="強化學習用於物理控制">強化學習（用於物理控制）<a class="anchor" href="#強化學習用於物理控制" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>本頁導讀原書 <a href="https://physicsbaseddeeplearning.org/reinflearn-intro.html">Reinforcement Learning</a> 一章：把 PDE 的<strong>控制問題</strong>包裝成強化學習任務，用 PPO 之類的演算法學習控制策略，並與可微分物理的控制方式對照。</p>
+</blockquote>
+<hr>
+
+<h2 id="核心概念">核心概念<a class="anchor" href="#核心概念" aria-hidden="true">#</a></h2>
+<p><strong>強化學習（RL）</strong>讓一個<strong>代理（agent）</strong>透過與<strong>環境（environment）</strong>互動、收取<strong>獎勵（reward）</strong>訊號來學習。與監督式學習不同，RL 把系統當成<strong>黑箱</strong>，靠探索不同動作來最大化累積獎勵——因此<strong>不需要環境可微分</strong>。</p>
+
+<h2 id="ppo-演算法">PPO 演算法<a class="anchor" href="#ppo-演算法" aria-hidden="true">#</a></h2>
+<p>原書採用 <strong>近端策略最佳化（Proximal Policy Optimization, PPO）</strong>，一種 actor-critic 架構，用兩個網路：</p>
+<table>
+<thead>
+<tr><th>網路</th><th>角色</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Actor（策略）</strong></td><td>依狀態產生控制動作 <code>π(a; s, θ)</code>；以「裁剪（clipping）」限制每次更新幅度，避免策略劇烈變動而失穩</td></tr>
+<tr><td><strong>Critic（價值）</strong></td><td>預測期望累積獎勵 <code>V(s; φ)</code>，用來估計「優勢（advantage）」，衡量某動作相對平均表現的好壞</td></tr>
+</tbody>
+</table>
+
+<h2 id="物理控制的設定">物理控制的設定<a class="anchor" href="#物理控制的設定" aria-hidden="true">#</a></h2>
+<p>以 Burgers 方程等 PDE 系統為例，RL 迴圈這樣運作：</p>
+<ul>
+<li><strong>環境</strong>：接收代理給的<strong>施力動作</strong>，回傳<strong>速度場狀態</strong>。</li>
+<li><strong>獎勵</strong>：結合兩部分——各時間步的<strong>施力大小懲罰</strong>（鼓勵省力），與終點狀態相對目標的<strong>誤差</strong>（鼓勵達標）。</li>
+<li><strong>探索</strong>：動作加上高斯雜訊來探索，隨訓練逐漸縮小雜訊。</li>
+</ul>
+<div class="math">reward = − Σ_t ‖ a_t ‖²  −  ‖ u_T − u* ‖²</div>
+
+<h2 id="rl-與可微分物理的比較">RL 與可微分物理的比較<a class="anchor" href="#rl-與可微分物理的比較" aria-hidden="true">#</a></h2>
+<p>兩者都能控制 PDE，但處理「長程依賴」的方式截然不同：</p>
+<table>
+<thead>
+<tr><th></th><th>RL（PPO）</th><th>可微分物理（DP）</th></tr>
+</thead>
+<tbody>
+<tr><td>對環境的假設</td><td>黑箱，不需可微分</td><td>需可微分求解器</td></tr>
+<tr><td>長程信用分配</td><td>靠<strong>價值網路</strong>追蹤當前動作的未來後果</td><td>靠<strong>反向傳播穿過模擬</strong>，直接算出過去動作對最終結果的影響</td></tr>
+<tr><td>探索</td><td>主動探索動作空間</td><td>沿明確的物理梯度做較有針對性的最佳化</td></tr>
+<tr><td>樣本效率</td><td>通常較低（需大量互動）</td><td>通常較高（梯度資訊豐富）</td></tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>如何選：</strong>若求解器可微分且梯度良好，<a href="diffphys.html">可微分物理</a>通常更省樣本、更精準；若環境不可微、或獎勵稀疏／不連續，RL 的黑箱探索則更合適。兩者是互補的控制工具。</p>
+</blockquote>
+<hr>
+<p><em>本頁由 Claude 整理，內容以原書為準；如發現與最新版不符，請以連結內原文為主。</em></p>
+
+    </article>
+    <footer class="page-footer">本頁整理自 <a href="https://physicsbaseddeeplearning.org/reinflearn-intro.html" target="_blank" rel="noopener">Physics-Based Deep Learning · Reinforcement Learning</a>。內容如與原書不符，請以原書為準。</footer>
+  </main>
+  <aside class="toc-panel" aria-label="本頁目錄">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a class="toc-h2" href="#核心概念">核心概念</a>
+      <a class="toc-h2" href="#ppo-演算法">PPO 演算法</a>
+      <a class="toc-h2" href="#物理控制的設定">物理控制的設定</a>
+      <a class="toc-h2" href="#rl-與可微分物理的比較">RL 與可微分物理的比較</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>
