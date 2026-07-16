@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NVIDIA PhysicsNeMo 中文文檔</title>
+  <meta name="description" content="NVIDIA PhysicsNeMo 官方文檔中文版：建構、訓練與部署 Physics-AI 模型的開源 SciML 深度學習框架完整中文導覽">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">PhysicsNeMo</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html" class="active">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://docs.nvidia.com/physicsnemo/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+
+<main class="content-full">
+  <section class="hero">
+    <h1>NVIDIA <span class="hl">PhysicsNeMo</span> 中文文檔</h1>
+    <p class="sub">建構、訓練、微調與推論 Physics-AI 模型的開源深度學習框架——建構於 PyTorch 之上，提供神經算子、GNN、Transformer、擴散模型與 PINN 的最佳化實作，把物理知識與資料結合，實現即時預測並可擴展到多節點 GPU 叢集。</p>
+    <div class="badges">
+      <span class="badge">依據官方文檔 26.05（latest）</span>
+      <span class="badge">PhysicsNeMo v2.x</span>
+      <span class="badge">建構於 PyTorch</span>
+      <span class="badge">Apache-2.0 開源</span>
+      <span class="badge">繁體中文</span>
+    </div>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="installation.html">安裝與快速入門</a>
+      <a class="btn btn-ghost" href="docs.html">閱讀總覽文檔</a>
+    </div>
+  </section>
+
+  <div class="cards">
+    <a class="card" href="docs.html">
+      <div class="icon">📘</div>
+      <h3>總覽文檔</h3>
+      <p>PhysicsNeMo 是什麼、五大核心元件、AI4Science 生態系（Core／CFD／Curator／Earth2Studio），與官方文檔完整章節對照，一頁建立心智模型。</p>
+      <span class="go">前往閱讀 →</span>
+    </a>
+    <a class="card" href="installation.html">
+      <div class="icon">💿</div>
+      <h3>安裝與快速入門</h3>
+      <p>系統需求、NGC 容器、pip／uv 安裝與可選 extras 相依群組（cu12／cu13、sym、gnns、mesh-extras…），到第一個 Hello World 模型。</p>
+      <span class="go">開始安裝 →</span>
+    </a>
+    <a class="card" href="training.html">
+      <div class="icon">🚀</div>
+      <h3>訓練工作流程</h3>
+      <p>用 FNO＋Darcy2D 建立第一條訓練管線：內建模型、自訂模型（physicsnemo.Module）、推論、日誌（MLflow／W&amp;B）與 checkpoint。</p>
+      <span class="go">開始學習 →</span>
+    </a>
+    <a class="card" href="models.html">
+      <div class="icon">🧠</div>
+      <h3>模型架構</h3>
+      <p>五大家族：GNN（MeshGraphNet／GraphCast）、Transformer（Transolver）、神經算子（FNO／DoMINO）、擴散模型與 Voxel U-Net。</p>
+      <span class="go">深入了解 →</span>
+    </a>
+    <a class="card" href="api.html">
+      <div class="icon">🗺️</div>
+      <h3>API 模組地圖</h3>
+      <p>physicsnemo 套件完整架構：models、nn、datapipes、diffusion、distributed、mesh、sym、active_learning——每個子模組的角色與官方 API 對照。</p>
+      <span class="go">查看地圖 →</span>
+    </a>
+  </div>
+
+  <section class="section" id="sections">
+    <h2>全部章節</h2>
+    <p>依官方文檔章節組織的中文專題頁，每頁附完整官方原文連結對照。</p>
+    <div class="feature-grid">
+      <a class="card" href="models.html">
+        <div class="icon">🧠</div>
+        <h3>模型架構</h3>
+        <p>GNN、Transformer、神經算子、擴散模型、Voxel 模型五大家族與對應訓練配方（training recipes）總整理。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="physics.html">
+        <div class="icon">⚛️</div>
+        <h3>物理引導與 PINNs</h3>
+        <p>physicsnemo.sym：符號式 PDE 定義、PhysicsInformer 殘差計算（autodiff／FD／MFD／譜方法／最小平方），與 LDC PINN 實戰。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="mesh.html">
+        <div class="icon">🕸️</div>
+        <h3>PhysicsNeMo-Mesh</h3>
+        <p>GPU 加速的 PyTorch 網格模組：點雲／曲線／曲面／體積單一 API、離散微積分、DomainMesh 與 ML 管線整合。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="distributed.html">
+        <div class="icon">🖥️</div>
+        <h3>分散式與領域平行</h3>
+        <p>DistributedManager、DDP 資料平行、ShardTensor 領域平行與 FSDP 組合——SciML 專屬的規模化策略。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="performance.html">
+        <div class="icon">🏎️</div>
+        <h3>效能最佳化</h3>
+        <p>Amdahl 定律思維、Profiling 工具、torch.compile 與外部 kernel 整合、GPU 最佳化層與資料載入瓶頸。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="ecosystem.html">
+        <div class="icon">🌐</div>
+        <h3>領域套件與資料策展</h3>
+        <p>PhysicsNeMo Curator ETL 管線、PhysicsNeMo-CFD（DoMINO NIM）、Earth2Studio 氣象推論、模型評估、主動學習與 Guardrails。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="api.html">
+        <div class="icon">🗺️</div>
+        <h3>API 模組地圖</h3>
+        <p>physicsnemo.* 全套件架構速查：15 個子模組的職責、關鍵類別與官方 API Reference 連結。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="examples.html">
+        <div class="icon">📚</div>
+        <h3>範例目錄</h3>
+        <p>官方 37+ 個訓練配方分類導覽：CFD、氣象氣候、醫療、積層製造、分子動力學、地球物理與生成式設計。</p>
+        <span class="go">前往 →</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>建議學習路徑</h2>
+    <ol>
+      <li><a href="docs.html">總覽文檔</a>：先理解 PhysicsNeMo 的定位——PyTorch 之上的 SciML 工具箱，而非黑盒求解器。</li>
+      <li><a href="installation.html">安裝與快速入門</a>：<code>pip install nvidia-physicsnemo</code> 或 NGC 容器，跑起第一個 FullyConnected 模型。</li>
+      <li><a href="training.html">訓練工作流程</a>：掌握「datapipe → model → loss → optimizer」的標準訓練配方與 checkpoint／日誌工具。</li>
+      <li><a href="models.html">模型架構</a>：認識五大模型家族，依你的資料形態（網格／點雲／結構化網格）選擇架構。</li>
+      <li><a href="physics.html">物理引導與 PINNs</a>：用 physics loss 與 <code>PhysicsInformer</code> 把守恆律與 PDE 殘差加進訓練。</li>
+      <li><a href="distributed.html">分散式與領域平行</a>：從單 GPU 到多節點——DDP 起步，資料放不下時上 ShardTensor。</li>
+      <li>依方向深入：<a href="mesh.html">PhysicsNeMo-Mesh</a>（幾何前處理）、<a href="performance.html">效能最佳化</a>（profiling／compile）、<a href="ecosystem.html">領域套件</a>（CFD／氣象推論與資料策展）。</li>
+      <li>動手做：到<a href="examples.html">範例目錄</a>挑一個貼近你領域的官方配方，複製後改造成自己的專案。</li>
+    </ol>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>本站內容整理自 <a href="https://docs.nvidia.com/physicsnemo/latest/index.html" target="_blank" rel="noopener">NVIDIA PhysicsNeMo Framework 官方文檔</a>（26.05／latest）。內容如與最新版官方文檔不符，請以官方為準。<br>PhysicsNeMo 由 NVIDIA 開發（Apache-2.0）；本站為非官方學習資源。 · <a href="../index.html">返回中文文檔大全</a></p>
+</footer>
+<script src="assets/script.js"></script>
+</body>
+</html>

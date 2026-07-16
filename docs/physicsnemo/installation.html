@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>安裝與快速入門 — NVIDIA PhysicsNeMo 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">PhysicsNeMo</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://docs.nvidia.com/physicsnemo/latest/getting-started/installation.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html" class="current">安裝與快速入門</a>
+        <a href="training.html">訓練工作流程</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="models.html">模型架構</a>
+        <a href="physics.html">物理引導與 PINNs</a>
+        <a href="mesh.html">PhysicsNeMo-Mesh</a>
+        <div class="nav-group-title">規模化</div>
+        <a href="distributed.html">分散式與領域平行</a>
+        <a href="performance.html">效能最佳化</a>
+        <div class="nav-group-title">生態系與參考</div>
+        <a href="ecosystem.html">領域套件與資料策展</a>
+        <a href="api.html">API 模組地圖</a>
+        <a href="examples.html">範例目錄</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="安裝">安裝與快速入門<a class="anchor" href="#安裝" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://docs.nvidia.com/physicsnemo/latest/getting-started/system_requirements.html">System Requirements</a>、<a href="https://docs.nvidia.com/physicsnemo/latest/getting-started/installation.html">Installation</a> 與 <a href="https://docs.nvidia.com/physicsnemo/latest/getting-started/physicsnemo_dependency_graph.html">Dependency Graph</a> 三章。</p>
+</blockquote>
+
+<h2 id="系統需求">系統需求<a class="anchor" href="#系統需求" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>項目</th><th>需求</th></tr></thead>
+<tbody>
+<tr><td>作業系統</td><td>Ubuntu 24.04；Windows（原生／WSL）</td></tr>
+<tr><td>Python</td><td>≥ 3.10（pip 安裝時）</td></tr>
+<tr><td>驅動</td><td>pip：與本機 PyTorch 相容的 NVIDIA 驅動；容器：26.05 容器基於 PyTorch 26.04 容器，見 <a href="https://docs.nvidia.com/deeplearning/frameworks/pytorch-release-notes/" target="_blank" rel="noopener">PyTorch 容器 Release Notes</a></td></tr>
+<tr><td>建議硬體</td><td>64 位元 x86（ARM64 亦支援）；GPU：Blackwell（B100／RTX PRO 6000）、Hopper（H100／H200）、Ada（RTX 40xx）、Ampere（A100／A30／A40／RTX 30xx）、Turing（T4）</td></tr>
+</tbody>
+</table>
+<blockquote><p><strong>官方建議</strong>：要拿到全部效能改進，優先使用 NGC 的 PhysicsNeMo 容器——所有先決條件與相依都已就緒。</p></blockquote>
+
+<h2 id="安裝方式">兩條安裝路徑怎麼選<a class="anchor" href="#安裝方式" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>情境</th><th>建議</th></tr></thead>
+<tbody>
+<tr><td>想訓練模型或跑官方範例</td><td>容器（現成環境）或 pip／uv（先裝 PyTorch 再裝 PhysicsNeMo）皆可</td></tr>
+<tr><td>領域專家，想使用／改造既有模型</td><td>容器或 pip／uv，並從 GitHub 下載 examples 作為起點</td></tr>
+<tr><td>想貢獻 PhysicsNeMo 本體</td><td>從原始碼安裝，見官方 <a href="https://docs.nvidia.com/physicsnemo/latest/resources/customization_guide.html" target="_blank" rel="noopener">Customizing PhysicsNeMo</a></td></tr>
+</tbody>
+</table>
+
+<h2 id="容器">方式一：NGC 容器<a class="anchor" href="#容器" aria-hidden="true">#</a></h2>
+<p><a href="https://catalog.ngc.nvidia.com/orgs/nvidia/teams/physicsnemo/containers/physicsnemo" target="_blank" rel="noopener">PhysicsNeMo NGC 容器</a>基於 NVIDIA PyTorch 容器，預裝全部相依。需先安裝 Docker Engine 與 <a href="https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html" target="_blank" rel="noopener">NVIDIA Container Toolkit</a>：</p>
+<pre><code class="language-bash"># 拉取映像（tag 見 NGC 頁面，如 26.05）
+docker pull nvcr.io/nvidia/physicsnemo/physicsnemo:&lt;tag&gt;
+
+# 啟動 shell 並掛載目前目錄
+docker run --shm-size=1g --ulimit memlock=-1 --ulimit stack=67108864 \
+           --runtime nvidia -v ${PWD}:/workspace \
+           -it --rm nvcr.io/nvidia/physicsnemo/physicsnemo:&lt;tag&gt; bash
+</code></pre>
+<p>多 GPU 執行加上 <code>--gpus all</code>。HPC 叢集可改用 Singularity／Apptainer：</p>
+<pre><code class="language-bash">singularity build PhysicsNeMo.sif docker://nvcr.io/nvidia/physicsnemo/physicsnemo:&lt;tag&gt;
+singularity run --writable --nv PhysicsNeMo.sif
+</code></pre>
+
+<h2 id="pip">方式二：pip／uv 安裝<a class="anchor" href="#pip" aria-hidden="true">#</a></h2>
+<p>先依 <a href="https://pytorch.org/get-started/locally/" target="_blank" rel="noopener">PyTorch 官方指南</a>安裝 PyTorch，再安裝 PhysicsNeMo：</p>
+<pre><code class="language-bash">pip install nvidia-physicsnemo
+python -c "import physicsnemo; print('PhysicsNeMo version:', physicsnemo.__version__)"
+</code></pre>
+<p>要一併解析 CUDA 對應的 PyTorch 與 RAPIDS 套件，用 <code>cu12</code>／<code>cu13</code> extra，並可疊加功能 extras：</p>
+<pre><code class="language-bash"># CUDA 13 + 神經網路加值套件
+pip install "nvidia-physicsnemo[cu13,nn-extras]"
+
+# 物理資訊工作流程（安裝 physicsnemo.sym 符號數學）
+pip install "nvidia-physicsnemo[sym]"
+</code></pre>
+<p>開發或跑 repo 範例建議用 <a href="https://docs.astral.sh/uv/" target="_blank" rel="noopener">uv</a>：</p>
+<pre><code class="language-bash">git clone https://github.com/NVIDIA/physicsnemo.git
+cd physicsnemo
+uv sync --extra cu13 --extra nn-extras
+uv run python -c "import physicsnemo; print(physicsnemo.__version__)"
+</code></pre>
+
+<h2 id="extras">可選 extras 相依群組<a class="anchor" href="#extras" aria-hidden="true">#</a></h2>
+<p>PhysicsNeMo 把相依拆成「有界的核心」＋「明確選用的 extras」。核心安裝包含 PyTorch、NumPy、ONNX、pandas、<strong>Warp</strong>、Hydra／OmegaConf 等通用套件；特殊能力透過具名群組選裝：</p>
+<table>
+<thead><tr><th>Extra</th><th>內容</th><th>典型用途</th></tr></thead>
+<tbody>
+<tr><td><code>cu12</code>／<code>cu13</code></td><td>CUDA 對應的 PyTorch／TorchVision + RAPIDS、CuPy、DALI</td><td>選定 CUDA 12 或 13 後端（兩者互斥）</td></tr>
+<tr><td><code>natten-cu12/13</code></td><td>預建的 NATTEN wheel</td><td>鄰域注意力（neighborhood attention），免自行編譯</td></tr>
+<tr><td><code>transformer-engine-cu12/13</code></td><td>CUDA 對應的 Transformer Engine</td><td>fp8 訓練／Tensor Core 最佳化（需搭配同版 CUDA extra）</td></tr>
+<tr><td><code>utils-extras</code></td><td>W&amp;B、MLflow、line profiler、VTK、STL</td><td>實驗追蹤、profiling、支援資料格式</td></tr>
+<tr><td><code>mesh-extras</code></td><td>matplotlib、PyVista、PyACVD、VTK</td><td>網格處理、檢視與視覺化（配 <a href="mesh.html">PhysicsNeMo-Mesh</a>）</td></tr>
+<tr><td><code>nn-extras</code></td><td>SciPy 與共用工具</td><td><code>physicsnemo.nn</code> 層的可選功能</td></tr>
+<tr><td><code>model-extras</code></td><td>nn-extras + PyVista + VTK</td><td>模型套件的可選功能</td></tr>
+<tr><td><code>datapipes-extras</code></td><td>TFRecord、Dask、NetCDF4、Xarray、Zarr</td><td>大型科學資料集與資料管線格式</td></tr>
+<tr><td><code>uq-extras</code></td><td>GPyTorch</td><td>不確定性量化（高斯過程）</td></tr>
+<tr><td><code>gnns</code></td><td>PyTorch Geometric 相關 + model extras</td><td>圖神經網路工作流程</td></tr>
+<tr><td><code>sym</code></td><td>SymPy</td><td><code>physicsnemo.sym</code> 符號 PDE／物理殘差</td></tr>
+</tbody>
+</table>
+<p>完整清單見 <a href="https://github.com/NVIDIA/physicsnemo/blob/main/pyproject.toml" target="_blank" rel="noopener">pyproject.toml</a>。GNN 工作流程搭 CUDA 後端的組合範例：<code>pip install "nvidia-physicsnemo[cu13,gnns]"</code>。</p>
+
+<h2 id="hello-world">Hello World：驗證安裝<a class="anchor" href="#hello-world" aria-hidden="true">#</a></h2>
+<pre><code class="language-python">import torch
+from physicsnemo.models.mlp.fully_connected import FullyConnected
+
+model = FullyConnected(in_features=32, out_features=64)
+input = torch.randn(128, 32)
+output = model(input)
+print(output.shape)   # torch.Size([128, 64])
+</code></pre>
+<p>成功輸出即代表安裝完成。許多官方範例需要額外套件——查看各範例目錄的 <code>README.md</code> 或 <code>requirements.txt</code>。</p>
+
+<footer class="page-footer">
+  <p>本頁整理自 NVIDIA PhysicsNeMo 官方文檔 26.05。內容以官方為準。下一步：<a href="training.html">訓練工作流程 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#系統需求">系統需求</a>
+      <a href="#安裝方式">安裝路徑怎麼選</a>
+      <a href="#容器">NGC 容器</a>
+      <a href="#pip">pip／uv 安裝</a>
+      <a href="#extras">extras 相依群組</a>
+      <a href="#hello-world">Hello World</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>模型架構 — NVIDIA PhysicsNeMo 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">PhysicsNeMo</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/model_architectures.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="training.html">訓練工作流程</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="models.html" class="current">模型架構</a>
+        <a href="physics.html">物理引導與 PINNs</a>
+        <a href="mesh.html">PhysicsNeMo-Mesh</a>
+        <div class="nav-group-title">規模化</div>
+        <a href="distributed.html">分散式與領域平行</a>
+        <a href="performance.html">效能最佳化</a>
+        <div class="nav-group-title">生態系與參考</div>
+        <a href="ecosystem.html">領域套件與資料策展</a>
+        <a href="api.html">API 模組地圖</a>
+        <a href="examples.html">範例目錄</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="模型架構">模型架構<a class="anchor" href="#模型架構" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/model_architectures.html">Model Architectures</a> 章節與 <a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api_models.html">Models API Reference</a>。</p>
+</blockquote>
+<p>PhysicsNeMo 提供五大類經過微調與最佳化的模型架構積木（transformer 層、GNN 層等），既可直接配置使用，也可作為自研模型的建材。每個架構都配有端到端的<strong>訓練配方（training recipe）</strong>作為參考實作。選型的第一原則是<strong>資料形態</strong>：</p>
+<table>
+<thead><tr><th>資料形態</th><th>適合家族</th><th>代表架構</th></tr></thead>
+<tbody>
+<tr><td>非結構化網格／粒子／圖</td><td>GNN</td><td>MeshGraphNet、GraphCast、X-MeshGraphNet</td></tr>
+<tr><td>點雲、複雜幾何、長程交互</td><td>Transformer</td><td>Transolver、GeoTransolver、DPOT</td></tr>
+<tr><td>結構化網格上的 PDE 函數族</td><td>神經算子</td><td>FNO、AFNO、SFNO、DeepONet、DoMINO</td></tr>
+<tr><td>不適定反問題／生成任務</td><td>擴散模型</td><td>Diffusion UNet（EDM）、Diffusion Transformer（DiT）</td></tr>
+<tr><td>規則 3D 體素網格</td><td>Voxel／CNN</td><td>3D UNet、FigConvUNet</td></tr>
+</tbody>
+</table>
+
+<h2 id="gnn">圖神經網路（GNN）<a class="anchor" href="#gnn" aria-hidden="true">#</a></h2>
+<p>GNN 的優勢是直接在<strong>非結構化／不規則網格</strong>上操作——這是相對 CNN 等網格式模型的關鍵差異。PhysicsNeMo 對 <strong>MeshGraphNet</strong> 與 <strong>GraphCast</strong> 提供頑健支援，應用橫跨流體、結構力學到全球天氣預報：</p>
+<table>
+<thead><tr><th>訓練配方</th><th>架構</th><th>重點</th></tr></thead>
+<tbody>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/vortex_shedding_mgn/README.html" target="_blank" rel="noopener">渦流脫落</a>（2D 非定常）</td><td>MeshGraphNet</td><td>TFRecord 時序資料；DDP 多 GPU</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/swe_distributed_gnn/README.html" target="_blank" rel="noopener">分散式淺水方程</a></td><td>GraphCast</td><td>二十面體網格即時生成；分散式訊息傳遞</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/external_aerodynamics/xaeronet/README.html" target="_blank" rel="noopener">XAeroNet（X-MeshGraphNet）</a></td><td>X-MeshGraphNet</td><td>圖分割 + halo 區域的多尺度擴展，可到 1 億+ cell</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/lagrangian_mgn/README.html" target="_blank" rel="noopener">拉格朗日粒子模擬</a></td><td>MeshGraphNet</td><td>連結性隨時間變化的點雲式資料</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/weather/graphcast/README.html" target="_blank" rel="noopener">中期天氣預報</a></td><td>GraphCast</td><td>自迴歸；gradient checkpointing、fused SiLU、多步 rollout</td></tr>
+</tbody>
+</table>
+<blockquote><p>官方另有 <a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/model_architecture/meshgraphnet.html" target="_blank" rel="noopener">MeshGraphNet 實務教學</a>。注意：GNN 後端已從 DGL 遷移至 <strong>PyTorch Geometric</strong>，遷移指南見 <a href="https://docs.nvidia.com/physicsnemo/latest/resources/dgl_to_pyg_migration.html" target="_blank" rel="noopener">Switching from DGL to PyG</a>；安裝用 <code>gnns</code> extra。</p></blockquote>
+
+<h2 id="transformer">Transformer<a class="anchor" href="#transformer" aria-hidden="true">#</a></h2>
+<p>Transformer 擅長物理問題中關鍵的<strong>長程交互作用</strong>，把輸入視為無序點集合，比網格式模型更能適應複雜幾何。代表是 <strong>Transolver</strong>（PhysicsAttention 作用於表面網格 + 即時計算的 SDF 值），用於外氣動力等 CFD 代理模型：</p>
+<table>
+<thead><tr><th>訓練配方</th><th>架構</th><th>重點</th></tr></thead>
+<tbody>
+<tr><td><a href="https://github.com/NVIDIA/physicsnemo/tree/main/examples/cfd/external_aerodynamics" target="_blank" rel="noopener">Transolver 外氣動力</a></td><td>Transolver</td><td>DDP＋領域平行；Transformer Engine 加速 25%，支援 fp8 訓練／推論</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/darcy_transolver/README.html" target="_blank" rel="noopener">Transolver Darcy 流</a></td><td>Transolver</td><td>2D 影像資料；DDP</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/navier_stokes_dpot/README.html" target="_blank" rel="noopener">DPOT 算子 Transformer</a></td><td>DPOT</td><td>譜域 Fourier attention 打造 PDE 基礎模型</td></tr>
+</tbody>
+</table>
+<p>此外 GraphCast、AFNO 與多數擴散模型也大量使用注意力層。Diffusion Transformer（DiT）骨幹特別模組化——注意力、tokenization／de-tokenization 後端都可換成你自訂的 Module。</p>
+
+<h2 id="神經算子">神經算子（Neural Operators）<a class="anchor" href="#神經算子" aria-hidden="true">#</a></h2>
+<p>神經算子學習<strong>無限維函數空間之間的映射</strong>——等於一次學會一整族 PDE 的解，且與網格解析度無關。主要架構：FNO、DeepONet、物理資訊變體 PINO，以及新一代泛化能力出色的 <strong>DoMINO</strong>：</p>
+<table>
+<thead><tr><th>訓練配方</th><th>架構</th><th>重點</th></tr></thead>
+<tbody>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/mhd_pino/README.html" target="_blank" rel="noopener">磁流體動力學 PINO</a></td><td>FNO（物理資訊）</td><td>譜方法＋有限差分梯度；DDP</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/external_aerodynamics/domino/README.html" target="_blank" rel="noopener">DoMINO 外氣動力</a></td><td>DoMINO</td><td>CAD 點雲＋局部 stencil，免模擬網格；自訂 Warp kernel 投影快 10 倍+；DDP＋領域平行</td></tr>
+<tr><td><a href="https://github.com/NVIDIA/makani" target="_blank" rel="noopener">中期天氣預報（Makani）</a></td><td>SFNO</td><td>球面 FNO；空間模型平行（模型＋資料同時切分）</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/darcy_physics_informed/README.html" target="_blank" rel="noopener">Darcy 流 DeepONet</a></td><td>DeepONet（FNO branch＋FC trunk）</td><td>自動微分物理資訊；支援非結構化隨機取樣</td></tr>
+</tbody>
+</table>
+
+<h2 id="擴散模型">擴散模型（Diffusion Models）<a class="anchor" href="#擴散模型" aria-hidden="true">#</a></h2>
+<p>PhysicsNeMo 提供現成的擴散骨幹（EDM／ADM 風格 U-Net 變體、DiT）＋完整配套工具——取樣器、損失函數、preconditioner、噪聲排程器——組成 <code>physicsnemo.diffusion</code> 專用套件。擴散方法特別適合<strong>不適定反問題</strong>：超解析、降尺度、幾何直接生成：</p>
+<table>
+<thead><tr><th>訓練配方</th><th>架構</th><th>重點</th></tr></thead>
+<tbody>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/weather/stormcast/README.html" target="_blank" rel="noopener">StormCast 對流尺度預報</a></td><td>Diffusion UNet</td><td>EDM 取樣器；fused ops、Apex GroupNorm、bf16 AMP</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/weather/corrdiff/README.html" target="_blank" rel="noopener">CorrDiff 公里級降尺度</a></td><td>Diffusion UNet</td><td>EDM；multi-diffusion 可擴展至 2000×2000+ 像素大域；patch-wise 梯度累積</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/geophysics/diffusion_fwi/README.html" target="_blank" rel="noopener">全波形反演（FWI）</a></td><td>Diffusion UNet＋GFN</td><td>物理資訊 Diffusion Posterior Sampling（DPS）</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/generative/topodiff/README.html" target="_blank" rel="noopener">拓撲最佳化 TopoDiff</a></td><td>Diffusion UNet＋自訂編碼器</td><td>自訂 DDPM＋DPS，生成滿足工程約束的新拓撲</td></tr>
+</tbody>
+</table>
+<p>API 詳見 <a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api_diffusion.html" target="_blank" rel="noopener">PhysicsNeMo Diffusion</a>（Introduction／Model Backbones／Noise Schedulers／Preconditioners／Metrics／Samplers／Multi-Diffusion／Utilities 八節）。</p>
+
+<h2 id="voxel">Voxel 模型（3D U-Net 家族）<a class="anchor" href="#voxel" aria-hidden="true">#</a></h2>
+<p>把 3D 物理域當作規則體素網格，將網格式物理問題轉化為 3D 影像任務，直接套用高度最佳化的電腦視覺架構（U-Net 編碼—解碼＋跳接）：</p>
+<table>
+<thead><tr><th>訓練配方</th><th>架構</th><th>重點</th></tr></thead>
+<tbody>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/datacenter/README.html" target="_blank" rel="noopener">資料中心熱流數位孿生</a></td><td>3D UNet</td><td>有限差分物理資訊；結構化 3D 體積場；DDP</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/external_aerodynamics/figconvnet/README.html" target="_blank" rel="noopener">FigConvUNet 外氣動力</a></td><td>FigConvUNet</td><td>CAD／網格點雲輸入；AMP（fp16/bf16）</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/gray_scott_rnn/README.html" target="_blank" rel="noopener">3D Gray-Scott 瞬態系統</a></td><td>RNN＋UNet</td><td>4D 資料（時間×3D 體積）</td></tr>
+</tbody>
+</table>
+
+<h2 id="api對照">Models API 家族對照<a class="anchor" href="#api對照" aria-hidden="true">#</a></h2>
+<p>官方 <a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api_models.html" target="_blank" rel="noopener">PhysicsNeMo Models</a> API 分 11 節：</p>
+<table>
+<thead><tr><th>API 節</th><th>內容</th></tr></thead>
+<tbody>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/models/modules.html" target="_blank" rel="noopener">Modules</a></td><td><code>physicsnemo.Module</code> 基底類、Model Zoo、<code>from_torch()</code> 轉換、存讀模型、model registry 與 entrypoints</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/models/fully_connected.html" target="_blank" rel="noopener">Fully Connected</a></td><td>MLP：PINN 與 DeepONet trunk 的基本款</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/models/fnos.html" target="_blank" rel="noopener">Fourier Neural Operators</a></td><td>FNO／AFNO 系列</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/models/gnns.html" target="_blank" rel="noopener">Graph Neural Networks</a></td><td>MeshGraphNet 系列</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/models/convolutional.html" target="_blank" rel="noopener">Convolutional Networks</a></td><td>U-Net 等卷積骨幹</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/models/recurrent.html" target="_blank" rel="noopener">Recurrent Neural Networks</a></td><td>時序推進 RNN</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/models/operators.html" target="_blank" rel="noopener">Operator Models</a></td><td>DoMINO、DeepONet 等算子模型</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/models/diffusion_unets.html" target="_blank" rel="noopener">Diffusion UNets</a></td><td>EDM／ADM U-Net 骨幹</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/models/dit.html" target="_blank" rel="noopener">Diffusion Transformer（DiT）</a></td><td>可換注意力／tokenizer 後端的 DiT</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/models/transolver.html" target="_blank" rel="noopener">Transolver</a></td><td>PhysicsAttention Transformer</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/models/weather.html" target="_blank" rel="noopener">Weather / Climate Models</a></td><td>GraphCast、DLWP 等氣象模型</td></tr>
+</tbody>
+</table>
+
+<footer class="page-footer">
+  <p>本頁整理自 NVIDIA PhysicsNeMo 官方文檔 26.05。內容以官方為準。下一步：<a href="physics.html">物理引導與 PINNs →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#gnn">圖神經網路</a>
+      <a href="#transformer">Transformer</a>
+      <a href="#神經算子">神經算子</a>
+      <a href="#擴散模型">擴散模型</a>
+      <a href="#voxel">Voxel 模型</a>
+      <a href="#api對照">Models API 對照</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

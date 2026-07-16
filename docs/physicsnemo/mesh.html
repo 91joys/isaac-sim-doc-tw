@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhysicsNeMo-Mesh — NVIDIA PhysicsNeMo 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">PhysicsNeMo</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/mesh.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="training.html">訓練工作流程</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="models.html">模型架構</a>
+        <a href="physics.html">物理引導與 PINNs</a>
+        <a href="mesh.html" class="current">PhysicsNeMo-Mesh</a>
+        <div class="nav-group-title">規模化</div>
+        <a href="distributed.html">分散式與領域平行</a>
+        <a href="performance.html">效能最佳化</a>
+        <div class="nav-group-title">生態系與參考</div>
+        <a href="ecosystem.html">領域套件與資料策展</a>
+        <a href="api.html">API 模組地圖</a>
+        <a href="examples.html">範例目錄</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="mesh">PhysicsNeMo-Mesh：GPU 加速網格模組<a class="anchor" href="#mesh" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/mesh.html">PhysicsNeMo-Mesh User Guide</a>（四章）與 <a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/mesh/index.html">Mesh API Reference</a>（18 節）。v2.0（26.03）新增模組。</p>
+</blockquote>
+<p><strong>PhysicsNeMo-Mesh 是 GPU 加速、基於 PyTorch 的網格模組</strong>，為 Physics-AI 工作流程而生。「mesh」對不同社群意義不同——CFD／FEM 想到體積網格、圖學想到表面網格、電腦視覺想到點雲、機器人學想到曲線——<strong>PhysicsNeMo-Mesh 用單一 API 全部處理</strong>：點雲、曲線、曲面、體積，並整合 PyTorch autograd。</p>
+<pre><code class="language-bash">pip install "nvidia-physicsnemo[cu13,mesh-extras]"
+</code></pre>
+<p>能力面涵蓋：離散微積分、微分幾何、細分（subdivision）、修復（repair）、空間查詢、拓撲與 I/O。動手教學在 <a href="https://github.com/NVIDIA/physicsnemo/tree/main/examples/minimal/mesh" target="_blank" rel="noopener">examples/minimal/mesh</a>。</p>
+
+<h2 id="使用指南">User Guide 四章<a class="anchor" href="#使用指南" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>章節</th><th>內容</th></tr></thead>
+<tbody>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/mesh/concepts.html" target="_blank" rel="noopener">Concepts and Data Model</a></td><td>維度通用性、五欄位 <code>Mesh</code> tensorclass、為何需要任意秩（arbitrary-rank）張量場、單純形（simplicial）限制</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/mesh/using_mesh.html" target="_blank" rel="noopener">Using Mesh</a></td><td>能力矩陣與常用模式：建立、變換、微積分、網格手術、序列化；mesh／graph／point-cloud 的等價關係</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/mesh/domain_mesh.html" target="_blank" rel="noopener">Simulation Domains with DomainMesh</a></td><td>用單一 <code>DomainMesh</code> 表示完整 PDE 問題：內部區域＋具名邊界＋全域中繼資料</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/mesh/ml_integration.html" target="_blank" rel="noopener">Mesh in ML Pipelines</a></td><td>管線反轉（pipeline inversion）、批次化、特徵抽取、資料增強、<code>torch.compile</code> 相容性</td></tr>
+</tbody>
+</table>
+
+<h2 id="定位">在框架中的定位<a class="anchor" href="#定位" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>資料前處理搬上 GPU</strong>：傳統上網格前處理（取樣、SDF、重網格化）在 CPU 用 VTK／trimesh 做，常成為訓練瓶頸；PhysicsNeMo-Mesh 讓這些操作以 PyTorch 張量在 GPU 上直接進行，可嵌入 datapipe 甚至反向傳播。</li>
+<li><strong>多資料集訓練基礎</strong>：26.05 的<a href="https://github.com/NVIDIA/physicsnemo/tree/main/examples/cfd/external_aerodynamics/unified_external_aero_recipe" target="_blank" rel="noopener">統一外氣動配方</a>用它支援多資料集網格訓練。</li>
+<li><strong>與 Warp 互補</strong>：Warp 提供 kernel 級幾何原語（BVH、HashGrid），PhysicsNeMo-Mesh 提供張量級網格資料模型與演算法。</li>
+</ul>
+
+<h2 id="api">Mesh API 全景（18 節）<a class="anchor" href="#api" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>分類</th><th>API 節</th><th>功能</th></tr></thead>
+<tbody>
+<tr><td rowspan="4">核心與 I/O</td><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/mesh/core.html" target="_blank" rel="noopener">Mesh</a></td><td>五欄位 tensorclass 核心資料結構</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/mesh/io.html" target="_blank" rel="noopener">I/O</a></td><td>讀寫網格格式（STL、VTK…）</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/mesh/tessellation.html" target="_blank" rel="noopener">Tessellation</a></td><td>鑲嵌／Delaunay／內部填充</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/mesh/generate.html" target="_blank" rel="noopener">Generate</a></td><td>程序化生成基本網格</td></tr>
+<tr><td rowspan="4">幾何與微積分</td><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/mesh/calculus.html" target="_blank" rel="noopener">Discrete Calculus</a></td><td>離散微積分（梯度、散度…）</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/mesh/curvature.html" target="_blank" rel="noopener">Curvature</a></td><td>曲率計算</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/mesh/geometry.html" target="_blank" rel="noopener">Geometry</a></td><td>面積、法向量、幾何量</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/mesh/transformations.html" target="_blank" rel="noopener">Transformations</a></td><td>變換與投影</td></tr>
+<tr><td rowspan="4">拓撲與查詢</td><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/mesh/boundaries.html" target="_blank" rel="noopener">Boundaries &amp; Topology</a></td><td>邊界與拓撲結構</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/mesh/neighbors.html" target="_blank" rel="noopener">Neighbors &amp; Adjacency</a></td><td>鄰接關係</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/mesh/spatial.html" target="_blank" rel="noopener">Spatial Queries</a></td><td>空間查詢（含 SDF）</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/mesh/sampling.html" target="_blank" rel="noopener">Sampling &amp; Interpolation</a></td><td>取樣與內插</td></tr>
+<tr><td rowspan="4">網格手術</td><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/mesh/subdivision.html" target="_blank" rel="noopener">Subdivision</a></td><td>細分</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/mesh/smoothing.html" target="_blank" rel="noopener">Smoothing</a></td><td>平滑</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/mesh/remeshing.html" target="_blank" rel="noopener">Remeshing</a></td><td>重網格化</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/mesh/repair.html" target="_blank" rel="noopener">Repair</a></td><td>修復破損網格</td></tr>
+<tr><td rowspan="2">品質與視覺化</td><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/mesh/validation.html" target="_blank" rel="noopener">Validation &amp; Quality</a></td><td>驗證與品質度量</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/mesh/visualization.html" target="_blank" rel="noopener">Visualization</a></td><td>視覺化（PyVista／matplotlib）</td></tr>
+</tbody>
+</table>
+
+<footer class="page-footer">
+  <p>本頁整理自 NVIDIA PhysicsNeMo 官方文檔 26.05。內容以官方為準。下一步：<a href="distributed.html">分散式與領域平行 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#使用指南">User Guide 四章</a>
+      <a href="#定位">在框架中的定位</a>
+      <a href="#api">Mesh API 全景</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

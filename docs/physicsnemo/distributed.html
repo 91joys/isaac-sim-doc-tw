@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>分散式與領域平行 — NVIDIA PhysicsNeMo 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">PhysicsNeMo</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/distributed_training.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="training.html">訓練工作流程</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="models.html">模型架構</a>
+        <a href="physics.html">物理引導與 PINNs</a>
+        <a href="mesh.html">PhysicsNeMo-Mesh</a>
+        <div class="nav-group-title">規模化</div>
+        <a href="distributed.html" class="current">分散式與領域平行</a>
+        <a href="performance.html">效能最佳化</a>
+        <div class="nav-group-title">生態系與參考</div>
+        <a href="ecosystem.html">領域套件與資料策展</a>
+        <a href="api.html">API 模組地圖</a>
+        <a href="examples.html">範例目錄</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="分散式">PhysicsNeMo Distributed：分散式與領域平行<a class="anchor" href="#分散式" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/distributed_training.html">PhysicsNeMo Distributed</a> 與 <a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/domain_parallelism_entry_point.html">Domain Parallelism</a>（三篇教學）章節。</p>
+</blockquote>
+<p>科學 AI 的規模化與 LLM 平行有本質差異——不只因為模型不同，資料也不同：SciML 處理的不是有序 token 或像素影像，而是<strong>網格、點雲、巨型連通圖、高解析度 3D 資料</strong>。而多數 SciML 模型（GNN、神經算子）參數在 10 億以下，讓 DeepSpeed／FSDP 式的模型平行對小模型無關緊要；真正主流的是兩種平行：</p>
+<table>
+<thead><tr><th>策略</th><th>切什麼</th><th>什麼時候用</th></tr></thead>
+<tbody>
+<tr><td><strong>資料平行（Data Parallelism）</strong></td><td>batch 切到多 GPU，每卡至少一個完整樣本</td><td>模型與單一樣本放得進一張卡，想放大 batch 與吞吐量——用 PyTorch DDP</td></tr>
+<tr><td><strong>領域平行（Domain Parallelism）</strong></td><td><strong>單一訓練樣本</strong>切到多 GPU 協同處理</td><td>單一樣本（高解析 3D 場、億級 cell 網格）一張卡放不下</td></tr>
+</tbody>
+</table>
+<p>Pipeline 平行對推論工作負載也很有價值；Megatron 式 tensor 平行則保留給真正的超大參數模型。</p>
+
+<h2 id="manager">DistributedManager：一切的起點<a class="anchor" href="#manager" aria-hidden="true">#</a></h2>
+<p><code>physicsnemo.distributed.DistributedManager</code> 是單例（singleton），統一偵測與配置分散式環境（torchrun／mpirun／SLURM 都認得）：</p>
+<pre><code class="language-python">from physicsnemo.distributed import DistributedManager
+
+DistributedManager.initialize()
+dist = DistributedManager()
+
+dist.rank          # 全域 rank
+dist.local_rank    # 本節點 rank（給 device_ids）
+dist.world_size    # 總程序數
+dist.device        # 此程序該用的 torch.device
+dist.distributed   # 是否為多程序執行
+</code></pre>
+<p>搭配 DDP 的完整範例見<a href="training.html#分散式">訓練工作流程 § 分散式</a>。另有<strong>可微分集合通訊</strong>（<code>physicsnemo.distributed.autograd</code>）：<code>gather_v</code>、<code>all_gather_v</code>、<code>scatter_v</code>、<code>indexed_all_to_all_v</code>——專為不規則資料（每 rank 大小不一的圖分割）設計，梯度可以反向流過通訊操作。</p>
+
+<h2 id="資料">資料怎麼分散<a class="anchor" href="#資料" aria-hidden="true">#</a></h2>
+<p>SciML 資料集常以 TB 計，資料載入是首要瓶頸。官方建議的高效能儲存格式：<a href="https://zarr.readthedocs.io/" target="_blank" rel="noopener">Zarr</a>、<a href="https://docs.xarray.dev/" target="_blank" rel="noopener">Xarray</a>（雲原生、可平行讀寫），以及 HDF5（h5py）與 NetCDF。點雲／網格／圖資料可直接用 <code>physicsnemo.datapipes</code> 的專用管線。</p>
+
+<h2 id="shardtensor">ShardTensor：通用領域平行<a class="anchor" href="#shardtensor" aria-hidden="true">#</a></h2>
+<p>部分模型<strong>原生支援</strong>領域平行（SFNO、MeshGraphNet）；其餘模型靠 <strong>ShardTensor</strong>——PhysicsNeMo 開發中的通用領域平行機制，把張量沿空間維度切分到 DeviceMesh 上，自動處理 halo 交換，且可與 FSDP／DDP 組合。官方三篇教學：</p>
+<table>
+<thead><tr><th>教學</th><th>內容</th></tr></thead>
+<tbody>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/domain_parallelism/domain_parallelism.html" target="_blank" rel="noopener">Domain Parallelism and Shard Tensor</a></td><td>領域平行是什麼、何時需要、PhysicsNeMo 如何支援——概念總覽</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/domain_parallelism/implementing_new_layers_in_shard_tensor.html" target="_blank" rel="noopener">Implementing New Layers for ShardTensor</a></td><td>尚未支援的操作如何自己擴展——用 PyTorch 與 PhysicsNeMo 工具實作新的分片層</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/domain_parallelism/fsdp_and_shard_tensor.html" target="_blank" rel="noopener">Domain Decomposition, ShardTensor, and FSDP Tutorial</a></td><td>端到端合成資料範例：領域平行 × 資料平行（FSDP）組合使用</td></tr>
+</tbody>
+</table>
+<p>API 見 <a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/physicsnemo.domain_parallel.html" target="_blank" rel="noopener">physicsnemo.domain_parallel</a>（ShardTensor 本體）與 <a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/physicsnemo.distributed.html" target="_blank" rel="noopener">physicsnemo.distributed</a>。</p>
+
+<h2 id="詞彙">分散式詞彙速查<a class="anchor" href="#詞彙" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>術語</th><th>意義</th></tr></thead>
+<tbody>
+<tr><td>Collectives</td><td>GPU 間張量通訊的原語（all-reduce、all-gather…）；PhysicsNeMo 提供可微分版本</td></tr>
+<tr><td>DDP（DistributedDataParallel）</td><td>PyTorch 資料平行：每 rank 複製完整模型、餵不同 batch、all-reduce 同步梯度</td></tr>
+<tr><td>FSDP</td><td>Fully Sharded Data Parallel：把參數／梯度／優化器狀態切分到各 rank，給大模型省記憶體</td></tr>
+<tr><td>DeviceMesh</td><td>PyTorch 的多維裝置網格抽象，ShardTensor 建構於其上；可同時表達「資料平行 × 領域平行」兩個維度</td></tr>
+<tr><td>Halo 區域</td><td>領域切分邊界上需要與鄰居交換的重疊區——卷積、訊息傳遞都需要</td></tr>
+<tr><td>DeepSpeed／Megatron</td><td>LLM 圈的 ZeRO 分片與 tensor 平行方案，SciML 小模型通常用不到</td></tr>
+</tbody>
+</table>
+
+<footer class="page-footer">
+  <p>本頁整理自 NVIDIA PhysicsNeMo 官方文檔 26.05。內容以官方為準。下一步：<a href="performance.html">效能最佳化 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#manager">DistributedManager</a>
+      <a href="#資料">資料怎麼分散</a>
+      <a href="#shardtensor">ShardTensor</a>
+      <a href="#詞彙">詞彙速查</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

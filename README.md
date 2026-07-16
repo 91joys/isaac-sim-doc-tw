@@ -45,6 +45,19 @@ docs/
 │   ├── interop.html    互操作性（PyTorch、JAX、DLPack）
 │   ├── modules.html    領域模組（sparse、fem、render）
 │   └── faq.html        FAQ・除錯・限制
+├── physicsnemo/    ← NVIDIA PhysicsNeMo 中文文檔（26.05／v2.x，前身 Modulus）
+│   ├── index.html      PhysicsNeMo 首頁
+│   ├── docs.html       總覽文檔（核心元件、生態系、官方文檔架構對照）
+│   ├── installation.html 安裝與快速入門（容器、pip/uv、extras 相依群組）
+│   ├── training.html   訓練工作流程（FNO×Darcy2D、自訂模型、日誌與 checkpoint）
+│   ├── models.html     模型架構（GNN、Transformer、神經算子、擴散、Voxel）
+│   ├── physics.html    物理引導與 PINNs（physicsnemo.sym、PhysicsInformer）
+│   ├── mesh.html       PhysicsNeMo-Mesh（GPU 網格模組、DomainMesh）
+│   ├── distributed.html 分散式與領域平行（DistributedManager、ShardTensor）
+│   ├── performance.html 效能最佳化（Profiling、torch.compile、最佳化層）
+│   ├── ecosystem.html  領域套件與資料策展（Curator、CFD、Earth2Studio、主動學習）
+│   ├── api.html        API 模組地圖（15 個子模組全架構）
+│   └── examples.html   範例目錄（37+ 官方訓練配方分類導覽）
 ├── pbdl/           ← Physics-Based Deep Learning 中文導讀（Thuerey 團隊專書）
 │   ├── index.html      PBDL 首頁
 │   ├── docs.html       總覽（緒論）：方法框架、正／反問題、常用 PDE
@@ -78,6 +91,7 @@ docs/
 - [Isaac Lab 官方文檔](https://isaac-sim.github.io/IsaacLab/main/index.html)（main）
 - [Newton Physics 官方文檔](https://newton-physics.github.io/newton/stable/guide/overview.html)（1.3.0，CC-BY-4.0）
 - [NVIDIA Warp 官方文檔](https://nvidia.github.io/warp/v1.14/index.html)（1.14.0）
+- [NVIDIA PhysicsNeMo 官方文檔](https://docs.nvidia.com/physicsnemo/latest/index.html)（26.05／latest）
 - [Physics-Based Deep Learning](https://physicsbaseddeeplearning.org/intro.html)（N. Thuerey 等，TUM Physics-based Simulation Group，v0.3）
 - [ntop/nDPI 官方 GitHub](https://github.com/ntop/nDPI) 與 [DeepWiki](https://deepwiki.com/ntop/nDPI)（nDPI 5.0，索引 2025-12-05）
 

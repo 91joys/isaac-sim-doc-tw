@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>領域套件與資料策展 — NVIDIA PhysicsNeMo 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">PhysicsNeMo</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/curator.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="training.html">訓練工作流程</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="models.html">模型架構</a>
+        <a href="physics.html">物理引導與 PINNs</a>
+        <a href="mesh.html">PhysicsNeMo-Mesh</a>
+        <div class="nav-group-title">規模化</div>
+        <a href="distributed.html">分散式與領域平行</a>
+        <a href="performance.html">效能最佳化</a>
+        <div class="nav-group-title">生態系與參考</div>
+        <a href="ecosystem.html" class="current">領域套件與資料策展</a>
+        <a href="api.html">API 模組地圖</a>
+        <a href="examples.html">範例目錄</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="生態系">領域套件與資料策展<a class="anchor" href="#生態系" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/curator.html">Data Curation</a>、<a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/model_evaluation.html">Model Evaluation and Inference</a>、<a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/active_learning.html">Active Learning</a> 與 <a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/guardrails.html">Guardrails</a> 章節。</p>
+</blockquote>
+<p>模型訓練之外，PhysicsNeMo 生態系覆蓋完整生命週期：<strong>資料策展（Curator）→ 訓練（Core）→ 評估與推論（CFD／Earth2Studio／NIM）→ 迭代改進（主動學習）→ 上線防護（Guardrails）</strong>。</p>
+
+<h2 id="curator">PhysicsNeMo Curator：工程資料 ETL<a class="anchor" href="#curator" aria-hidden="true">#</a></h2>
+<p><a href="https://github.com/NVIDIA/physicsnemo-curator" target="_blank" rel="noopener">PhysicsNeMo Curator</a> 是 GPU 加速的資料策展子模組，解決「模擬輸出 → 訓練就緒資料集」這段最耗時的工。核心特性：平行處理（多程序／分散式）、模組化架構、多格式（HDF5／VTK／STL／Zarr）、schema 驗證、易擴展。ETL 管線四元件：</p>
+<table>
+<thead><tr><th>元件</th><th>職責</th></tr></thead>
+<tbody>
+<tr><td><code>DataSource</code></td><td>讀輸入資料、寫輸出資料（來源與匯點）</td></tr>
+<tr><td><code>DataTransformation</code></td><td>格式轉換（如 HDF5 → Zarr、重新分塊、正規化）</td></tr>
+<tr><td><code>DatasetValidator</code></td><td>驗證輸入資料結構與內容（可選）</td></tr>
+<tr><td><code>ParallelProcessor</code></td><td>編排檔案級平行處理</td></tr>
+</tbody>
+</table>
+<p>元件可自由組合成自訂管線。官方入門教學是 <a href="https://github.com/NVIDIA/physicsnemo-curator/blob/main/examples/tutorials/etl_hdf5_to_zarr/hdf5_to_zarr.ipynb" target="_blank" rel="noopener">HDF5 → Zarr 轉換 notebook</a>；安裝建議走 PhysicsNeMo 容器＋<code>pip install -e .</code> 原始碼安裝。</p>
+
+<h2 id="評估">模型評估與推論<a class="anchor" href="#評估" aria-hidden="true">#</a></h2>
+<p>官方多數訓練範例附推論腳本；預訓練 checkpoint 發佈於 <a href="https://catalog.ngc.nvidia.com/models?query=PhysicsNeMo" target="_blank" rel="noopener">NGC Catalog</a> 與 <a href="https://huggingface.co/collections/nvidia/physicsnemo" target="_blank" rel="noopener">Hugging Face</a>。針對兩大領域另有現成下游工作流程：</p>
+<h3 id="cfd">PhysicsNeMo-CFD：DoMINO NIM 外氣動力<a class="anchor" href="#cfd" aria-hidden="true">#</a></h3>
+<p><a href="https://github.com/NVIDIA/physicsnemo-cfd" target="_blank" rel="noopener">PhysicsNeMo-CFD</a> 把預訓練 AI 模型接進工程 CFD 工作流程（含驗證與基準測試工具）。例：用 <a href="https://docs.nvidia.com/nim/physicsnemo/domino-automotive-aero/latest/overview.html" target="_blank" rel="noopener">DoMINO-Automotive-Aero NIM</a> 對 DrivAerML 車體算流場：</p>
+<pre><code class="language-python">from physicsnemo.cfd.inference.domino_nim import call_domino_nim
+
+output_dict = call_domino_nim(
+    stl_path="./drivaer_202.stl",
+    inference_api_url="http://localhost:8000/v1/infer",
+    data={
+        "stream_velocity": "38.89",
+        "stencil_size": "1",
+        "point_cloud_size": "500000",
+    },
+)
+</code></pre>
+<h3 id="earth2">Earth2Studio：AI 氣象推論<a class="anchor" href="#earth2" aria-hidden="true">#</a></h3>
+<p><a href="https://nvidia.github.io/earth2studio/" target="_blank" rel="noopener">Earth2Studio</a> 讓你幾行程式碼跑 AI 天氣預報。例：用 DLWP 從 GFS 初始化跑 10 天預報：</p>
+<pre><code class="language-python">from earth2studio.models.px import DLWP
+from earth2studio.data import GFS
+from earth2studio.io import NetCDF4Backend
+from earth2studio.run import deterministic as run
+
+model = DLWP.load_model(DLWP.load_default_package())
+run(["2024-01-01"], 10, model, GFS(), NetCDF4Backend("output.nc"))
+</code></pre>
+
+<h2 id="主動學習">主動學習（Active Learning）<a class="anchor" href="#主動學習" aria-hidden="true">#</a></h2>
+<p>主動學習的前提：<strong>用最少的訓練樣本達到目標模型效能</strong>——模型自己挑「學了最有幫助」的新資料點，再回頭請昂貴的求解器標註。PhysicsNeMo 的核心迴圈分四階段：</p>
+<table>
+<thead><tr><th>階段</th><th>內容</th></tr></thead>
+<tbody>
+<tr><td><strong>Training／Fine-tuning</strong></td><td>learner（代理模型）先以既有資料訓練，後續迭代用新資料微調</td></tr>
+<tr><td><strong>Querying</strong></td><td>查詢策略挑選最有資訊量的新資料點（如不確定性最高者）</td></tr>
+<tr><td><strong>Labeling</strong></td><td>取得新資料的 ground truth——跑外部求解器／模擬器或實驗</td></tr>
+<tr><td><strong>Metrology</strong>（可選）</td><td>生產環境的可觀測性：把代理模型丟進求解器工作流程量測效能與穩定性</td></tr>
+</tbody>
+</table>
+<p>元件以 <code>typing.Protocol</code> <strong>結構性子型別</strong>定義（<code>physicsnemo.active_learning.protocols</code>）——不強制繼承，只要執行期提供對應方法即可，方便改造既有程式碼。完整配方見<a href="https://github.com/NVIDIA/physicsnemo/tree/main/examples/cfd/external_aerodynamics/active_learning_aero" target="_blank" rel="noopener">外氣動力主動學習範例</a>。</p>
+
+<h2 id="guardrails">Guardrails：模型信心防護<a class="anchor" href="#guardrails" aria-hidden="true">#</a></h2>
+<p><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/guardrails.html" target="_blank" rel="noopener">Guardrails</a>（26.03 引入、26.05 強化）提供分析<strong>模型輸入與預測</strong>的工具，估計模型信心——辨識輸入是否落在訓練分佈外、預測是否可信，是代理模型上生產環境的安全網。範例見 <a href="https://github.com/NVIDIA/physicsnemo/tree/main/examples/minimal/guardrails" target="_blank" rel="noopener">examples/minimal/guardrails</a>；不確定性量化可搭配 <code>uq-extras</code>（GPyTorch）。</p>
+
+<h2 id="全景">生命週期全景<a class="anchor" href="#全景" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>階段</th><th>工具</th><th>本站章節</th></tr></thead>
+<tbody>
+<tr><td>資料策展</td><td>PhysicsNeMo Curator、<a href="mesh.html">PhysicsNeMo-Mesh</a></td><td>本頁 § Curator</td></tr>
+<tr><td>訓練</td><td>physicsnemo core（models／datapipes／distributed／sym）</td><td><a href="training.html">訓練工作流程</a></td></tr>
+<tr><td>評估推論</td><td>PhysicsNeMo-CFD、Earth2Studio、NIM、NGC checkpoints</td><td>本頁 § 評估</td></tr>
+<tr><td>迭代改進</td><td>Active Learning（querying／labeling／metrology）</td><td>本頁 § 主動學習</td></tr>
+<tr><td>上線防護</td><td>Guardrails、UQ</td><td>本頁 § Guardrails</td></tr>
+</tbody>
+</table>
+
+<footer class="page-footer">
+  <p>本頁整理自 NVIDIA PhysicsNeMo 官方文檔 26.05。內容以官方為準。下一步：<a href="api.html">API 模組地圖 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#curator">Curator ETL</a>
+      <a href="#評估">模型評估與推論</a>
+      <a href="#cfd" class="toc-h3">PhysicsNeMo-CFD</a>
+      <a href="#earth2" class="toc-h3">Earth2Studio</a>
+      <a href="#主動學習">主動學習</a>
+      <a href="#guardrails">Guardrails</a>
+      <a href="#全景">生命週期全景</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

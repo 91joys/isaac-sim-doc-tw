@@ -58,6 +58,7 @@
     .site-card.newton { border-top-color: #1e88e5; }
     .site-card.ndpi { border-top-color: #14a89e; }
     .site-card.warp { border-top-color: #7e57c2; }
+    .site-card.physicsnemo { border-top-color: #3f51b5; }
     .site-card.pbdl { border-top-color: #e5326e; }
     .site-card .logo { font-size: 2.2rem; margin-bottom: 10px; }
     .site-card h2 { margin: 0 0 4px; font-size: 1.5rem; }
@@ -66,6 +67,7 @@
     .site-card h2 .hl-newton { color: #1565c0; }
     .site-card h2 .hl-ndpi { color: #0b7a72; }
     .site-card h2 .hl-warp { color: #5e35b1; }
+    .site-card h2 .hl-physicsnemo { color: #283593; }
     .site-card h2 .hl-pbdl { color: #b4245a; }
     .site-card .tagline { color: #57606a; font-size: 0.95rem; margin: 0 0 16px; }
     .site-card ul {
@@ -90,6 +92,7 @@
     .site-card.newton li::before { color: #1e88e5; }
     .site-card.ndpi li::before { color: #14a89e; }
     .site-card.warp li::before { color: #7e57c2; }
+    .site-card.physicsnemo li::before { color: #3f51b5; }
     .site-card.pbdl li::before { color: #e5326e; }
     .enter {
       display: inline-block;
@@ -105,6 +108,7 @@
     .site-card.newton .enter { background: #1e88e5; }
     .site-card.ndpi .enter { background: #0b7a72; }
     .site-card.warp .enter { background: #5e35b1; }
+    .site-card.physicsnemo .enter { background: #3f51b5; }
     .site-card.pbdl .enter { background: #e5326e; }
     .section {
       max-width: 1020px;
@@ -154,6 +158,7 @@
     <span class="badge">Isaac Lab</span>
     <span class="badge">Newton Physics 1.3.0</span>
     <span class="badge">Warp 1.14.0</span>
+    <span class="badge">PhysicsNeMo 26.05</span>
     <span class="badge">Physics-Based DL</span>
     <span class="badge">nDPI 5.0</span>
     <span class="badge">非官方學習資源</span>
@@ -216,6 +221,20 @@
     <span class="enter">進入 Warp 文檔 →</span>
   </a>
 
+  <a class="site-card physicsnemo" href="physicsnemo/index.html">
+    <div class="logo">⚛️</div>
+    <h2><span class="hl-physicsnemo">PhysicsNeMo</span> 中文文檔</h2>
+    <p class="tagline">NVIDIA 開源 Physics-AI 框架（前身 Modulus）——建構於 PyTorch 的 SciML 工具箱，神經算子、GNN、擴散模型與 PINN 一站到位。</p>
+    <ul>
+      <li>總覽文檔：五大核心元件、生態系與官方文檔完整架構對照</li>
+      <li>訓練工作流程：FNO×Darcy2D 配方、自訂模型與 checkpoint</li>
+      <li>模型架構五大家族：GNN、Transformer、神經算子、擴散、Voxel</li>
+      <li>物理引導與 PINNs：physicsnemo.sym 與 PhysicsInformer</li>
+      <li>分散式與領域平行（ShardTensor）、Mesh 模組、API 全地圖</li>
+    </ul>
+    <span class="enter">進入 PhysicsNeMo 文檔 →</span>
+  </a>
+
   <a class="site-card pbdl" href="pbdl/index.html">
     <div class="logo">🌊</div>
     <h2><span class="hl-pbdl">Physics-Based DL</span> 中文導讀</h2>
@@ -262,7 +281,7 @@
 </section>
 
 <footer class="site-footer">
-  <p>本站內容整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>、<a href="https://isaac-sim.github.io/IsaacLab/main/index.html" target="_blank" rel="noopener">Isaac Lab 官方文檔</a>、<a href="https://newton-physics.github.io/newton/stable/guide/overview.html" target="_blank" rel="noopener">Newton Physics 官方文檔</a> 與 <a href="https://nvidia.github.io/warp/v1.14/index.html" target="_blank" rel="noopener">NVIDIA Warp 官方文檔</a> 與 <a href="https://physicsbaseddeeplearning.org/intro.html" target="_blank" rel="noopener">Physics-Based Deep Learning</a>。內容如與最新版官方文檔不符，請以官方為準。<br>本站為非官方學習資源。</p>
+  <p>本站內容整理自 <a href="https://docs.isaacsim.omniverse.nvidia.com/latest/index.html" target="_blank" rel="noopener">Isaac Sim 官方文檔</a>、<a href="https://isaac-sim.github.io/IsaacLab/main/index.html" target="_blank" rel="noopener">Isaac Lab 官方文檔</a>、<a href="https://newton-physics.github.io/newton/stable/guide/overview.html" target="_blank" rel="noopener">Newton Physics 官方文檔</a> 與 <a href="https://nvidia.github.io/warp/v1.14/index.html" target="_blank" rel="noopener">NVIDIA Warp 官方文檔</a>、<a href="https://docs.nvidia.com/physicsnemo/latest/index.html" target="_blank" rel="noopener">NVIDIA PhysicsNeMo 官方文檔</a> 與 <a href="https://physicsbaseddeeplearning.org/intro.html" target="_blank" rel="noopener">Physics-Based Deep Learning</a>。內容如與最新版官方文檔不符，請以官方為準。<br>本站為非官方學習資源。</p>
 </footer>
 </body>
 </html>

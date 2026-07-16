@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>訓練工作流程 — NVIDIA PhysicsNeMo 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">PhysicsNeMo</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/simple_training_example.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="training.html" class="current">訓練工作流程</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="models.html">模型架構</a>
+        <a href="physics.html">物理引導與 PINNs</a>
+        <a href="mesh.html">PhysicsNeMo-Mesh</a>
+        <div class="nav-group-title">規模化</div>
+        <a href="distributed.html">分散式與領域平行</a>
+        <a href="performance.html">效能最佳化</a>
+        <div class="nav-group-title">生態系與參考</div>
+        <a href="ecosystem.html">領域套件與資料策展</a>
+        <a href="api.html">API 模組地圖</a>
+        <a href="examples.html">範例目錄</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="訓練">訓練工作流程（Training Recipe）<a class="anchor" href="#訓練" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/simple_training_example.html">Training Recipe</a> 與 <a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/physicsnemo_for_pytorch.html">PhysicsNeMo for PyTorch Users</a> 章節。</p>
+</blockquote>
+<p>PhysicsNeMo 的訓練管線就是標準 PyTorch 訓練迴圈：<strong>資料（datapipe）→ 可訓練模型 → 損失 → 優化器</strong>。差別在於每個環節都可以換上 SciML 專用、GPU 最佳化的元件，並附贈 checkpoint、日誌、分散式等品質工具。</p>
+
+<h2 id="內建模型">用內建模型訓練：FNO × Darcy2D<a class="anchor" href="#內建模型" aria-hidden="true">#</a></h2>
+<p>官方入門範例：學習 2D Darcy 流「滲透率場 → 壓力場」的映射。PhysicsNeMo 內建基準資料管線（如 <code>Darcy2D</code>），免設定資料載入即可原型開發：</p>
+<pre><code class="language-python">import torch
+import physicsnemo
+from physicsnemo.datapipes.benchmarks.darcy import Darcy2D
+from physicsnemo.metrics.general.mse import mse
+from physicsnemo.models.fno.fno import FNO
+
+normaliser = {  # 滲透率與 Darcy 場的平均值／標準差
+    "permeability": (1.25, 0.75),
+    "darcy": (4.52e-2, 2.79e-2),
+}
+dataloader = Darcy2D(
+    resolution=256, batch_size=64, nr_permeability_freq=5, normaliser=normaliser
+)
+model = FNO(
+    in_channels=1, out_channels=1,
+    decoder_layers=1, decoder_layer_size=32,
+    dimension=2, latent_channels=32,
+    num_fno_layers=4, num_fno_modes=12, padding=5,
+).to("cuda")
+
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda step: 0.85**step)
+
+dataloader = iter(dataloader)
+for i in range(20):
+    batch = next(dataloader)
+    pred = model(batch["permeability"])
+    loss = mse(pred, batch["darcy"])
+    loss.backward()
+    optimizer.step()
+    scheduler.step()
+    print(f"Iteration: {i}. Loss: {loss.detach().cpu().numpy()}")
+</code></pre>
+<p>內建模型高度可配置，開箱即可套用到不同應用；完整清單見<a href="models.html">模型架構</a>與官方 <a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api_models.html" target="_blank" rel="noopener">Models API</a>。</p>
+
+<h2 id="自訂模型">自訂模型：從 PyTorch 到 physicsnemo.Module<a class="anchor" href="#自訂模型" aria-hidden="true">#</a></h2>
+<p>內建模型不合用時，寫自己的模型也能享受 PhysicsNeMo 的 checkpoint 與 model registry：</p>
+<ul>
+<li><strong>新模型</strong>：繼承 <code>physicsnemo.Module</code>（取代 <code>torch.nn.Module</code>）即可。</li>
+<li><strong>既有 PyTorch 模型</strong>：不想改原始碼，用 <code>physicsnemo.Module.from_torch()</code> 一行轉換。</li>
+<li><strong>注意</strong>：要用 checkpoint 功能，模型建構參數必須可 JSON 序列化。</li>
+</ul>
+<p>PhysicsNeMo 模型與標準 PyTorch 模型完全互通——任何 <code>physicsnemo.Module</code>（或普通 <code>torch.nn.Module</code>）都能直接搭配 <code>physicsnemo.sym</code> 的 <code>PhysicsInformer</code> 做物理資訊訓練，不需要包裝類別。細節見官方 <a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/models/modules.html" target="_blank" rel="noopener">Modules 文檔</a>。</p>
+
+<h2 id="推論">推論：儲存與載入模型<a class="anchor" href="#推論" aria-hidden="true">#</a></h2>
+<pre><code class="language-python"># 訓練後儲存（.mdlus 格式：連建構參數一起存）
+model.save("checkpoint.mdlus")
+
+# 推論端：不需要知道原始超參數，直接重建
+model_inf = physicsnemo.Module.from_checkpoint("checkpoint.mdlus").to("cuda")
+model_inf.eval()
+
+with torch.inference_mode():
+    input = torch.ones(8, 1, 256, 256).to("cuda")
+    output = model_inf(input)
+</code></pre>
+<p>要載入含 optimizer／scheduler 狀態的訓練 checkpoint（續訓），用 <code>physicsnemo.launch.utils</code> 的 <code>save_checkpoint</code>／<code>load_checkpoint</code> 工具。</p>
+
+<h2 id="日誌">日誌與 Checkpoint<a class="anchor" href="#日誌" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>工具</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td>Console logging（<code>PythonLogger</code>／<code>LaunchLogger</code>）</td><td>標準化的訓練輸出格式，記錄超參數與每輪損失</td></tr>
+<tr><td>MLflow 整合</td><td><code>initialize_mlflow()</code> 後 LaunchLogger 自動寫入實驗追蹤</td></tr>
+<tr><td>Weights &amp; Biases 整合</td><td><code>initialize_wandb()</code>，適合團隊儀表板</td></tr>
+<tr><td>Checkpointing</td><td><code>save_checkpoint()</code>／<code>load_checkpoint()</code> 一次存讀模型、優化器、排程器與步數，支援中斷續訓</td></tr>
+</tbody>
+</table>
+<blockquote><p>安裝 <code>utils-extras</code> extra 可取得 MLflow／W&amp;B 相依：<code>pip install "nvidia-physicsnemo[utils-extras]"</code>。</p></blockquote>
+
+<h2 id="分散式">升級為分散式訓練<a class="anchor" href="#分散式" aria-hidden="true">#</a></h2>
+<p>同一份腳本改成資料平行只需三步：初始化 <code>DistributedManager</code>、把模型搬到 <code>dist.device</code>、包一層 <code>DistributedDataParallel</code>：</p>
+<pre><code class="language-python">from physicsnemo.distributed import DistributedManager
+from torch.nn.parallel import DistributedDataParallel
+
+def main():
+    DistributedManager.initialize()   # 自動偵測啟動的程序數
+    dist = DistributedManager()
+
+    model = FNO(...).to(dist.device)
+    if dist.distributed:
+        model = DistributedDataParallel(
+            model,
+            device_ids=[dist.local_rank],
+            output_device=dist.device,
+            broadcast_buffers=dist.broadcast_buffers,
+            find_unused_parameters=dist.find_unused_parameters,
+        )
+    # ……訓練迴圈不變……
+
+if __name__ == "__main__":
+    main()
+</code></pre>
+<p>用 <code>torchrun --nproc_per_node=8 train.py</code>（或 mpirun／SLURM）啟動。深入見<a href="distributed.html">分散式與領域平行</a>。</p>
+
+<h2 id="流程總結">標準配方清單<a class="anchor" href="#流程總結" aria-hidden="true">#</a></h2>
+<ol>
+<li>選資料管線：內建 <code>physicsnemo.datapipes</code>（基準／氣候／GNN／CAE）或自己的 PyTorch DataLoader。</li>
+<li>選模型：<code>physicsnemo.models</code> 內建家族，或 <code>Module.from_torch()</code> 包裝自家模型。</li>
+<li>選損失：資料損失（MSE…）＋可選的<a href="physics.html">物理殘差損失</a>。</li>
+<li>標準 <code>torch.optim</code> 優化器與排程器。</li>
+<li>掛上日誌（MLflow／W&amp;B）與 checkpoint 工具。</li>
+<li>需要時以 <code>DistributedManager</code> + DDP 規模化；資料單卡放不下時考慮 <a href="distributed.html#shardtensor">ShardTensor</a>。</li>
+</ol>
+
+<footer class="page-footer">
+  <p>本頁整理自 NVIDIA PhysicsNeMo 官方文檔 26.05。內容以官方為準。下一步：<a href="models.html">模型架構 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#內建模型">FNO × Darcy2D</a>
+      <a href="#自訂模型">自訂模型</a>
+      <a href="#推論">推論</a>
+      <a href="#日誌">日誌與 Checkpoint</a>
+      <a href="#分散式">分散式訓練</a>
+      <a href="#流程總結">標準配方清單</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

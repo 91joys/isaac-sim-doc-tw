@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>總覽文檔 — NVIDIA PhysicsNeMo 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">PhysicsNeMo</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html" class="active">總覽文檔</a>
+    <a href="https://docs.nvidia.com/physicsnemo/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html" class="current">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="training.html">訓練工作流程</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="models.html">模型架構</a>
+        <a href="physics.html">物理引導與 PINNs</a>
+        <a href="mesh.html">PhysicsNeMo-Mesh</a>
+        <div class="nav-group-title">規模化</div>
+        <a href="distributed.html">分散式與領域平行</a>
+        <a href="performance.html">效能最佳化</a>
+        <div class="nav-group-title">生態系與參考</div>
+        <a href="ecosystem.html">領域套件與資料策展</a>
+        <a href="api.html">API 模組地圖</a>
+        <a href="examples.html">範例目錄</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="總覽">NVIDIA PhysicsNeMo 總覽文檔<a class="anchor" href="#總覽" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方文檔 <a href="https://docs.nvidia.com/physicsnemo/latest/index.html">首頁</a> 與 <a href="https://docs.nvidia.com/physicsnemo/latest/overview.html">Overview</a> 章節，依據 PhysicsNeMo 26.05（latest，PhysicsNeMo v2.x 架構）。</p>
+</blockquote>
+
+<h2 id="是什麼">PhysicsNeMo 是什麼<a class="anchor" href="#是什麼" aria-hidden="true">#</a></h2>
+<p><strong>NVIDIA PhysicsNeMo 是一個用最先進 SciML 方法建構、訓練、微調與推論 Physics-AI 模型的開源深度學習框架</strong>，服務 AI4Science 與工程應用。它提供一組 Python 模組，讓你組出可擴展、高度最佳化的訓練與推論管線——把物理知識與資料結合，實現即時預測。</p>
+<ul>
+<li><strong>不是黑盒求解器，而是 PyTorch 的互補工具箱</strong>：你依然寫標準的 PyTorch 訓練迴圈，PhysicsNeMo 提供 SciML 專用的模型、資料管線、分散式與物理殘差工具。</li>
+<li><strong>方法譜系全覆蓋</strong>：無論你用神經算子（Neural Operators）、GNN、Transformer，或物理資訊神經網路（PINN），乃至兩者之間的混合方法，都有最佳化的實作可直接取用。</li>
+<li><strong>為 NVIDIA GPU 深度最佳化</strong>：從單 GPU 到多節點叢集，內建資料平行與領域平行工具，只需幾行程式碼即可規模化。</li>
+</ul>
+<blockquote><p><strong>名稱由來</strong>：PhysicsNeMo 的前身是 <strong>NVIDIA Modulus</strong>，2025 年更名並在 v2.0 進行大規模模組化重構（見 <a href="https://github.com/NVIDIA/physicsnemo/blob/main/v2.0-MIGRATION-GUIDE.md" target="_blank" rel="noopener">v2.0 Migration Guide</a>）。舊的獨立套件 PhysicsNeMo-Sym 已上游整併為 <code>physicsnemo.sym</code> 命名空間。</p></blockquote>
+
+<h2 id="核心元件">五大核心元件<a class="anchor" href="#核心元件" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>元件</th><th>角色</th></tr></thead>
+<tbody>
+<tr><td><code>physicsnemo.models</code></td><td>最佳化、可配置、易用的模型架構家族：神經算子、GNN、擴散模型、Transformer 等（見<a href="models.html">模型架構</a>）</td></tr>
+<tr><td><code>physicsnemo.datapipes</code></td><td>針對點雲、網格等工程／科學資料結構調校的內建資料管線，可擴展且開箱即用</td></tr>
+<tr><td><code>physicsnemo.distributed</code></td><td>建構於 <code>torch.distributed</code> 之上的分散式子模組，幾步即可平行訓練（見<a href="distributed.html">分散式與領域平行</a>）</td></tr>
+<tr><td><code>physicsnemo.curator</code></td><td>加速工程資料集策展（curation）流程的子模組（見<a href="ecosystem.html#curator">資料策展</a>）</td></tr>
+<tr><td><code>physicsnemo.sym</code></td><td>符號式 PDE 定義、自動空間導數計算與物理殘差評估（<code>PhysicsInformer</code>）；以 <code>pip install "nvidia-physicsnemo[sym]"</code> 安裝（見<a href="physics.html">物理引導與 PINNs</a>）</td></tr>
+</tbody>
+</table>
+
+<h2 id="生態系">生態系：領域專用套件<a class="anchor" href="#生態系" aria-hidden="true">#</a></h2>
+<p>核心框架之外，官方另維護三個給領域專家的推論導向套件：</p>
+<table>
+<thead><tr><th>套件</th><th>對象</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><a href="https://github.com/NVIDIA/physicsnemo-cfd" target="_blank" rel="noopener">PhysicsNeMo CFD</a></td><td>CFD 領域專家</td><td>用預訓練 AI 模型探索、實驗與驗證 CFD 用例（含 DoMINO NIM 整合、驗證與基準測試工作流程）</td></tr>
+<tr><td><a href="https://github.com/NVIDIA/physicsnemo-curator" target="_blank" rel="noopener">PhysicsNeMo Curator</a></td><td>資料工程</td><td>GPU 加速的工程資料集 ETL：抽取、轉換、載入（HDF5／VTK／STL／Zarr）</td></tr>
+<tr><td><a href="https://nvidia.github.io/earth2studio/" target="_blank" rel="noopener">Earth2Studio</a></td><td>氣候／氣象研究者</td><td>用預訓練 AI 氣象模型（FourCastNet、DLWP…）快速上手天氣與氣候模擬</td></tr>
+</tbody>
+</table>
+<p>相關生態：DoMINO-Automotive-Aero <a href="https://docs.nvidia.com/nim/physicsnemo/domino-automotive-aero/latest/overview.html" target="_blank" rel="noopener">NIM</a>（外氣動力預訓練微服務）、<a href="https://catalog.ngc.nvidia.com/models?query=PhysicsNeMo" target="_blank" rel="noopener">NGC Catalog 預訓練 checkpoint</a> 與 <a href="https://huggingface.co/collections/nvidia/physicsnemo" target="_blank" rel="noopener">Hugging Face 上的 PhysicsNeMo 模型集</a>。</p>
+
+<h2 id="定位">與 PyTorch 及其他框架的關係<a class="anchor" href="#定位" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>面向</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td><strong>PyTorch</strong></td><td>PhysicsNeMo 建構於 PyTorch 之上：模型是 <code>physicsnemo.Module</code>（<code>torch.nn.Module</code> 的擴展），訓練迴圈、優化器、autograd 全是原生 PyTorch。既有 PyTorch 模型可用 <code>Module.from_torch()</code> 一行轉換，享受 checkpoint 與 model registry 等功能</td></tr>
+<tr><td><strong>Warp</strong></td><td>核心相依之一。DoMINO 等模型用自訂 Warp kernel 做點雲空間投影，端到端比純 PyTorch 快 10 倍以上——本站另有 <a href="../warp/index.html">Warp 中文文檔</a></td></tr>
+<tr><td><strong>傳統數值求解器</strong></td><td>非取代關係：訓練資料常來自 CFD／FEM 求解器；訓練出的 AI 代理模型（surrogate）提供快幾個數量級的近即時預測，用於設計迭代與大規模系集</td></tr>
+<tr><td><strong>本站 PBDL 理論對照</strong></td><td>PhysicsNeMo 是「Physics-Based Deep Learning」方法的工程化實作——理論背景可對照 <a href="../pbdl/index.html">PBDL 中文文檔</a>（物理損失、可微物理、神經算子章節）</td></tr>
+</tbody>
+</table>
+
+<h2 id="為什麼用">為什麼用 PhysicsNeMo<a class="anchor" href="#為什麼用" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>SciML 基準測試與驗證</strong>：拿你的模型與經過驗證的架構在標準基準問題上比較，附領域專屬的驗證準則。</li>
+<li><strong>通用 SciML 配方 × 異質資料集</strong>：從 SOTA 架構清單挑模型，配內建資料管線直接套用到你的用例。</li>
+<li><strong>開箱即用的效能與可擴展性</strong>：最佳化的 ETL 管線 + 多 GPU／多節點規模化，不用自己造輪子。</li>
+</ul>
+
+<h2 id="網站架構">官方文檔網站架構<a class="anchor" href="#網站架構" aria-hidden="true">#</a></h2>
+<p>官方文檔（docs.nvidia.com/physicsnemo/latest）分六大區塊，以下是完整架構與本站章節對照：</p>
+<table>
+<thead><tr><th>官方區塊</th><th>官方章節</th><th>本站對應</th></tr></thead>
+<tbody>
+<tr><td rowspan="2"><strong>PhysicsNeMo Framework</strong></td><td><a href="https://docs.nvidia.com/physicsnemo/latest/index.html" target="_blank" rel="noopener">Home</a></td><td><a href="index.html">首頁</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/overview.html" target="_blank" rel="noopener">Overview</a></td><td>本頁</td></tr>
+<tr><td rowspan="3"><strong>Getting Started</strong></td><td><a href="https://docs.nvidia.com/physicsnemo/latest/getting-started/system_requirements.html" target="_blank" rel="noopener">System Requirements</a></td><td rowspan="3"><a href="installation.html">安裝與快速入門</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/getting-started/installation.html" target="_blank" rel="noopener">Installation</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/getting-started/physicsnemo_dependency_graph.html" target="_blank" rel="noopener">Dependency Graph</a></td></tr>
+<tr><td rowspan="13"><strong>User Guide</strong></td><td><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/simple_training_example.html" target="_blank" rel="noopener">Training Recipe</a></td><td><a href="training.html">訓練工作流程</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/model_architectures.html" target="_blank" rel="noopener">Model Architectures</a>（含 <a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/model_architecture/meshgraphnet.html" target="_blank" rel="noopener">MeshGraphNet 教學</a>）</td><td><a href="models.html">模型架構</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/distributed_training.html" target="_blank" rel="noopener">PhysicsNeMo Distributed</a></td><td><a href="distributed.html">分散式與領域平行</a></td></tr>
+<tr><td>└ <a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/domain_parallelism_entry_point.html" target="_blank" rel="noopener">Domain Parallelism</a>（3 篇 ShardTensor 教學）</td><td><a href="distributed.html#shardtensor">同上 § ShardTensor</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/physics_addition.html" target="_blank" rel="noopener">Physics-guided</a></td><td><a href="physics.html">物理引導與 PINNs</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/pinns-tutorials/index.html" target="_blank" rel="noopener">PINNs</a>（含 <a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/pinns-tutorials/lid_driven_cavity_flow.html" target="_blank" rel="noopener">LDC 教學</a>）</td><td><a href="physics.html#pinns">同上 § PINNs</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/performance.html" target="_blank" rel="noopener">Performance</a>（Profiling／Torch Compile／Optimized Layers）</td><td><a href="performance.html">效能最佳化</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/physicsnemo_for_pytorch.html" target="_blank" rel="noopener">PhysicsNeMo for PyTorch Users</a></td><td><a href="training.html#自訂模型">訓練工作流程 § 自訂模型</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/curator.html" target="_blank" rel="noopener">Data Curation</a></td><td><a href="ecosystem.html#curator">領域套件 § Curator</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/mesh.html" target="_blank" rel="noopener">PhysicsNeMo-Mesh</a>（4 章）</td><td><a href="mesh.html">PhysicsNeMo-Mesh</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/model_evaluation.html" target="_blank" rel="noopener">Model Evaluation and Inference</a></td><td><a href="ecosystem.html#評估">領域套件 § 模型評估</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/active_learning.html" target="_blank" rel="noopener">Active Learning</a></td><td><a href="ecosystem.html#主動學習">領域套件 § 主動學習</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/guardrails.html" target="_blank" rel="noopener">Guardrails</a></td><td><a href="ecosystem.html#guardrails">領域套件 § Guardrails</a></td></tr>
+<tr><td><strong>Examples</strong></td><td><a href="https://docs.nvidia.com/physicsnemo/latest/examples_catalog.html" target="_blank" rel="noopener">Examples Catalog</a>（37+ 範例）</td><td><a href="examples.html">範例目錄</a></td></tr>
+<tr><td><strong>Library Documentation</strong></td><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api_index.html" target="_blank" rel="noopener">API Reference</a>（15 個子模組）</td><td><a href="api.html">API 模組地圖</a></td></tr>
+<tr><td rowspan="2"><strong>Resources</strong></td><td><a href="https://docs.nvidia.com/physicsnemo/latest/resources/customization_guide.html" target="_blank" rel="noopener">Customizing PhysicsNeMo</a></td><td><a href="training.html#自訂模型">訓練工作流程 § 自訂模型</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/resources/dgl_to_pyg_migration.html" target="_blank" rel="noopener">DGL → PyTorch Geometric 遷移</a></td><td><a href="models.html#gnn">模型架構 § GNN</a></td></tr>
+<tr><td><strong>Releases</strong></td><td><a href="https://docs.nvidia.com/physicsnemo/latest/release-notes/index.html" target="_blank" rel="noopener">Release Notes</a></td><td>本頁 § <a href="#版本">版本沿革</a></td></tr>
+</tbody>
+</table>
+
+<h2 id="版本">版本沿革速覽<a class="anchor" href="#版本" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>版本</th><th>重點</th></tr></thead>
+<tbody>
+<tr><td><strong>26.05</strong>（latest）</td><td>多資料集網格訓練、資料策展改進、Guardrails 與主動學習強化；PhysicsNeMo Sym 完全整併入核心（<code>physicsnemo.sym</code>）；新配方：GeoTransolver／Globe 統一外氣動配方、Underfill flow、HealDA 氣象資料同化</td></tr>
+<tr><td><strong>26.03</strong>（v2.0）</td><td>大規模模組化重構：新 <code>physicsnemo.nn</code>（kNN／radius-search／SDF 統一介面）、<code>physicsnemo.diffusion</code> 專用套件、重構 datapipes、全新 <strong>PhysicsNeMo Mesh</strong> 模組</td></tr>
+<tr><td>25.11 以前</td><td>Modulus 時代 API（<code>Solver</code>／<code>Domain</code>／<code>Constraint</code>／<code>Geometry</code> 抽象），遷移方式見 <a href="https://github.com/NVIDIA/physicsnemo/blob/main/v2.0-MIGRATION-GUIDE.md" target="_blank" rel="noopener">Migration Guide</a></td></tr>
+</tbody>
+</table>
+<p>官方另有 <a href="https://developer.nvidia.com/blog/tag/physicsnemo/" target="_blank" rel="noopener">NVIDIA 技術部落格</a> 與 <a href="https://nvidia.github.io/physicsnemo/blog/" target="_blank" rel="noopener">開發者部落格</a>，發佈新模型與案例研究。</p>
+
+<footer class="page-footer">
+  <p>本頁整理自 NVIDIA PhysicsNeMo 官方文檔 26.05。內容以官方為準。下一步：<a href="installation.html">安裝與快速入門 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#是什麼">PhysicsNeMo 是什麼</a>
+      <a href="#核心元件">五大核心元件</a>
+      <a href="#生態系">生態系</a>
+      <a href="#定位">與 PyTorch 的關係</a>
+      <a href="#為什麼用">為什麼用 PhysicsNeMo</a>
+      <a href="#網站架構">官方文檔網站架構</a>
+      <a href="#版本">版本沿革</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

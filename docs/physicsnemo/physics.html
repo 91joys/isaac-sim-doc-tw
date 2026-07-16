@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>物理引導與 PINNs — NVIDIA PhysicsNeMo 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">PhysicsNeMo</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/physics_addition.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="training.html">訓練工作流程</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="models.html">模型架構</a>
+        <a href="physics.html" class="current">物理引導與 PINNs</a>
+        <a href="mesh.html">PhysicsNeMo-Mesh</a>
+        <div class="nav-group-title">規模化</div>
+        <a href="distributed.html">分散式與領域平行</a>
+        <a href="performance.html">效能最佳化</a>
+        <div class="nav-group-title">生態系與參考</div>
+        <a href="ecosystem.html">領域套件與資料策展</a>
+        <a href="api.html">API 模組地圖</a>
+        <a href="examples.html">範例目錄</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="物理引導">物理引導（Physics-guided）與 PINNs<a class="anchor" href="#物理引導" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/physics_addition.html">Physics-guided</a> 與 <a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/pinns-tutorials/index.html">PINNs 教學</a> 章節，及 <a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/physicsnemo.sym.html">physicsnemo.sym API</a>。</p>
+</blockquote>
+<p>給模型加入<strong>歸納偏置（inductive bias）</strong>能顯著改善泛化能力。Physics-AI 有兩條路：一是選擇天生適合物理資料的架構（FNO 用 FFT、MeshGraphNet 直接吃模擬網格、DoMINO 的類數值方法 stencil）；二是<strong>把控制方程當作損失函數</strong>，正則化模型預測使其遵守物理。本頁講第二條路。</p>
+<blockquote><p><strong>v2.0 重要變更</strong>：舊獨立套件 PhysicsNeMo-Sym 已上游整併為 <code>physicsnemo.sym</code> 命名空間（原 repo 已封存），以 <code>pip install "nvidia-physicsnemo[sym]"</code> 安裝。舊 <code>Solver</code>／<code>Domain</code>／<code>Constraint</code>／<code>Geometry</code> 抽象已改為<strong>顯式 PyTorch 迴圈</strong>寫法，對照見 <a href="https://github.com/NVIDIA/physicsnemo/blob/main/v2.0-MIGRATION-GUIDE.md#physicsnemo-sym--physicsnemosym" target="_blank" rel="noopener">v2.0 Migration Guide</a>。</p></blockquote>
+
+<h2 id="物理損失">最簡單的物理損失：代數約束<a class="anchor" href="#物理損失" aria-hidden="true">#</a></h2>
+<p>不是所有物理約束都需要 PDE。以分子動力學為例：平衡系統中所有分子受力總和應為零，一行就能加進損失：</p>
+<pre><code class="language-python">out = model(node_features, edge_features, input_graph)   # (N,3) 每個分子的力
+loss_data = torch.nn.functional.l1_loss(out, true_out)             # 資料損失
+loss_physics = torch.mean(out).abs()                               # 合力為零的約束
+loss = loss_data + 0.001 * loss_physics                            # 權重（拉格朗日乘子）
+loss.backward()
+</code></pre>
+<p>完整範例見<a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/molecular_dynamics/lennard_jones/README.html" target="_blank" rel="noopener">分子動力學範例</a>。</p>
+
+<h2 id="physicsinformer">PDE 損失：PhysicsInformer<a class="anchor" href="#physicsinformer" aria-hidden="true">#</a></h2>
+<p>控制方程含 PDE 時，計算殘差需要空間／時間梯度，而梯度算法取決於資料形態。<code>physicsnemo.sym.eq.phy_informer.PhysicsInformer</code> 統一了這件事——在<strong>點雲、網格（grid）、圖／網格（mesh）</strong>上計算 PDE 殘差，梯度方法可選：</p>
+<table>
+<thead><tr><th><code>grad_method</code></th><th>方法</th><th>適用</th></tr></thead>
+<tbody>
+<tr><td><code>"autodiff"</code></td><td>自動微分</td><td>點雲／PINN；精確但需要輸入座標 <code>requires_grad</code></td></tr>
+<tr><td><code>"finite_difference"</code></td><td>有限差分</td><td>結構化網格；快速</td></tr>
+<tr><td><code>"meshless_finite_difference"</code></td><td>無網格有限差分</td><td>散點資料</td></tr>
+<tr><td><code>"least_squares"</code></td><td>最小平方</td><td>非結構化網格／mesh</td></tr>
+<tr><td><code>"spectral"</code></td><td>譜微分</td><td>週期域、FNO 類模型</td></tr>
+</tbody>
+</table>
+<p>方程本身以 <code>physicsnemo.sym.eq.pde.PDE</code> 子類用 SymPy <strong>符號式定義</strong>——內建 Navier–Stokes、擴散、波動等常見方程，也支援自訂 PDE。方程只寫一次，正問題與反問題都能重用。</p>
+
+<h2 id="pinns">PINN 工作流程<a class="anchor" href="#pinns" aria-hidden="true">#</a></h2>
+<p>PhysicsNeMo 把 PINN 訓練寫成<strong>普通的 PyTorch 訓練迴圈</strong>，由五個顯式積木組成：</p>
+<ol>
+<li><strong>網路</strong>：任何 <code>torch.nn.Module</code>，典型是 <code>physicsnemo.models.mlp.fully_connected.FullyConnected</code>（座標 → 場變數）。</li>
+<li><strong>PDE 定義</strong>：<code>physicsnemo.sym.eq.pde.PDE</code> 子類，用 SymPy 宣告控制方程。</li>
+<li><strong>PhysicsInformer</strong>：給定 PDE 與 <code>grad_method</code>，在網路輸出上計算導數與方程殘差。</li>
+<li><strong>損失與優化器</strong>：標準 PyTorch 損失（資料項＋物理殘差項）＋任何 <code>torch.optim</code> 優化器。</li>
+<li><strong>配置</strong>：Hydra（<code>@hydra.main</code>）讀一個小小的 <code>config.yaml</code>，沒有框架特殊包裝。</li>
+</ol>
+<p>與其他 PhysicsNeMo 工作流程完全同構：同一套 <code>physicsnemo.distributed</code> 多 GPU 初始化、同一套日誌／checkpoint 工具——<strong>物理資訊只是損失裡多一項殘差</strong>。</p>
+
+<h2 id="範例">兩個典範例子<a class="anchor" href="#範例" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>範例</th><th>類型</th><th>展示</th></tr></thead>
+<tbody>
+<tr><td><a href="https://github.com/NVIDIA/physicsnemo/tree/main/examples/cfd/ldc_pinns" target="_blank" rel="noopener">頂蓋驅動穴流（LDC）PINN</a></td><td>正問題、純物理驅動</td><td>2D 不可壓縮 Navier–Stokes 的最小端到端腳本：網路 → PDE → PhysicsInformer → 訓練迴圈（官方教學：<a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/pinns-tutorials/lid_driven_cavity_flow.html" target="_blank" rel="noopener">LDC 章節</a>）</td></tr>
+<tr><td><a href="https://github.com/NVIDIA/physicsnemo/tree/main/examples/cfd/inverse_pinns" target="_blank" rel="noopener">反問題 PINN（熱沉係數回復）</a></td><td>反問題</td><td>從 OpenFOAM 觀測資料回復未知 PDE 係數（運動黏度、熱擴散率）</td></tr>
+</tbody>
+</table>
+<p>兩者都是自包含、可直接執行的 Python 腳本，官方建議<strong>複製後改造</strong>成自己的問題，而非透過框架 hook 擴展；範例內附從舊 physicsnemo-sym 寫法的並列遷移註記。</p>
+
+<h2 id="混合">資料 × 物理的混合訓練<a class="anchor" href="#混合" aria-hidden="true">#</a></h2>
+<p>物理損失也可以加在<strong>資料驅動模型</strong>上（物理引導、physics-informed 的 FNO／DeepONet 等）：</p>
+<ul>
+<li><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/darcy_physics_informed/README.html" target="_blank" rel="noopener">Darcy 物理資訊範例</a>：同一問題分別用 PINO（譜梯度）與 DeepONet（autodiff）兩種方式物理化。</li>
+<li><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/mhd_pino/README.html" target="_blank" rel="noopener">磁流體 PINO</a>：譜方法＋有限差分混合梯度。</li>
+<li><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/stokes_mgn/README.html" target="_blank" rel="noopener">Stokes 流 MeshGraphNet</a>：訓練後用物理資訊<strong>推論修正</strong>提升精度。</li>
+</ul>
+<blockquote><p><strong>理論背景</strong>：物理損失、可微物理與兩者的取捨，可對照本站 <a href="../pbdl/physical-losses.html">PBDL：物理損失</a> 與 <a href="../pbdl/diffphys.html">PBDL：可微物理</a> 章節。</p></blockquote>
+
+<footer class="page-footer">
+  <p>本頁整理自 NVIDIA PhysicsNeMo 官方文檔 26.05。內容以官方為準。下一步：<a href="mesh.html">PhysicsNeMo-Mesh →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#物理損失">代數約束損失</a>
+      <a href="#physicsinformer">PhysicsInformer</a>
+      <a href="#pinns">PINN 工作流程</a>
+      <a href="#範例">兩個典範例子</a>
+      <a href="#混合">混合訓練</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

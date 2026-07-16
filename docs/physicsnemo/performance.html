@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>效能最佳化 — NVIDIA PhysicsNeMo 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">PhysicsNeMo</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/performance.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="training.html">訓練工作流程</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="models.html">模型架構</a>
+        <a href="physics.html">物理引導與 PINNs</a>
+        <a href="mesh.html">PhysicsNeMo-Mesh</a>
+        <div class="nav-group-title">規模化</div>
+        <a href="distributed.html">分散式與領域平行</a>
+        <a href="performance.html" class="current">效能最佳化</a>
+        <div class="nav-group-title">生態系與參考</div>
+        <a href="ecosystem.html">領域套件與資料策展</a>
+        <a href="api.html">API 模組地圖</a>
+        <a href="examples.html">範例目錄</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="效能">效能最佳化<a class="anchor" href="#效能" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/performance.html">Performance</a> 章節及其三篇子教學：<a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/performance_docs/profiling.html">Profiling</a>、<a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/performance_docs/torch_compile_support.html">Torch Compile</a>、<a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/performance_docs/optimized_layers.html">Optimized Layers</a>。</p>
+</blockquote>
+
+<h2 id="amdahl">先想 Amdahl 定律<a class="anchor" href="#amdahl" aria-hidden="true">#</a></h2>
+<blockquote><p>「最佳化系統單一部分所獲得的整體效能提升，受限於該部分實際被使用的時間比例。」</p></blockquote>
+<p>AI 應用是<strong>端到端的 CPU＋GPU 系統</strong>：如果 90% 時間卡在 I/O 與前處理，把模型加速一倍毫無意義。優先順序永遠由 <strong>profiling 實測</strong>決定，改完要<strong>重新 profile</strong> 再決定下一步。四個關鍵子系統：</p>
+<table>
+<thead><tr><th>子系統</th><th>瓶頸樣態</th><th>工具箱</th></tr></thead>
+<tbody>
+<tr><td><strong>模型計算</strong></td><td>kernel 效率低、launch 開銷大</td><td><code>torch.compile</code>、CUDA Graphs、混合精度（AMP）、NCCL、cuML／cuGraph／<a href="../warp/index.html">Warp</a> 專用 kernel</td></tr>
+<tr><td><strong>資料載入</strong></td><td>SciML 資料集動輒 TB 級，GPU 等資料</td><td>HDF5／Zarr、<a href="https://docs.nvidia.com/deeplearning/dali/user-guide/docs/index.html" target="_blank" rel="noopener">NVIDIA DALI</a>、平行 I/O</td></tr>
+<tr><td><strong>資料前處理</strong></td><td>正規化、裁切、增強佔用 CPU，餓死 GPU</td><td>搬上 GPU（<a href="mesh.html">PhysicsNeMo-Mesh</a>、DALI、Warp）</td></tr>
+<tr><td><strong>規模化</strong></td><td>單卡快、多卡不動；checkpoint／指標聚合拖慢</td><td>DDP 調校、平行 I/O、<a href="distributed.html">領域平行</a></td></tr>
+</tbody>
+</table>
+
+<h2 id="profiling">Profiling<a class="anchor" href="#profiling" aria-hidden="true">#</a></h2>
+<p><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/performance_docs/profiling.html" target="_blank" rel="noopener">官方教學</a>以一個真實應用示範端到端加速流程。要點：</p>
+<ul>
+<li><strong>多工具互補</strong>：PyTorch Profiler（op 級熱點＋TensorBoard 視覺化）、NVIDIA Nsight Systems（系統級時間線：CPU／GPU／通訊重疊）、line profiler（Python 層瓶頸）。</li>
+<li>PhysicsNeMo 提供 <code>physicsnemo.utils.profiling</code> 包裝工具，統一掛 profiler 到訓練迴圈。</li>
+<li>先看全貌（GPU 使用率、空隙）再鑽 kernel；I/O 空隙優先於 kernel 微調。</li>
+</ul>
+
+<h2 id="compile">torch.compile 與外部 kernel<a class="anchor" href="#compile" aria-hidden="true">#</a></h2>
+<p><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/performance_docs/torch_compile_support.html" target="_blank" rel="noopener">Torch Compile and External Kernels</a> 教你把兩個世界接起來：</p>
+<ul>
+<li><code>torch.compile</code> 做端到端模型編譯（kernel 融合、去除 Python 開銷）。</li>
+<li>外部自訂 kernel（Warp、Triton、CUDA）透過 <code>torch.library</code> 自訂 op 註冊，讓 compile 不會在邊界斷圖（graph break）。</li>
+<li>PhysicsNeMo 模型逐步最佳化為 compile 友善（StormCast／CorrDiff 的 fused ops 即是範例）；<a href="mesh.html">PhysicsNeMo-Mesh</a> 亦相容 <code>torch.compile</code>。</li>
+</ul>
+
+<h2 id="optimized-layers">GPU 最佳化層與函數<a class="anchor" href="#optimized-layers" aria-hidden="true">#</a></h2>
+<p><a href="https://docs.nvidia.com/physicsnemo/latest/user-guide/performance_docs/optimized_layers.html" target="_blank" rel="noopener">GPU Optimized Layers and Functions</a>：用 <code>physicsnemo.nn</code> 的層與 functional API 加速算子密集的 SciML 工作負載——kNN、radius search、SDF、ball query 等在 v2.0 整併為單一模組化介面（見 <a href="api.html">API 模組地圖</a>）。實戰中的效能配置範例：</p>
+<table>
+<thead><tr><th>配方</th><th>效能手段</th></tr></thead>
+<tbody>
+<tr><td>Transolver 外氣動力</td><td>Transformer Engine：大模型加速 25%，支援 fp8 訓練／推論</td></tr>
+<tr><td>DoMINO</td><td>自訂 Warp kernel 做點雲空間投影，比純 PyTorch 快 10 倍以上</td></tr>
+<tr><td>GraphCast</td><td>gradient checkpointing、concatenation trick、fused SiLU</td></tr>
+<tr><td>StormCast／CorrDiff</td><td>fused ops、Apex GroupNorm、bf16 AMP、（patch-wise）梯度累積</td></tr>
+<tr><td>SFNO（Makani）</td><td>AMP＋activation checkpointing 塞進 GPU 記憶體、空間模型平行</td></tr>
+</tbody>
+</table>
+<blockquote><p>官方註明這些效能指南仍在持續擴充中，新版本會有更多內容；建議搭配 NGC 容器以取得全部效能改進。</p></blockquote>
+
+<footer class="page-footer">
+  <p>本頁整理自 NVIDIA PhysicsNeMo 官方文檔 26.05。內容以官方為準。下一步：<a href="ecosystem.html">領域套件與資料策展 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#amdahl">Amdahl 定律</a>
+      <a href="#profiling">Profiling</a>
+      <a href="#compile">torch.compile</a>
+      <a href="#optimized-layers">最佳化層與函數</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

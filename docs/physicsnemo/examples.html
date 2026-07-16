@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>範例目錄 — NVIDIA PhysicsNeMo 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">PhysicsNeMo</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://docs.nvidia.com/physicsnemo/latest/examples_catalog.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="training.html">訓練工作流程</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="models.html">模型架構</a>
+        <a href="physics.html">物理引導與 PINNs</a>
+        <a href="mesh.html">PhysicsNeMo-Mesh</a>
+        <div class="nav-group-title">規模化</div>
+        <a href="distributed.html">分散式與領域平行</a>
+        <a href="performance.html">效能最佳化</a>
+        <div class="nav-group-title">生態系與參考</div>
+        <a href="ecosystem.html">領域套件與資料策展</a>
+        <a href="api.html">API 模組地圖</a>
+        <a href="examples.html" class="current">範例目錄</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="範例">範例目錄（Examples Catalog）<a class="anchor" href="#範例" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://docs.nvidia.com/physicsnemo/latest/examples_catalog.html">Examples Catalog</a>（37+ 範例，可依主題篩選）與 <a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples_index.html">Examples 文檔</a>。原始碼都在 <a href="https://github.com/NVIDIA/physicsnemo/tree/main/examples">GitHub examples/</a>，官方建議下載後改造成自己的專案。</p>
+</blockquote>
+
+<h2 id="入門範例">入門範例（Introductory）<a class="anchor" href="#入門範例" aria-hidden="true">#</a></h2>
+<p>官方標記為新手起點的七個範例：</p>
+<table>
+<thead><tr><th>範例</th><th>架構</th><th>學到什麼</th></tr></thead>
+<tbody>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/darcy_fno/README.html" target="_blank" rel="noopener">2D Darcy 流 FNO</a></td><td>FNO</td><td>資料驅動訓練的最小範例（同<a href="training.html">訓練工作流程</a>）</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/darcy_physics_informed/README.html" target="_blank" rel="noopener">Darcy 流物理引導</a></td><td>PINO／DeepONet</td><td>兩種給資料驅動模型加物理的方法</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/ldc_pinns/README.html" target="_blank" rel="noopener">頂蓋驅動穴流 PINN</a></td><td>MLP PINN</td><td>純物理驅動（無資料）求解 N–S（同<a href="physics.html#pinns">PINNs</a>）</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/vortex_shedding_mgn/README.html" target="_blank" rel="noopener">渦流脫落 MeshGraphNet</a></td><td>MeshGraphNet</td><td>非結構化網格上的瞬態模擬（DeepMind 範例重製）</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/weather/fcn_afno/README.html" target="_blank" rel="noopener">AFNO 天氣預報</a></td><td>AFNO</td><td>FourCastNet 全球資料驅動氣象模型</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/lagrangian_mgn/README.html" target="_blank" rel="noopener">拉格朗日 MeshGraphNet</a></td><td>MeshGraphNet</td><td>粒子式模擬（Learning to Simulate）</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/stokes_mgn/README.html" target="_blank" rel="noopener">Stokes 流</a></td><td>MeshGraphNet</td><td>物理資訊推論修正提升精度</td></tr>
+</tbody>
+</table>
+
+<h2 id="cfd">CFD（17 個）<a class="anchor" href="#cfd" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>主題</th><th>範例</th></tr></thead>
+<tbody>
+<tr><td><strong>外氣動力</strong></td><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/external_aerodynamics/aero_graph_net/README.html" target="_blank" rel="noopener">AeroGraphNet</a>（Ahmed body／DrivAerNet）、<a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/external_aerodynamics/domino/README.html" target="_blank" rel="noopener">DoMINO</a>、<a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/external_aerodynamics/figconvnet/README.html" target="_blank" rel="noopener">FIGConvUNet</a>、<a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/external_aerodynamics/xaeronet/README.html" target="_blank" rel="noopener">XAeroNet</a>、<a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/external_aerodynamics/domino_nim_finetuning/README.html" target="_blank" rel="noopener">DoMINO NIM 微調</a></td></tr>
+<tr><td><strong>Darcy 流變體</strong></td><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/darcy_nested_fnos/README.html" target="_blank" rel="noopener">巢狀 FNO</a>、<a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/darcy_transolver/README.html" target="_blank" rel="noopener">Transolver</a>、物理引導版</td></tr>
+<tr><td><strong>瞬態流動</strong></td><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/navier_stokes_rnn/README.html" target="_blank" rel="noopener">2D N–S RNN</a>、<a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/gray_scott_rnn/README.html" target="_blank" rel="noopener">3D Gray-Scott RNN</a>、<a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/vortex_shedding_mesh_reduced/README.html" target="_blank" rel="noopener">Mesh-Reduced 時序注意力</a></td></tr>
+<tr><td><strong>生成式</strong></td><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/flow_reconstruction_diffusion/README.html" target="_blank" rel="noopener">擴散式流場超解析</a></td></tr>
+<tr><td><strong>大規模／分散式</strong></td><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/swe_distributed_gnn/README.html" target="_blank" rel="noopener">分散式 GraphCast 淺水方程</a></td></tr>
+<tr><td><strong>工程應用</strong></td><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/datacenter/README.html" target="_blank" rel="noopener">資料中心熱流代理模型</a>、<a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/cfd/mhd_pino/README.html" target="_blank" rel="noopener">磁流體 PINO</a></td></tr>
+</tbody>
+</table>
+
+<h2 id="weather">氣象與氣候（10 個）<a class="anchor" href="#weather" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>範例</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/weather/dataset_download/README.html" target="_blank" rel="noopener">ERA5 下載轉換器</a></td><td>氣象訓練資料工程起點</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/weather/graphcast/README.html" target="_blank" rel="noopener">GraphCast</a>／<a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/weather/fcn_afno/README.html" target="_blank" rel="noopener">AFNO（FourCastNet）</a></td><td>全球中期預報兩大路線：GNN vs 神經算子</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/weather/dlwp/README.html" target="_blank" rel="noopener">DLWP</a>／<a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/weather/dlwp_healpix/README.html" target="_blank" rel="noopener">DLWP-HEALPix</a></td><td>輕量深度學習氣象預報（立方球／HEALPix 網格）</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/weather/diagnostic/README.html" target="_blank" rel="noopener">診斷模型（降水）</a></td><td>從預報場推導診斷量</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/weather/unified_recipe/README.html" target="_blank" rel="noopener">統一訓練配方</a></td><td>可配置的全球氣象模型訓練框架</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/weather/corrdiff/README.html" target="_blank" rel="noopener">CorrDiff</a>／<a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/weather/stormcast/README.html" target="_blank" rel="noopener">StormCast</a></td><td>生成式擴散：公里級降尺度與對流尺度區域預報</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/weather/temporal_interpolation/README.html" target="_blank" rel="noopener">Earth-2 時間內插</a></td><td>預報時間軸細化</td></tr>
+</tbody>
+</table>
+
+<h2 id="其他領域">其他領域<a class="anchor" href="#其他領域" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>領域</th><th>範例</th></tr></thead>
+<tbody>
+<tr><td><strong>醫療</strong></td><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/healthcare/bloodflow_1d_mgn/README.html" target="_blank" rel="noopener">1D 血流 MeshGraphNet</a>（降階心血管模擬）、<a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/healthcare/brain_anomaly_detection/README.html" target="_blank" rel="noopener">FNO 腦部異常偵測</a></td></tr>
+<tr><td><strong>積層製造</strong></td><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/additive_manufacturing/sintering_physics/README.html" target="_blank" rel="noopener">Virtual Foundry GraphNet</a>（HP Labs 合作，燒結變形預測）</td></tr>
+<tr><td><strong>分子動力學</strong></td><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/molecular_dynamics/lennard_jones/README.html" target="_blank" rel="noopener">Lennard-Jones GNN</a>（含物理約束損失）</td></tr>
+<tr><td><strong>地球物理</strong></td><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/geophysics/diffusion_fwi/README.html" target="_blank" rel="noopener">擴散式全波形反演（FWI）</a></td></tr>
+<tr><td><strong>結構力學</strong></td><td><a href="https://github.com/NVIDIA/physicsnemo/tree/main/examples/structural_mechanics/deforming_plate" target="_blank" rel="noopener">變形板 Hybrid MeshGraphNet</a></td></tr>
+<tr><td><strong>生成式設計</strong></td><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/generative/topodiff/README.html" target="_blank" rel="noopener">TopoDiff 拓撲最佳化</a></td></tr>
+<tr><td><strong>油藏模擬</strong></td><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/reservoir_simulation/sim_utils/README.html" target="_blank" rel="noopener">Reservoir simulation utilities</a></td></tr>
+<tr><td><strong>最小範例</strong></td><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/examples/minimal/datapipes/README.html" target="_blank" rel="noopener">datapipes</a>、<a href="https://github.com/NVIDIA/physicsnemo/tree/main/examples/minimal/mesh" target="_blank" rel="noopener">mesh</a>、<a href="https://github.com/NVIDIA/physicsnemo/tree/main/examples/minimal/guardrails" target="_blank" rel="noopener">guardrails</a>——單一概念的最小可執行示範</td></tr>
+</tbody>
+</table>
+
+<h2 id="怎麼挑">怎麼挑範例<a class="anchor" href="#怎麼挑" aria-hidden="true">#</a></h2>
+<ol>
+<li><strong>照資料形態</strong>：結構化網格 → Darcy FNO；非結構化網格 → vortex shedding MGN；點雲 → DoMINO；球面／全球 → GraphCast。</li>
+<li><strong>照方法</strong>：純物理（無資料）→ LDC PINN；資料＋物理 → darcy_physics_informed；生成式 → CorrDiff／TopoDiff。</li>
+<li><strong>照規模</strong>：單卡入門 → introductory 七例；多 GPU → GraphCast／Transolver；超大樣本 → XAeroNet、swe_distributed_gnn。</li>
+<li>每個範例目錄含 <code>README</code>、<code>requirements.txt</code> 與 Hydra 配置——複製整個目錄開始改造即可。</li>
+</ol>
+
+<footer class="page-footer">
+  <p>本頁整理自 NVIDIA PhysicsNeMo 官方文檔 26.05。內容以官方為準。回到：<a href="docs.html">總覽文檔</a> · <a href="index.html">首頁</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#入門範例">入門範例</a>
+      <a href="#cfd">CFD</a>
+      <a href="#weather">氣象與氣候</a>
+      <a href="#其他領域">其他領域</a>
+      <a href="#怎麼挑">怎麼挑範例</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

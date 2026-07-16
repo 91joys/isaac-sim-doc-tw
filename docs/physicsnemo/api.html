@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API 模組地圖 — NVIDIA PhysicsNeMo 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">PhysicsNeMo</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api_index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <a href="training.html">訓練工作流程</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="models.html">模型架構</a>
+        <a href="physics.html">物理引導與 PINNs</a>
+        <a href="mesh.html">PhysicsNeMo-Mesh</a>
+        <div class="nav-group-title">規模化</div>
+        <a href="distributed.html">分散式與領域平行</a>
+        <a href="performance.html">效能最佳化</a>
+        <div class="nav-group-title">生態系與參考</div>
+        <a href="ecosystem.html">領域套件與資料策展</a>
+        <a href="api.html" class="current">API 模組地圖</a>
+        <a href="examples.html">範例目錄</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="api地圖">API 模組地圖：physicsnemo 套件完整架構<a class="anchor" href="#api地圖" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>整理自官方 <a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api_index.html">API Reference</a>。PhysicsNeMo v2.0 重構後的模組化架構——每個子模組單一職責，可自由組合。</p>
+</blockquote>
+
+<h2 id="總表">15 個子模組總表<a class="anchor" href="#總表" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>模組</th><th>職責</th><th>本站章節</th></tr></thead>
+<tbody>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/physicsnemo.core.html" target="_blank" rel="noopener"><code>physicsnemo.core</code></a></td><td>框架基底：<code>Module</code> 類（checkpoint、registry、entrypoints、<code>from_torch()</code>）</td><td><a href="training.html#自訂模型">訓練 § 自訂模型</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api_models.html" target="_blank" rel="noopener"><code>physicsnemo.models</code></a></td><td>模型家族（11 節）：FC、FNO、GNN、CNN、RNN、算子、Diffusion UNet、DiT、Transolver、氣象模型</td><td><a href="models.html">模型架構</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/physicsnemo.nn.html" target="_blank" rel="noopener"><code>physicsnemo.nn</code></a></td><td>SciML 專用層與運算的統一介面（v2.0 整併 kNN、radius-search、SDF、ball query）</td><td>本頁 § <a href="#nn">nn 細目</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/datapipes/physicsnemo.datapipes.html" target="_blank" rel="noopener"><code>physicsnemo.datapipes</code></a></td><td>資料管線：readers、transforms、基準（Darcy2D…）、氣候、GNN、CAE 六類</td><td><a href="training.html">訓練工作流程</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api_diffusion.html" target="_blank" rel="noopener"><code>physicsnemo.diffusion</code></a></td><td>擴散專用套件（8 節）：骨幹、噪聲排程、preconditioner、metrics、取樣器、multi-diffusion</td><td><a href="models.html#擴散模型">模型 § 擴散</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/physicsnemo.distributed.html" target="_blank" rel="noopener"><code>physicsnemo.distributed</code></a></td><td><code>DistributedManager</code>、可微分集合通訊（gather_v…）</td><td><a href="distributed.html">分散式</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/physicsnemo.domain_parallel.html" target="_blank" rel="noopener"><code>physicsnemo.domain_parallel</code></a></td><td>ShardTensor 領域平行</td><td><a href="distributed.html#shardtensor">分散式 § ShardTensor</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/mesh/index.html" target="_blank" rel="noopener"><code>physicsnemo.mesh</code></a></td><td>GPU 網格處理（18 節）：核心／IO／微積分／拓撲／手術／品質</td><td><a href="mesh.html">PhysicsNeMo-Mesh</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/physicsnemo.sym.html" target="_blank" rel="noopener"><code>physicsnemo.sym</code></a></td><td>符號 PDE 定義、<code>PhysicsInformer</code> 物理殘差（<code>[sym]</code> extra）</td><td><a href="physics.html">物理引導與 PINNs</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/physicsnemo.metrics.html" target="_blank" rel="noopener"><code>physicsnemo.metrics</code></a></td><td>通用與領域指標（MSE、氣象技能分數…）</td><td><a href="training.html">訓練工作流程</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/physicsnemo.optim.html" target="_blank" rel="noopener"><code>physicsnemo.optim</code></a></td><td>優化工具（如 combined optimizer）</td><td>—</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/physicsnemo.active_learning.html" target="_blank" rel="noopener"><code>physicsnemo.active_learning</code></a></td><td>主動學習 protocols（learner／query／label／metrology 策略）</td><td><a href="ecosystem.html#主動學習">生態系 § 主動學習</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/physicsnemo.utils.html" target="_blank" rel="noopener"><code>physicsnemo.utils</code></a></td><td>日誌、checkpoint、profiling、最佳化工具</td><td><a href="training.html#日誌">訓練 § 日誌</a></td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/physicsnemo.deploy.html" target="_blank" rel="noopener"><code>physicsnemo.deploy</code></a></td><td>部署：ONNX 匯出支援</td><td>—</td></tr>
+<tr><td><code>physicsnemo.launch</code></td><td>啟動工具（LaunchLogger、save/load_checkpoint）</td><td><a href="training.html#日誌">訓練 § 日誌</a></td></tr>
+</tbody>
+</table>
+<blockquote><p>程式碼庫結構的官方說明見 <a href="https://github.com/NVIDIA/physicsnemo/blob/main/CONTRIBUTING.md#codebase-structure" target="_blank" rel="noopener">CONTRIBUTING.md § Codebase Structure</a>。</p></blockquote>
+
+<h2 id="nn">physicsnemo.nn 細目：Layers 與 Functionals<a class="anchor" href="#nn" aria-hidden="true">#</a></h2>
+<p>v2.0 把散落各處的 SciML 運算整併成「<strong>Layers（模組式）＋ Functionals（函數式）</strong>」雙介面，仿 <code>torch.nn</code>／<code>torch.nn.functional</code> 的設計：</p>
+<h3 id="layers">Layers（12 節）<a class="anchor" href="#layers" aria-hidden="true">#</a></h3>
+<table>
+<thead><tr><th>節</th><th>內容</th></tr></thead>
+<tbody>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/nn/layers/activations.html" target="_blank" rel="noopener">Activations</a></td><td>激活函數（含 fused 版本）</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/nn/layers/attention_transformers.html" target="_blank" rel="noopener">Attention &amp; Transformers</a></td><td>注意力與 transformer 層（含鄰域注意力）</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/nn/layers/convolutional.html" target="_blank" rel="noopener">Convolutional</a></td><td>卷積層</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/nn/layers/embeddings.html" target="_blank" rel="noopener">Embeddings</a></td><td>位置／時間嵌入</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/nn/layers/fourier_spectral.html" target="_blank" rel="noopener">Fourier / FFT / Spectral</a></td><td>FNO 的譜卷積層</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/nn/layers/fully_connected_mlp.html" target="_blank" rel="noopener">Fully Connected / MLP</a></td><td>全連接與 MLP</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/nn/layers/normalization.html" target="_blank" rel="noopener">Normalization</a></td><td>正規化層</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/nn/layers/resampling_interpolation.html" target="_blank" rel="noopener">Resampling &amp; Interpolation</a></td><td>重取樣與內插</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/nn/layers/rope.html" target="_blank" rel="noopener">RoPE</a></td><td>旋轉位置嵌入</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/nn/layers/regularization.html" target="_blank" rel="noopener">Regularization</a></td><td>正則化（dropout 變體…）</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/nn/layers/specialized.html" target="_blank" rel="noopener">Specialized</a></td><td>特殊層（weight norm、ball query…）</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/nn/layers/graph_geometry.html" target="_blank" rel="noopener">Graph &amp; Geometry</a></td><td>圖與幾何層</td></tr>
+</tbody>
+</table>
+<h3 id="functionals">Functionals（7 節）<a class="anchor" href="#functionals" aria-hidden="true">#</a></h3>
+<table>
+<thead><tr><th>節</th><th>內容</th></tr></thead>
+<tbody>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/nn/functionals/neighbors.html" target="_blank" rel="noopener">Neighbors</a></td><td>kNN、radius search 鄰居查詢</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/nn/functionals/derivatives.html" target="_blank" rel="noopener">Derivatives</a></td><td>導數計算</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/nn/functionals/geometry.html" target="_blank" rel="noopener">Geometry</a></td><td>幾何運算（SDF…）</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/nn/functionals/fourier_spectral.html" target="_blank" rel="noopener">FFT</a></td><td>譜運算</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/nn/functionals/regularization_parameterization.html" target="_blank" rel="noopener">Regularization &amp; Parameterization</a></td><td>正則化／參數化函數</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/nn/functionals/interpolation.html" target="_blank" rel="noopener">Interpolation</a></td><td>內插函數</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/nn/functionals/rendering.html" target="_blank" rel="noopener">Rendering</a></td><td>渲染函數</td></tr>
+</tbody>
+</table>
+
+<h2 id="datapipes">datapipes 細目<a class="anchor" href="#datapipes" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>節</th><th>內容</th></tr></thead>
+<tbody>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/datapipes/physicsnemo.datapipes.readers.html" target="_blank" rel="noopener">Built-in Readers</a></td><td>內建讀取器（HDF5、Zarr…）</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/datapipes/physicsnemo.datapipes.transforms.html" target="_blank" rel="noopener">Built-in Transforms</a></td><td>內建轉換（正規化、裁切…）</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/datapipes/physicsnemo.datapipes.benchmarks.html" target="_blank" rel="noopener">Benchmark Datapipes</a></td><td>基準問題（Darcy2D、Kelvin-Helmholtz…）</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/datapipes/physicsnemo.datapipes.climate.html" target="_blank" rel="noopener">Weather &amp; Climate Datapipes</a></td><td>ERA5／HEALPix 等氣候管線</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/datapipes/physicsnemo.datapipes.gnn.html" target="_blank" rel="noopener">GNN Datapipes</a></td><td>圖資料管線（vortex shedding、Ahmed body…）</td></tr>
+<tr><td><a href="https://docs.nvidia.com/physicsnemo/latest/physicsnemo/api/datapipes/physicsnemo.datapipes.cae.html" target="_blank" rel="noopener">CAE Datapipes</a></td><td>CAE／外氣動力管線（DoMINO datapipe…）</td></tr>
+</tbody>
+</table>
+
+<h2 id="import">典型 import 速查<a class="anchor" href="#import" aria-hidden="true">#</a></h2>
+<pre><code class="language-python">import physicsnemo                                              # 核心
+from physicsnemo.models.fno.fno import FNO                     # 模型
+from physicsnemo.models.mlp.fully_connected import FullyConnected
+from physicsnemo.datapipes.benchmarks.darcy import Darcy2D     # 資料管線
+from physicsnemo.metrics.general.mse import mse                # 指標
+from physicsnemo.distributed import DistributedManager         # 分散式
+from physicsnemo.sym.eq.phy_informer import PhysicsInformer    # 物理殘差（[sym]）
+from physicsnemo.sym.eq.pde import PDE                         # 符號 PDE
+</code></pre>
+
+<footer class="page-footer">
+  <p>本頁整理自 NVIDIA PhysicsNeMo 官方文檔 26.05。內容以官方為準。下一步：<a href="examples.html">範例目錄 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#總表">15 個子模組總表</a>
+      <a href="#nn">physicsnemo.nn 細目</a>
+      <a href="#layers" class="toc-h3">Layers</a>
+      <a href="#functionals" class="toc-h3">Functionals</a>
+      <a href="#datapipes">datapipes 細目</a>
+      <a href="#import">import 速查</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>
