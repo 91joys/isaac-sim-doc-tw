@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SolverSemiImplicit — Newton Physics 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Newton</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://newton-physics.github.io/newton/stable/api/_generated/newton.solvers.SolverSemiImplicit.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="concepts.html">核心概念</a>
+        <a href="solvers.html">求解器</a>
+        <a href="solver-semiimplicit.html" class="sub current">↳ SolverSemiImplicit</a>
+        <a href="solver-mujoco.html" class="sub">↳ SolverMuJoCo</a>
+        <a href="collisions.html">碰撞與接觸</a>
+        <a href="sensors.html">感測器與致動器</a>
+        <div class="nav-group-title">工具與教學</div>
+        <a href="visualization.html">視覺化</a>
+        <a href="tutorials.html">教學與範例</a>
+        <a href="diffsim.html">可微分物理教學</a>
+        <a href="diffsim-ball.html">diffsim_ball 逐行精讀</a>
+        <div class="nav-group-title">參考</div>
+        <a href="faq.html">FAQ・整合・遷移</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="solversemiimplicit">SolverSemiImplicit<a class="anchor" href="#solversemiimplicit" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://newton-physics.github.io/newton/stable/api/_generated/newton.solvers.SolverSemiImplicit.html">newton.solvers.SolverSemiImplicit</a> API 頁面（1.4.0 stable）。繼承 <code>SolverBase</code> 與 <code>CouplingInterface</code>。</p>
+</blockquote>
+
+<h2 id="概述">概述<a class="anchor" href="#概述" aria-hidden="true">#</a></h2>
+<p><code>SolverSemiImplicit</code> 是使用 <strong>symplectic Euler（辛歐拉）</strong>的半隱式積分器。建好 <code>Model</code> 與 <code>State</code> 物件後,就能用它把模擬狀態往前推進一個時間步。</p>
+<p>幾個關鍵性質:</p>
+<ul>
+<li><strong>變分積分器(variational integrator),能量守恆</strong>——長時間模擬不會像顯式 Euler 那樣持續注入能量。</li>
+<li><strong>非無條件穩定</strong>——時間步 <code>dt</code> 必須小到能承受模型中的剛度(stiffness)與阻尼力;剛度越高,<code>dt</code> 要越小(常見做法是每個渲染影格內跑多個 substep)。</li>
+<li><strong>最大座標(maximal coordinates)</strong>——關節以成對剛體約束(attachment spring)實現,而非廣義座標。</li>
+<li><strong>簡單、通用、可微分入門首選</strong>——支援剛體、粒子、布料(無自碰撞)、軟體,官方 diffsim 範例多以它示範。</li>
+</ul>
+<p>數學背景見 <a href="https://en.wikipedia.org/wiki/Semi-implicit_Euler_method" target="_blank" rel="noopener">Semi-implicit Euler method(Wikipedia)</a>。</p>
+
+<h2 id="基本用法">基本用法<a class="anchor" href="#基本用法" aria-hidden="true">#</a></h2>
+<pre><code class="language-python">solver = newton.solvers.SolverSemiImplicit(model)
+
+# 模擬迴圈
+for i in range(100):
+    solver.step(state_in, state_out, control, contacts, dt)
+    state_in, state_out = state_out, state_in
+</code></pre>
+
+<h2 id="建構子參數">建構子參數<a class="anchor" href="#建構子參數" aria-hidden="true">#</a></h2>
+<pre><code class="language-python">SolverSemiImplicit(
+    model,
+    *,
+    angular_damping=0.05,
+    friction_smoothing=1.0,
+    joint_attach_ke=1.0e4,
+    joint_attach_kd=1.0e2,
+    enable_tri_contact=True,
+    deterministic=None,
+)
+</code></pre>
+<table>
+<thead><tr><th>參數</th><th>型別</th><th>預設值</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td><code>model</code></td><td><code>Model</code></td><td>—</td><td>要模擬的模型。</td></tr>
+<tr><td><code>angular_damping</code></td><td><code>float</code></td><td><code>0.05</code></td><td>剛體積分使用的角速度阻尼係數。</td></tr>
+<tr><td><code>friction_smoothing</code></td><td><code>float</code></td><td><code>1.0</code></td><td>摩擦速度正規化使用的 Huber norm delta(見 <code>warp.norm_huber()</code>),用來平滑摩擦力在零速度附近的不連續。</td></tr>
+<tr><td><code>joint_attach_ke</code></td><td><code>float</code></td><td><code>1.0e4</code></td><td>關節附著彈簧剛度。最大座標求解器用「彈簧」把成對剛體綁在一起實現關節——太軟關節會分離,太硬則需要更小的 <code>dt</code>。</td></tr>
+<tr><td><code>joint_attach_kd</code></td><td><code>float</code></td><td><code>1.0e2</code></td><td>關節附著彈簧阻尼。</td></tr>
+<tr><td><code>enable_tri_contact</code></td><td><code>bool</code></td><td><code>True</code></td><td>是否啟用三角形接觸(布料/網格接觸)。</td></tr>
+<tr><td><code>deterministic</code></td><td><code>warp.DeterministicMode | None</code></td><td><code>None</code></td><td>對此求解器會發出 atomic 操作的 kernel 模組選擇性啟用確定性模式;<code>None</code> 表示繼承目前的 <code>wp.config.deterministic</code> 設定。</td></tr>
+</tbody>
+</table>
+
+<h2 id="step">step() 方法<a class="anchor" href="#step" aria-hidden="true">#</a></h2>
+<pre><code class="language-python">solver.step(state_in, state_out, control, contacts, dt)
+</code></pre>
+<p>以給定的控制輸入把模型向前模擬一個時間步。</p>
+<table>
+<thead><tr><th>參數</th><th>型別</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td><code>state_in</code></td><td><code>State</code></td><td>輸入狀態。</td></tr>
+<tr><td><code>state_out</code></td><td><code>State</code></td><td>輸出狀態(寫入結果)。</td></tr>
+<tr><td><code>control</code></td><td><code>Control | None</code></td><td>控制輸入;<code>None</code> 表示使用 <code>Model</code> 上的控制值。</td></tr>
+<tr><td><code>contacts</code></td><td><code>Contacts | None</code></td><td>接觸資訊(由 <code>model.collide()</code> 產生);<code>None</code> 表示不使用接觸。</td></tr>
+<tr><td><code>dt</code></td><td><code>float</code></td><td>時間步長(通常以秒為單位)。</td></tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>可微分模擬注意</strong>:處理粒子間接觸的 <code>eval_particle_contact</code> kernel 可能會破壞含粒子碰撞模擬的梯度計算。若要停用,請在呼叫 <code>step()</code> 之前把 <code>newton.Model.particle_grid</code> 設為 <code>None</code>。</p>
+</blockquote>
+
+<h2 id="關節支援">關節支援與限制<a class="anchor" href="#關節支援" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>支援的關節類型</strong>:PRISMATIC、REVOLUTE、BALL、FIXED、FREE、DISTANCE(視為 FREE)、D6;<strong>不支援</strong> CABLE。</li>
+<li><strong>支援的屬性/控制</strong>:<code>joint_enabled</code>、<code>joint_limit_ke</code>/<code>joint_limit_kd</code>、<code>joint_target_ke</code>/<code>joint_target_kd</code>(PD 目標)、<code>joint_f</code>(前饋力)。</li>
+<li>BALL 關節<strong>不強制</strong>關節極限與目標。</li>
+<li><strong>不支援</strong>:<code>joint_armature</code>、<code>joint_friction</code>、<code>joint_effort_limit</code>、<code>joint_velocity_limit</code>、<code>joint_target_mode</code>。</li>
+<li><strong>不支援</strong>等式約束(equality constraints)與 mimic 約束。</li>
+</ul>
+<p>完整跨求解器比較見官方 <a href="https://newton-physics.github.io/newton/stable/solvers/index.html#joint-feature-support" target="_blank" rel="noopener">Joint Feature Support</a>,或本站<a href="solvers.html#關節支援">求解器總覽的關節支援矩陣</a>。</p>
+
+<h2 id="何時選用">何時選用?<a class="anchor" href="#何時選用" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>情境</th><th>適合嗎</th></tr></thead>
+<tbody>
+<tr><td>可微分模擬(diffsim)入門、梯度式最佳化</td><td>✅ 首選之一(另見 <code>SolverFeatherstone</code>)</td></tr>
+<tr><td>剛體＋粒子＋布料＋軟體混合場景、簡單通用</td><td>✅ 支援面最廣的半隱式求解器</td></tr>
+<tr><td>高剛度材料、大時間步</td><td>⚠️ 非無條件穩定,需縮小 <code>dt</code> 或增加 substep</td></tr>
+<tr><td>精確 articulation 動力學(機器人)</td><td>❌ 建議改用 <code>SolverFeatherstone</code>(廣義座標)或 <code>SolverMuJoCo</code></td></tr>
+<tr><td>需要關節 armature/摩擦/力矩上限</td><td>❌ 不支援,改用 <code>SolverMuJoCo</code></td></tr>
+</tbody>
+</table>
+<p>可微分工作流程完整範例見<a href="diffsim.html">可微分物理教學</a>與<a href="solvers.html#可微分">求解器總覽的 DiffSim 章節</a>。</p>
+
+<footer class="page-footer">
+  <p>本頁整理自 Newton Physics 官方文檔 1.4.0(CC-BY-4.0)。內容以官方為準。相關頁面:<a href="solver-mujoco.html">SolverMuJoCo 詳解 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#概述">概述</a>
+      <a href="#基本用法">基本用法</a>
+      <a href="#建構子參數">建構子參數</a>
+      <a href="#step">step() 方法</a>
+      <a href="#關節支援">關節支援與限制</a>
+      <a href="#何時選用">何時選用?</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

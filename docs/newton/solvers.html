@@ -27,6 +27,8 @@
         <div class="nav-group-title">核心主題</div>
         <a href="concepts.html">核心概念</a>
         <a href="solvers.html" class="current">求解器</a>
+        <a href="solver-semiimplicit.html" class="sub">↳ SolverSemiImplicit</a>
+        <a href="solver-mujoco.html" class="sub">↳ SolverMuJoCo</a>
         <a href="collisions.html">碰撞與接觸</a>
         <a href="sensors.html">感測器與致動器</a>
         <div class="nav-group-title">工具與教學</div>
@@ -49,11 +51,11 @@
 <table>
 <thead><tr><th>求解器</th><th>一句話定位</th></tr></thead>
 <tbody>
-<tr><td><code>SolverMuJoCo</code></td><td>介接 <a href="https://github.com/google-deepmind/mujoco_warp">MuJoCo Warp</a>（GPU 加速版 MuJoCo）——機器人 RL 訓練的主力，預設使用 MuJoCo 自己的碰撞管線</td></tr>
+<tr><td><a href="solver-mujoco.html"><code>SolverMuJoCo</code></a></td><td>介接 <a href="https://github.com/google-deepmind/mujoco_warp">MuJoCo Warp</a>（GPU 加速版 MuJoCo）——機器人 RL 訓練的主力，預設使用 MuJoCo 自己的碰撞管線。<a href="solver-mujoco.html">→ 詳解頁</a></td></tr>
 <tr><td><code>SolverXPBD</code></td><td>eXtended Position-Based Dynamics 隱式積分器，剛體＋軟體，最大座標</td></tr>
 <tr><td><code>SolverVBD</code></td><td>Vertex Block Descent（粒子）＋ Augmented VBD（剛體）隱式求解器，布料強項；<em>實驗性</em></td></tr>
 <tr><td><code>SolverFeatherstone</code></td><td>Featherstone CRBA 半隱式（symplectic Euler）廣義座標求解器，articulation 動力學</td></tr>
-<tr><td><code>SolverSemiImplicit</code></td><td>半隱式 symplectic Euler，最大座標，簡單通用、可微分入門首選</td></tr>
+<tr><td><a href="solver-semiimplicit.html"><code>SolverSemiImplicit</code></a></td><td>半隱式 symplectic Euler，最大座標，簡單通用、可微分入門首選。<a href="solver-semiimplicit.html">→ 詳解頁</a></td></tr>
 <tr><td><code>SolverKamino</code></td><td>處理閉鏈（kinematic loops）、欠／過致動、關節極限、硬摩擦接觸與回彈衝擊；<em>實驗性</em></td></tr>
 <tr><td><code>SolverImplicitMPM</code></td><td>隱式 MPM（Material Point Method），顆粒與彈塑性材料（沙、雪、泥）</td></tr>
 <tr><td><code>SolverStyle3D</code></td><td>Projective Dynamics 布料專用求解器</td></tr>

@@ -141,6 +141,11 @@ body {
   font-weight: 700;
 }
 
+.site-nav a.sub {
+  padding-left: 28px;
+  font-size: 0.82rem;
+}
+
 .sidebar-divider {
   border: none;
   border-top: 1px solid var(--border);

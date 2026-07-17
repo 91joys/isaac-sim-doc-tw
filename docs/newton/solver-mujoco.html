@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SolverMuJoCo — Newton Physics 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Newton</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://newton-physics.github.io/newton/stable/api/_generated/newton.solvers.SolverMuJoCo.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="installation.html">安裝與快速入門</a>
+        <div class="nav-group-title">核心主題</div>
+        <a href="concepts.html">核心概念</a>
+        <a href="solvers.html">求解器</a>
+        <a href="solver-semiimplicit.html" class="sub">↳ SolverSemiImplicit</a>
+        <a href="solver-mujoco.html" class="sub current">↳ SolverMuJoCo</a>
+        <a href="collisions.html">碰撞與接觸</a>
+        <a href="sensors.html">感測器與致動器</a>
+        <div class="nav-group-title">工具與教學</div>
+        <a href="visualization.html">視覺化</a>
+        <a href="tutorials.html">教學與範例</a>
+        <a href="diffsim.html">可微分物理教學</a>
+        <a href="diffsim-ball.html">diffsim_ball 逐行精讀</a>
+        <div class="nav-group-title">參考</div>
+        <a href="faq.html">FAQ・整合・遷移</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="solvermujoco">SolverMuJoCo<a class="anchor" href="#solvermujoco" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://newton-physics.github.io/newton/stable/api/_generated/newton.solvers.SolverMuJoCo.html">newton.solvers.SolverMuJoCo</a> API 頁面(1.4.0 stable)。繼承 <code>SolverBase</code> 與 <code>CouplingInterface</code>。</p>
+</blockquote>
+
+<h2 id="概述">概述<a class="anchor" href="#概述" aria-hidden="true">#</a></h2>
+<p><code>SolverMuJoCo</code> 提供介接 <a href="https://github.com/google-deepmind/mujoco" target="_blank" rel="noopener">MuJoCo</a> 物理引擎的介面,並透過 <a href="https://github.com/google-deepmind/mujoco_warp" target="_blank" rel="noopener">mujoco_warp</a> 做 GPU 加速。它同時支援 MuJoCo(CPU)與 mujoco_warp(GPU)兩種後端,能高效模擬帶接觸與約束的 articulation 系統——是機器人 RL 訓練的主力求解器。</p>
+<blockquote>
+<p>📦 <strong>安裝需求</strong>:此求解器需要安裝 <code>mujoco_warp</code> 及其相依套件,安裝方式見 <a href="https://github.com/google-deepmind/mujoco_warp" target="_blank" rel="noopener">mujoco_warp 儲存庫</a>。另外注意:Newton 模型的 <code>shape_collision_radius</code> 不會被 MuJoCo 使用——MuJoCo 會依幾何定義自行計算包圍球半徑(<code>geom_rbound</code>)。</p>
+</blockquote>
+
+<h2 id="基本用法">基本用法<a class="anchor" href="#基本用法" aria-hidden="true">#</a></h2>
+<pre><code class="language-python">solver = newton.solvers.SolverMuJoCo(model)
+
+# 模擬迴圈
+for i in range(100):
+    solver.step(state_in, state_out, control, contacts, dt)
+    state_in, state_out = state_out, state_in
+</code></pre>
+<p>預設使用 MuJoCo 自己的碰撞管線(<code>use_mujoco_contacts=True</code>),此時 <code>step()</code> 的 <code>contacts</code> 可傳 <code>None</code>;若設為 <code>False</code> 改用 Newton 的接觸求解,就必須把 Newton 的 contacts 傳進 <code>step()</code>。</p>
+
+<h2 id="參數解析優先序">參數解析優先序<a class="anchor" href="#參數解析優先序" aria-hidden="true">#</a></h2>
+<p>求解器選項(例如 <code>impratio</code>)依以下優先序解析:</p>
+<ol>
+<li><strong>建構子引數</strong>——若提供,所有 world 使用相同值。</li>
+<li><strong>Newton 模型自訂屬性</strong>(<code>model.mujoco.&lt;option&gt;</code>)——支援 per-world 值。</li>
+<li><strong>MuJoCo 預設值</strong>——上述皆未設定時使用。</li>
+</ol>
+
+<h2 id="建構子參數">建構子參數<a class="anchor" href="#建構子參數" aria-hidden="true">#</a></h2>
+
+<h3 id="求解器與積分">求解器與積分設定<a class="anchor" href="#求解器與積分" aria-hidden="true">#</a></h3>
+<table>
+<thead><tr><th>參數</th><th>型別</th><th>預設</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td><code>solver</code></td><td><code>int | str | None</code></td><td>Newton 預設 <code>"newton"</code></td><td>約束求解器類型:<code>"cg"</code> 或 <code>"newton"</code>(或對應 MuJoCo 整數常數)。</td></tr>
+<tr><td><code>integrator</code></td><td><code>int | str | None</code></td><td>Newton 預設 <code>"implicitfast"</code></td><td>積分器類型:<code>"euler"</code>、<code>"rk4"</code> 或 <code>"implicitfast"</code>。</td></tr>
+<tr><td><code>iterations</code></td><td><code>int | None</code></td><td>MuJoCo 預設 100</td><td>求解器迭代次數。</td></tr>
+<tr><td><code>ls_iterations</code></td><td><code>int | None</code></td><td>MuJoCo 預設 50</td><td>line search 迭代次數。</td></tr>
+<tr><td><code>tolerance</code></td><td><code>float | None</code></td><td>MuJoCo 預設 1e-8</td><td>求解器提前終止容差。</td></tr>
+<tr><td><code>ls_tolerance</code></td><td><code>float | None</code></td><td>MuJoCo 預設 0.01</td><td>line search 提前終止容差。</td></tr>
+<tr><td><code>jacobian</code></td><td><code>int | str | None</code></td><td>MuJoCo 預設 <code>"auto"</code></td><td>Jacobian 計算方式:<code>"dense"</code>、<code>"sparse"</code> 或 <code>"auto"</code>。</td></tr>
+<tr><td><code>ls_parallel</code></td><td><code>bool | None</code></td><td>—</td><td><em>已棄用且被忽略</em>(mujoco_warp 3.9.1 移除了平行 line search),傳入會發出 <code>DeprecationWarning</code>。</td></tr>
+</tbody>
+</table>
+
+<h3 id="接觸與碰撞">接觸與碰撞<a class="anchor" href="#接觸與碰撞" aria-hidden="true">#</a></h3>
+<table>
+<thead><tr><th>參數</th><th>型別</th><th>預設</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td><code>use_mujoco_contacts</code></td><td><code>bool</code></td><td><code>True</code></td><td>使用 MuJoCo 接觸求解;設 <code>False</code> 改用 Newton 接觸求解(此時 contacts 必須經由 <code>step()</code> 傳入)。</td></tr>
+<tr><td><code>disable_contacts</code></td><td><code>bool</code></td><td><code>False</code></td><td>完全停用 MuJoCo 的接觸計算。</td></tr>
+<tr><td><code>cone</code></td><td><code>int | str | None</code></td><td>Newton 預設 <code>"pyramidal"</code></td><td>接觸摩擦錐類型:<code>"pyramidal"</code> 或 <code>"elliptic"</code>。</td></tr>
+<tr><td><code>impratio</code></td><td><code>float | None</code></td><td>MuJoCo 預設 1.0</td><td>摩擦/法向約束阻抗比。</td></tr>
+<tr><td><code>nconmax</code></td><td><code>int | None</code></td><td>自動估計</td><td>每個 world 的接觸點數上限;取使用者值與估計值中較大者。</td></tr>
+<tr><td><code>njmax</code></td><td><code>int | None</code></td><td>自動估計</td><td>每個 world 的約束數上限;取使用者值與估計值中較大者。</td></tr>
+<tr><td><code>enable_multiccd</code></td><td><code>bool</code></td><td><code>False</code></td><td>啟用 multi-CCD 接觸生成(每對 geom 最多 4 個接觸點,而非 1 個)。注意:任一 geom 的 <code>margin &gt; 0</code> 時該對永遠只產生單一接觸。</td></tr>
+<tr><td><code>ccd_iterations</code></td><td><code>int | None</code></td><td>MuJoCo 預設 35</td><td>CCD(連續碰撞偵測)最大迭代次數。</td></tr>
+<tr><td><code>ccd_tolerance</code></td><td><code>float | None</code></td><td>MuJoCo 預設 1e-6</td><td>CCD 容差。</td></tr>
+<tr><td><code>sdf_iterations</code></td><td><code>int | None</code></td><td>MuJoCo 預設 10</td><td>SDF 最大迭代次數。</td></tr>
+<tr><td><code>sdf_initpoints</code></td><td><code>int | None</code></td><td>MuJoCo 預設 40</td><td>SDF 初始化點數。</td></tr>
+</tbody>
+</table>
+
+<h3 id="介質力">介質力(流體/磁場)<a class="anchor" href="#介質力" aria-hidden="true">#</a></h3>
+<table>
+<thead><tr><th>參數</th><th>型別</th><th>預設</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td><code>density</code></td><td><code>float | None</code></td><td>MuJoCo 預設 0.0</td><td>介質密度,用於升力與阻力。</td></tr>
+<tr><td><code>viscosity</code></td><td><code>float | None</code></td><td>MuJoCo 預設 0.0</td><td>介質黏度,用於升力與阻力。</td></tr>
+<tr><td><code>wind</code></td><td><code>tuple | None</code></td><td>MuJoCo 預設 (0, 0, 0)</td><td>風速向量 (x, y, z)。</td></tr>
+<tr><td><code>magnetic</code></td><td><code>tuple | None</code></td><td>MuJoCo 預設 (0, -0.5, 0)</td><td>全域磁通量向量 (x, y, z)。</td></tr>
+</tbody>
+</table>
+
+<h3 id="後端與匯出">後端、world 與匯出<a class="anchor" href="#後端與匯出" aria-hidden="true">#</a></h3>
+<table>
+<thead><tr><th>參數</th><th>型別</th><th>預設</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td><code>use_mujoco_cpu</code></td><td><code>bool</code></td><td><code>False</code></td><td>設 <code>True</code> 改用 MuJoCo-C 的 CPU 後端,而非 mujoco_warp。</td></tr>
+<tr><td><code>separate_worlds</code></td><td><code>bool | None</code></td><td><code>not use_mujoco_cpu</code></td><td>設 <code>True</code> 時每個 Newton world 映射為獨立的 MuJoCo world。</td></tr>
+<tr><td><code>update_data_interval</code></td><td><code>int</code></td><td><code>1</code></td><td>每隔多少模擬步從 Newton 狀態更新 MuJoCo <code>Data</code> 物件;<code>0</code> 表示初始化後不再更新。</td></tr>
+<tr><td><code>save_to_mjcf</code></td><td><code>str | None</code></td><td><code>None</code></td><td>可選路徑,把產生的 MJCF 模型存成檔案(除錯用,見下)。</td></tr>
+<tr><td><code>include_sites</code></td><td><code>bool</code></td><td><code>True</code></td><td>把標記 <code>ShapeFlags.SITE</code> 的 Newton shape 匯出為 MuJoCo site(不參與碰撞的參考點,用於感測器附著、除錯或參考座標系)。</td></tr>
+<tr><td><code>skip_visual_only_geoms</code></td><td><code>bool</code></td><td><code>True</code></td><td>純視覺用(不參與碰撞)的幾何不匯出到 MuJoCo spec,避免與使用顯式 <code>&lt;contact&gt;</code> 定義的模型不一致。</td></tr>
+<tr><td><code>deterministic</code></td><td><code>warp.DeterministicMode | None</code></td><td><code>None</code></td><td>MuJoCo Warp 求解器 kernel 的確定性模式;<code>None</code> 繼承 <code>wp.config.deterministic</code>。</td></tr>
+</tbody>
+</table>
+
+<h2 id="除錯">除錯:匯出 MJCF 與 MuJoCo 檢視器<a class="anchor" href="#除錯" aria-hidden="true">#</a></h2>
+<p>可以把建構子從 <code>newton.Model</code> 產生的 MuJoCo 模型存成 MJCF 檔,再用 MuJoCo 模擬器打開檢查:</p>
+<pre><code class="language-python">solver = newton.solvers.SolverMuJoCo(model, save_to_mjcf="model.xml")
+</code></pre>
+<p>也可以透過 MuJoCo 自己的檢視器觀看模擬,確認 Newton 模型轉成 MuJoCo 模型後長什麼樣子:</p>
+<pre><code class="language-python">import newton
+
+solver = newton.solvers.SolverMuJoCo(model)
+
+for _ in range(num_frames):
+    # 推進模擬
+    solver.step(state_in, state_out, control, contacts, dt)
+    state_in, state_out = state_out, state_in
+
+    solver.render_mujoco_viewer()
+</code></pre>
+<blockquote>
+<p>⚠️ MuJoCo 檢視器只支援渲染<strong>單一 world</strong> 的 Newton 模型,除非 <code>use_mujoco_cpu=True</code> 或建構時設 <code>separate_worlds=False</code>。檢視器僅作為除錯工具。<code>render_mujoco_viewer()</code> 可用參數控制左右 UI、接觸點/接觸力顯示與透明幾何(<code>show_left_ui</code>、<code>show_right_ui</code>、<code>show_contact_points</code>、<code>show_contact_forces</code>、<code>show_transparent_geoms</code>);用 <code>close_mujoco_viewer()</code> 關閉。</p>
+</blockquote>
+
+<h2 id="reset">reset():發散後的正確重置<a class="anchor" href="#reset" aria-hidden="true">#</a></h2>
+<pre><code class="language-python">solver.reset(state, world_mask=None, flags=None)
+</code></pre>
+<p>把關節狀態重置為模型預設值,並清除 MuJoCo 的內部緩衝。這在 RL 訓練重置環境時特別重要:MuJoCo 會跨 <code>step()</code> 保留求解器狀態(加速度 warm-start、致動器 activation)與外力輸入,模擬發散(如 NaN)之後,即使關節狀態已重置,這些緩衝仍可能「毒害」下一步。因此 <code>reset()</code> 一律per-world 歸零 <code>qacc_warmstart</code>、<code>qfrc_applied</code>、<code>xfrc_applied</code>、<code>act</code> 與 <code>ctrl</code>。</p>
+<ul>
+<li><code>world_mask</code>:形狀 <code>(world_count,)</code> 的布林遮罩,選擇要重置哪些 world;<code>None</code> 表示全部。</li>
+<li><code>flags</code>:<code>StateFlags</code> 位元遮罩,控制重置哪些量——<code>JOINT_Q</code> 重置 <code>state.joint_q</code>、<code>JOINT_QD</code> 重置 <code>state.joint_qd</code>;<code>None</code> 表示全部重置。內部 MuJoCo 緩衝無論如何都會清除。</li>
+<li>MuJoCo 是廣義座標求解器,<code>body_q</code>/<code>body_qd</code> 會在下一次 <code>step()</code> 由前向運動學從關節座標導出,所以 <code>BODY_Q</code>/<code>BODY_QD</code>(及粒子)flag 在此無效、會被忽略。</li>
+<li>當 <code>update_data_interval != 1</code> 時,每步的 <code>qpos</code>/<code>qvel</code> 同步是關閉或稀疏的,重置後的關節座標會立即推入 <code>qpos</code>/<code>qvel</code>。</li>
+</ul>
+
+<h2 id="控制與致動器">控制與致動器(CtrlSource / CtrlType)<a class="anchor" href="#控制與致動器" aria-hidden="true">#</a></h2>
+<p>MuJoCo 致動器的控制輸入來源由 <code>SolverMuJoCo.CtrlSource</code> 決定:</p>
+<table>
+<thead><tr><th>枚舉值</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td><code>CtrlSource.JOINT_TARGET</code> (0)</td><td>從 Newton 的 <code>joint_target_q</code>/<code>joint_target_qd</code> 陣列映射(Newton 標準控制介面)。</td></tr>
+<tr><td><code>CtrlSource.CTRL_DIRECT</code> (1)</td><td>直接使用 <code>control.mujoco.ctrl</code>(MuJoCo 原生控制)。</td></tr>
+</tbody>
+</table>
+<p><code>JOINT_TARGET</code> 模式下,<code>CtrlType</code> 決定讀哪個目標陣列:</p>
+<table>
+<thead><tr><th>枚舉值</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td><code>CtrlType.POSITION</code> (0)</td><td>從 <code>joint_target_q</code> 映射,增益取自 <code>joint_target_ke</code>;僅位置控制的致動器同時從 <code>joint_target_kd</code> 同步阻尼,<code>POSITION_VELOCITY</code> 模式的 kd 則由獨立的速度致動器處理。</td></tr>
+<tr><td><code>CtrlType.VELOCITY</code> (1)</td><td>從 <code>joint_target_qd</code> 映射,增益取自 <code>joint_target_kd</code>。</td></tr>
+<tr><td><code>CtrlType.GENERAL</code> (2)</td><td>搭配 <code>CTRL_DIRECT</code> 使用,對應 motor/general 致動器。</td></tr>
+</tbody>
+</table>
+<p>另有兩個輔助枚舉:<code>EqType</code> 描述 MuJoCo 等式約束類型(<code>CONNECT</code>=像球關節把兩剛體約束在一點、<code>WELD</code>=像固定關節焊接兩剛體、<code>JOINT</code>=把一個純量關節座標約束為另一個的四次多項式,即 mimic);<code>TrnType</code> 描述致動器傳動類型(JOINT、JOINT_IN_PARENT、TENDON、SITE、BODY、SLIDERCRANK)。</p>
+
+<h2 id="關節支援">關節支援與限制<a class="anchor" href="#關節支援" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>支援的關節類型</strong>:PRISMATIC、REVOLUTE、BALL、FIXED、FREE、D6;<strong>不支援</strong> DISTANCE 與 CABLE。</li>
+<li><strong>支援的屬性/控制</strong>:<code>joint_armature</code>、<code>joint_friction</code>、<code>joint_effort_limit</code>、<code>joint_limit_ke</code>/<code>joint_limit_kd</code>、<code>joint_target_ke</code>/<code>joint_target_kd</code>、<code>joint_target_mode</code>、<code>joint_f</code>——是所有求解器中支援最完整的。</li>
+<li><strong>支援</strong>等式約束(CONNECT、WELD、JOINT)與 mimic 約束(僅 REVOLUTE 與 PRISMATIC)。</li>
+<li><strong>不支援</strong>:<code>joint_velocity_limit</code>、<code>joint_enabled</code>。</li>
+</ul>
+<p>完整跨求解器比較見官方 <a href="https://newton-physics.github.io/newton/stable/solvers/index.html#joint-feature-support" target="_blank" rel="noopener">Joint Feature Support</a>,或本站<a href="solvers.html#關節支援">求解器總覽的關節支援矩陣</a>。</p>
+
+<h2 id="其他方法與屬性">其他方法與映射屬性<a class="anchor" href="#其他方法與屬性" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>方法</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td><code>step(state_in, state_out, control, contacts, dt)</code></td><td>推進一個時間步。</td></tr>
+<tr><td><code>update_contacts(contacts, state=None)</code></td><td>在 <code>use_mujoco_contacts</code> 模式下,把 MuJoCo 的接觸回填到 Newton 的 <code>Contacts</code>。</td></tr>
+<tr><td><code>get_max_contact_count()</code></td><td>回傳 MuJoCo 能產生的剛體接觸數上限。</td></tr>
+<tr><td><code>notify_model_changed(flags)</code></td><td>通知求解器模型屬性已變更(執行期改參數時使用)。</td></tr>
+<tr><td><code>import_mujoco()</code>(classmethod)</td><td>匯入 MuJoCo Warp 相依並快取為類別變數。</td></tr>
+<tr><td><code>register_custom_attributes(builder)</code>(classmethod)</td><td>在 <code>mujoco</code> 命名空間下宣告要配置到 Model 的自訂屬性;USD 屬性採 MuJoCo USD schema 的 <code>mjc:</code> 前綴(如 <code>"mjc:condim"</code>)。</td></tr>
+<tr><td><code>coupling_eval_effective_mass(...)</code> 等</td><td><code>CouplingInterface</code> 的多物理耦合掛鉤:評估耦合端點的有效質量/慣量與 MuJoCo 內部套用的重力加速度。</td></tr>
+</tbody>
+</table>
+<p>此外,求解器暴露大量 MuJoCo↔Newton 的索引映射屬性(進階/內部用途),例如 <code>mjc_body_to_newton</code>(body 映射)、<code>mjc_dof_to_newton_dof</code>(DOF 映射)、<code>mjc_geom_to_newton_shape</code> 與其逆映射 <code>newton_shape_to_mjc_geom</code>(僅在 <code>use_mujoco_contacts=False</code> 時建立)、<code>mjc_actuator_to_newton_idx</code>(致動器映射)、<code>mjc_eq_to_newton_eq</code>/<code>mjc_eq_to_newton_mimic</code>(等式約束映射)、<code>mjc_tendon_to_newton_tendon</code>(肌腱映射)等,完整列表見官方 API 頁面。</p>
+
+<h2 id="何時選用">何時選用?<a class="anchor" href="#何時選用" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>情境</th><th>適合嗎</th></tr></thead>
+<tbody>
+<tr><td>機器人 RL 訓練、操作任務(廣義座標、成熟接觸模型)</td><td>✅ 主力首選</td></tr>
+<tr><td>需要 armature、關節摩擦、力矩上限、等式/mimic 約束</td><td>✅ 唯一全支援的求解器</td></tr>
+<tr><td>與 MJCF/MuJoCo 生態相容、用 MuJoCo 檢視器除錯</td><td>✅</td></tr>
+<tr><td>粒子、布料、軟體</td><td>❌ 不支援,改用 <code>SolverSemiImplicit</code>/<code>SolverXPBD</code>/<code>SolverVBD</code></td></tr>
+<tr><td>可微分模擬</td><td>❌ 不支援梯度,改用 <code>SolverSemiImplicit</code> 或 <code>SolverFeatherstone</code></td></tr>
+</tbody>
+</table>
+
+<footer class="page-footer">
+  <p>本頁整理自 Newton Physics 官方文檔 1.4.0(CC-BY-4.0)。內容以官方為準。相關頁面:<a href="solver-semiimplicit.html">← SolverSemiImplicit 詳解</a>・<a href="solvers.html">求解器總覽</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#概述">概述</a>
+      <a href="#基本用法">基本用法</a>
+      <a href="#參數解析優先序">參數解析優先序</a>
+      <a href="#建構子參數">建構子參數</a>
+      <a href="#除錯">除錯</a>
+      <a href="#reset">reset()</a>
+      <a href="#控制與致動器">控制與致動器</a>
+      <a href="#關節支援">關節支援與限制</a>
+      <a href="#其他方法與屬性">其他方法與屬性</a>
+      <a href="#何時選用">何時選用?</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>
