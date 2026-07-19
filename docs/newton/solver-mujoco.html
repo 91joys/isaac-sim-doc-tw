@@ -44,7 +44,7 @@
     <article class="markdown-body">
 <h1 id="solvermujoco">SolverMuJoCo<a class="anchor" href="#solvermujoco" aria-hidden="true">#</a></h1>
 <blockquote>
-<p>對應官方 <a href="https://newton-physics.github.io/newton/stable/api/_generated/newton.solvers.SolverMuJoCo.html">newton.solvers.SolverMuJoCo</a> API 頁面(1.4.0 stable)。繼承 <code>SolverBase</code> 與 <code>CouplingInterface</code>。</p>
+<p>對應官方 <a href="https://newton-physics.github.io/newton/stable/api/_generated/newton.solvers.SolverMuJoCo.html">newton.solvers.SolverMuJoCo</a> API 頁面與 <a href="https://newton-physics.github.io/newton/stable/solvers/mujoco.html">MuJoCo 後端指南</a>(1.4.0 stable)。繼承 <code>SolverBase</code> 與 <code>CouplingInterface</code>。Newton 以相容版本鎖定(<code>~=</code>)同時釘住 <code>mujoco</code> 與 <code>mujoco-warp</code> 以保持版本對齊。</p>
 </blockquote>
 
 <h2 id="概述">概述<a class="anchor" href="#概述" aria-hidden="true">#</a></h2>
@@ -191,6 +191,133 @@ for _ in range(num_frames):
 </ul>
 <p>完整跨求解器比較見官方 <a href="https://newton-physics.github.io/newton/stable/solvers/index.html#joint-feature-support" target="_blank" rel="noopener">Joint Feature Support</a>,或本站<a href="solvers.html#關節支援">求解器總覽的關節支援矩陣</a>。</p>
 
+<h2 id="映射-關節">Newton → MuJoCo 關節類型映射<a class="anchor" href="#映射-關節" aria-hidden="true">#</a></h2>
+<p>MuJoCo 有自己的建模慣例,許多 Newton 屬性的映射方式不同(或根本不映射)。以下各節整理自官方 1.4.0 新增的 <a href="https://newton-physics.github.io/newton/stable/solvers/mujoco.html" target="_blank" rel="noopener">MuJoCo 後端指南</a>。</p>
+<table>
+<thead><tr><th>Newton 類型</th><th>MuJoCo 對應</th><th>備註</th></tr></thead>
+<tbody>
+<tr><td><code>FREE</code></td><td><code>mjJNT_FREE</code></td><td>初始位姿取自 <code>body_q</code>。</td></tr>
+<tr><td><code>BALL</code></td><td><code>mjJNT_BALL</code></td><td>每軸致動器透過 <code>gear</code> 映射。</td></tr>
+<tr><td><code>REVOLUTE</code></td><td><code>mjJNT_HINGE</code></td><td></td></tr>
+<tr><td><code>PRISMATIC</code></td><td><code>mjJNT_SLIDE</code></td><td></td></tr>
+<tr><td><code>D6</code></td><td>最多 3×<code>mjJNT_SLIDE</code>＋3×<code>mjJNT_HINGE</code></td><td>每個啟用的線性/角度 DOF 各自成為一個 MuJoCo 關節,加 <code>_lin</code>/<code>_ang</code> 後綴(同群多軸時再附數字索引,如 <code>_lin0</code>、<code>_lin1</code>)。</td></tr>
+<tr><td><code>FIXED</code></td><td><em>(無關節)</em></td><td>子 body 直接巢狀在父 body 下;連到世界的固定關節會產生 <strong>mocap</strong> body,由 <code>mjData.mocap_pos</code>/<code>mocap_quat</code> 驅動。</td></tr>
+<tr><td><code>DISTANCE</code></td><td><em>(無關節)</em></td><td>距離約束被捨棄,但 body 記帳如自由 body 處理。</td></tr>
+<tr><td><code>CABLE</code></td><td><em>不支援</em></td><td>不轉發給 MuJoCo。</td></tr>
+</tbody>
+</table>
+
+<h2 id="映射-幾何">幾何類型映射<a class="anchor" href="#映射-幾何" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>Newton 類型</th><th>MuJoCo 對應</th><th>備註</th></tr></thead>
+<tbody>
+<tr><td><code>SPHERE</code>/<code>CAPSULE</code>/<code>CYLINDER</code>/<code>BOX</code>/<code>ELLIPSOID</code></td><td><code>mjGEOM_*</code> 同名</td><td>直接對應。</td></tr>
+<tr><td><code>PLANE</code></td><td><code>mjGEOM_PLANE</code></td><td>必須附著在靜態 body(<code>body=-1</code>),否則轉換時拋 <code>ValueError</code>。MuJoCo 的平面碰撞永遠是無限大,<code>shape_scale</code> 只影響渲染(未設時預設 5×5×5)。</td></tr>
+<tr><td><code>HFIELD</code></td><td><code>mjGEOM_HFIELD</code></td><td>高度場資料以 <code>[0,1]</code> 正規化儲存並原樣轉發;geom 原點依 <code>min_z</code> 平移,使最低點落在正確的世界高度。</td></tr>
+<tr><td><code>MESH</code>/<code>CONVEX_MESH</code></td><td><code>mjGEOM_MESH</code></td><td>MuJoCo 只支援<strong>凸</strong>碰撞網格;非凸網格會被 MuJoCo 編譯器(而非 Newton)取凸包,改變碰撞邊界。網格來源的 <code>maxhullvert</code> 會被轉發。</td></tr>
+<tr><td><code>CONE</code>、<code>GAUSSIAN</code></td><td><em>不支援</em></td><td>MuJoCo geom 類型表中不存在。</td></tr>
+</tbody>
+</table>
+<p>帶 <code>SITE</code> 旗標的 shape 轉為 MuJoCo site(不參與碰撞的參考座標系,用於感測器附著與空間肌腱纏繞錨點)。只有 SPHERE、CAPSULE、CYLINDER、BOX 是 MuJoCo 原生 site 幾何,其他類型會靜默退回 SPHERE。另外,非凸 trimesh、SDF 接觸、hydroelastic 接觸等 Newton 碰撞功能不屬於 MuJoCo 幾何模型,只能透過 Newton 碰撞管線(<code>use_mujoco_contacts=False</code>)取得。</p>
+
+<h2 id="映射-致動器">致動器映射(joint_target_mode)<a class="anchor" href="#映射-致動器" aria-hidden="true">#</a></h2>
+<p>Newton 的 per-DOF <code>joint_target_mode</code> 會建立對應的 MuJoCo general actuator:</p>
+<table>
+<thead><tr><th>模式</th><th>建立的 MuJoCo 致動器</th></tr></thead>
+<tbody>
+<tr><td><code>POSITION</code></td><td>1 個:<code>gainprm=[kp]</code>、<code>biasprm=[0, -kp, -kd]</code></td></tr>
+<tr><td><code>VELOCITY</code></td><td>1 個:<code>gainprm=[kd]</code>、<code>biasprm=[0, 0, -kd]</code></td></tr>
+<tr><td><code>POSITION_VELOCITY</code></td><td>2 個——位置致動器(<code>gainprm=[kp]</code>、<code>biasprm=[0, -kp, 0]</code>)＋速度致動器(<code>gainprm=[kd]</code>、<code>biasprm=[0, 0, -kd]</code>)</td></tr>
+<tr><td><code>NONE</code>、<code>EFFORT</code></td><td>不建立致動器</td></tr>
+</tbody>
+</table>
+<p><code>joint_effort_limit</code> 轉發為關節上的 <code>actfrcrange</code>(prismatic/revolute/D6)或致動器上的 <code>forcerange</code>(ball)。完整的 MuJoCo general-actuator 模型(任意 gain/bias/dynamics、顯式 transmission、ctrl/force/act range)只能透過 <code>mujoco</code> 自訂屬性命名空間取得,以此宣告的額外致動器會排在 joint-target 致動器之後。</p>
+
+<h2 id="等式約束">等式約束與 Mimic<a class="anchor" href="#等式約束" aria-hidden="true">#</a></h2>
+<p>MuJoCo 等式約束類型請用 <code>SolverMuJoCo.EqType</code>(頂層別名 <code>newton.EqType</code> 於 Newton 1.4 起<strong>棄用</strong>):<code>CONNECT</code>(錨點在 <code>data[0:3]</code>)、<code>WELD</code>(錨點＋相對位姿＋力矩縮放)、<code>JOINT</code>(多項式係數 <code>data[0:5]</code>);Mimic 經 <code>add_constraint_mimic()</code> 轉為 <code>mjEQ_JOINT</code>,僅支援 REVOLUTE 與 PRISMATIC。Newton 核心 API 沒有專門的等式約束 builder 呼叫,要透過自訂屬性建構:</p>
+<pre><code class="language-python">builder.add_custom_values(
+    **{
+        "mujoco:equality_constraint_type": int(newton.solvers.SolverMuJoCo.EqType.CONNECT),
+        "mujoco:equality_constraint_body1": body1,
+        "mujoco:equality_constraint_body2": body2,
+        "mujoco:equality_constraint_anchor": wp.vec3(0.0, 0.0, 0.0),
+        "mujoco:equality_constraint_enabled": True,
+        "mujoco:equality_constraint_world": builder.current_world,
+    }
+)
+</code></pre>
+
+<h2 id="迴圈閉合">迴圈閉合(loop closures)<a class="anchor" href="#迴圈閉合" aria-hidden="true">#</a></h2>
+<p>閉迴圈關節不會產生 MuJoCo 關節,而是按關節類型約束兩 body 的相對運動:<code>FIXED</code> 鎖 6 個相對 DOF;<code>REVOLUTE</code> 鎖 5 個(繞鉸軸的旋轉自由);<code>BALL</code> 鎖 3 個平移 DOF。其他類型(PRISMATIC、FREE、DISTANCE、CABLE)用作迴圈閉合時會警告並被靜默跳過——<strong>迴圈不會閉合</strong>;D6 依 DOF 分派(1 個角軸=revolute 閉合、3 個=ball 閉合,其他組態跳過)。閉迴圈關節上撰寫的任何驅動(PD 目標、<code>joint_f</code>)、極限、armature、摩擦與力矩/速度上限都會被<strong>忽略</strong>,其 DOF 也不計入 MuJoCo 的 <code>nq</code>/<code>nv</code>。</p>
+
+<h2 id="狀態同步">執行期狀態同步<a class="anchor" href="#狀態同步" aria-hidden="true">#</a></h2>
+<p>每次 <code>step()</code> 都經過三階段:</p>
+<ol>
+<li><strong>推送 Newton → MuJoCo</strong>:把 Newton 的 <code>State</code>/<code>Control</code> 輸入寫進 MuJoCo 工作資料;<code>use_mujoco_contacts=False</code> 時同時轉換 Newton 側接觸。關節狀態重同步頻率由 <code>update_data_interval</code> 控制(用於 substepping)。</li>
+<li><strong>積分</strong>:<code>mujoco_warp</code> 把 MuJoCo 模型往前推 <code>dt</code>。</li>
+<li><strong>拉回 MuJoCo → Newton</strong>:從積分後的 MuJoCo 資料填充輸出 <code>State</code>;kinematic root 直接沿用 <code>state_in</code> 的值。</li>
+</ol>
+<p>⚠️ 接觸<strong>不會</strong>自動拉回 Newton 的 <code>Contacts</code> 物件——需要接觸點、力或材質索引時,請顯式呼叫 <code>update_contacts()</code>。</p>
+
+<h2 id="多world">多 world 支援<a class="anchor" href="#多world" aria-hidden="true">#</a></h2>
+<p><code>separate_worlds=True</code>(多 world GPU 模式的預設)只從<strong>第一個 world</strong> 建構 MuJoCo 模型,再由 <code>mujoco_warp</code> 複製到所有 world。這要求所有 Newton world 結構完全相同(相同的 body、關節、shape),建構時驗證、不符則拋 <code>ValueError</code>。Body、關節、等式約束與 mimic 約束不能有負的 world 索引;只有 shape 可以放在全域 world(-1),它們會跨 world 共享而不複製。</p>
+
+<h2 id="margin-gap">Margin/gap 與 multi-CCD<a class="anchor" href="#margin-gap" aria-hidden="true">#</a></h2>
+<p><code>shape_margin</code> 映射到 MuJoCo <code>geom_margin</code>、<code>shape_gap</code> 映射到 <code>geom_gap</code>(接觸對值同理映射到 <code>pair_margin</code>/<code>pair_gap</code>)。MuJoCo 把表面距離落在 <code>(margin, margin+gap]</code> 的接觸回報為<strong>不出力的非作用接觸</strong>。MJCF/USD 的 margin/gap 採 MuJoCo 3.9+ 直接語意;只有要重現 Newton 3.9 前的匯入轉換時才傳 <code>legacy_margin_gap=True</code> 給 <code>add_mjcf()</code>/<code>add_usd()</code>。</p>
+<ul>
+<li><strong>Multi-contact CCD</strong>:<code>enable_multiccd=True</code> 允許每對 geom 最多 4 個接觸點(預設 1 個);但任一 geom 的 MuJoCo <code>geom_margin</code> 非零時,該對仍退回單一接觸。</li>
+<li><strong>Margin 歸零</strong>:<code>mujoco_warp</code> 拒絕 box-box 對(其預設 NATIVECCD 路徑)及 <code>enable_multiccd=True</code> 時任何 box/mesh 對的非零 margin。為保持相容,只要模型存在 box geom(或 multiccd＋mesh 的組合),<code>SolverMuJoCo</code> 會在編譯期把 <code>geom_margin</code> <strong>全模型歸零</strong>;Newton 模型的 <code>shape_margin</code> 陣列不受影響,且 <code>use_mujoco_contacts=False</code> 時會在執行期還原撰寫的 margin。</li>
+</ul>
+
+<h2 id="剛性阻尼轉換">關節極限與接觸剛性/阻尼的 solref 轉換<a class="anchor" href="#剛性阻尼轉換" aria-hidden="true">#</a></h2>
+<p><code>joint_limit_ke/kd</code> 與 <code>shape_material_ke/kd</code> 都是<strong>力空間</strong>增益(如 N·m/rad、N/m),而 MuJoCo 用 <code>solref=(timeconst, dampratio)</code> 慣例。<code>SolverMuJoCo</code> 會先以逆質量權重(<code>dof_invweight0</code> 或兩 body 的 <code>body_invweight0</code> 和)與阻抗參數 <code>1-dmax</code> 縮放增益,再轉成正值 <code>solref</code>,以保留 Newton 的力空間語意,同時允許 MuJoCo 的 <code>refsafe</code> 時步鉗制軟化對步長而言過硬的約束。重點:</p>
+<ul>
+<li>從 MJCF/USD 撰寫的 <code>solreflimit</code>/<code>solref</code> 是原生 MuJoCo 參數,<strong>原樣保留、不重縮放</strong>;內部以 <code>solreflimit_mode</code>/<code>solref_mode</code> 記錄該值是力空間增益、原生撰寫值還是 MJCF 隱含預設(這些 <code>SOLREF_MODE_*</code> 是內部常數,並非公開 API)。</li>
+<li><code>joint_limit_ke &lt;= 0</code> 或 <code>joint_limit_kd &lt;= 0</code> 時還原 MuJoCo 預設 <code>solreflimit=(0.02, 1.0)</code>。</li>
+<li><code>refsafe</code> 啟用時,正值 <code>solref</code> 的有效 <code>timeconst</code> 有 <code>2*dt</code> 下限——一旦到達下限,再拉高增益也不會更硬,應改<strong>縮小時間步長</strong>。</li>
+<li><code>use_mujoco_contacts=True</code> 與 MuJoCo CPU 後端不套用逐接觸的兩體縮放因子,力空間 shape 會退回舊式 <code>convert_solref(ke, kd, 1, 1)</code> 單位質量近似。</li>
+<li><code>save_to_mjcf</code> 對力空間模式的關節<strong>不是</strong>完整語意的往返匯出——MJCF 只儲存 <code>solreflimit</code>,重建模型後需重新套用 <code>joint_limit_ke/kd</code>。</li>
+</ul>
+<p>參數解讀、穩定性取捨與任務導向的調校指引見官方 <a href="https://newton-physics.github.io/newton/stable/concepts/simulation_tuning_mujoco.html" target="_blank" rel="noopener">MuJoCo-Warp Contact Tuning</a>。</p>
+
+<h2 id="自訂屬性">MuJoCo 專屬參數(USD/MJCF 與自訂屬性)<a class="anchor" href="#自訂屬性" aria-hidden="true">#</a></h2>
+<p>MuJoCo 有許多 Newton 核心 API 沒有對應的參數,匯入 MJCF/USD 時透過兩種機制處理:</p>
+<ol>
+<li><strong>自訂屬性命名空間</strong>:專屬的 <code>mujoco</code> 命名空間(<code>model.mujoco.&lt;name&gt;</code>)由 MJCF 元素與 OpenUSD MuJoCo schema 屬性(<code>mjc:*</code>)填充。啟用方式是在<strong>加入任何內容之前</strong>先在 <code>ModelBuilder</code> 上呼叫 <code>SolverMuJoCo.register_custom_attributes(builder)</code>。肌腱(tendon)與 MuJoCo 式 <code>&lt;pair&gt;</code> 接觸覆寫也都經由此命名空間實作(spatial tendon 支援 <code>site</code>/<code>geom</code>/<code>pulley</code> 纏繞元素,其他類型警告後跳過)。</li>
+<li><strong>直接映射到 Newton 內建屬性</strong>:部分 MuJoCo 屬性在匯入時直接映射為 Newton 內建屬性,例如由 <code>solreflimit</code> 導出的關節極限剛性/阻尼;MuJoCo 關節 <code>damping</code> 映射為 <code>joint_damping</code>(舊的 <code>model.mujoco.dof_passive_damping</code> 是棄用別名,存取時發 <code>DeprecationWarning</code>)。</li>
+</ol>
+<p>求解器選項在建構時讀取一次;之後編輯 <code>model.mujoco.&lt;option&gt;</code> <strong>不會生效</strong>——解析後的值已固化在底層 MuJoCo 模型中。</p>
+
+<h2 id="不支援功能">不支援的 MuJoCo 功能<a class="anchor" href="#不支援功能" aria-hidden="true">#</a></h2>
+<p>反方向上,載入 MJCF/USD 資產時以下 MuJoCo 建模概念<strong>不會被匯入</strong>,轉換時也不會重建:</p>
+<ul>
+<li><strong>感測器</strong>(<code>&lt;sensor&gt;</code>)——Newton 有自己獨立的感測器管線。</li>
+<li><strong>相機與燈光</strong>——Newton 使用自己的 viewer 與照明管線,來源資產中的相機/燈光 primitive 被忽略。</li>
+<li><strong>Keyframes</strong>(<code>&lt;keyframe&gt;</code>)——MuJoCo 的存檔狀態/重置機制。</li>
+<li><strong>Composite 與 flex</strong>(<code>&lt;composite&gt;</code>、<code>&lt;flex&gt;</code>)——MuJoCo 內建可變形體;Newton 有專門的布料/MPM/FEM 求解器。</li>
+<li><strong>Skinned meshes</strong>(<code>&lt;skin&gt;</code>)——僅供視覺化,不匯入。</li>
+<li><strong>使用者外掛</strong>(<code>&lt;plugin&gt;</code>)與<strong>任意自訂元素</strong>(<code>&lt;custom&gt;</code>、<code>&lt;numeric&gt;</code>、<code>&lt;text&gt;</code>)——Newton 專屬使用者資料請改用自訂屬性系統。</li>
+<li><strong>致動器傳動</strong>——僅支援 <code>joint</code>、<code>tendon</code>、<code>site</code>、<code>body</code>;<code>jointinparent</code> 與 <code>slidercrank</code> 不轉換,使用它們的致動器會在建構時警告並跳過。</li>
+</ul>
+
+<h2 id="注意事項">注意事項(Caveats)<a class="anchor" href="#注意事項" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong><code>shape_collision_radius</code> 被忽略</strong>——MuJoCo 依幾何定義自行計算包圍球半徑(<code>geom_rbound</code>)。</li>
+<li><strong>非凸網格取凸包</strong>——改變有效碰撞邊界。</li>
+<li><strong>速度上限不轉發</strong>——<code>joint_velocity_limit</code> 沒有 MuJoCo 對應,被忽略。</li>
+<li><strong>Kinematic root 的 armature 被覆寫</strong>——kinematic articulation root 的 DOF armature 被替換為極大內部值(1e10),使 MuJoCo 視其為被規定的(prescribed)座標;使用者提供的 armature 被靜默丟棄。</li>
+<li><strong>碰撞過濾 bitmask 退化</strong>——<code>shape_collision_group</code> 經圖著色轉為 <code>contype</code>/<code>conaffinity</code>,最多支援 32 色;超過的 shape 退回 <code>contype=1</code>/<code>conaffinity=1</code>,會與所有 shape 碰撞、繞過原本的過濾。</li>
+</ul>
+
+<h2 id="kinematic-root">Kinematic link 與固定 root<a class="anchor" href="#kinematic-root" aria-hidden="true">#</a></h2>
+<p>Newton 只允許在 articulation root 上設 <code>is_kinematic=True</code>(其後代仍可為動態)。執行期 <code>SolverMuJoCo</code> 讓 kinematic root 保持使用者規定而非動態積分:回填 Newton 狀態時,kinematic root 的 <code>joint_q</code>/<code>joint_qd</code> 沿用前值而不被 MuJoCo 的積分結果覆寫;施加在 kinematic body 上的力/力矩在 MuJoCo 側被忽略;但它們仍參與接觸,可作為移動或固定的障礙物。轉換時的 root 映射規則:</p>
+<ul>
+<li><strong>非固定關節的 kinematic root</strong> → 一般 MuJoCo 關節,但 DOF 掛上極大 armature,等效於無限質量座標。</li>
+<li><strong>以固定關節連到世界的 root</strong>(不論是否 kinematic)→ MuJoCo <strong>mocap body</strong>,位姿經 <code>mjData.mocap_pos</code>/<code>mocap_quat</code> 驅動;所有軸都鎖住的 D6 root(如一般 USD <code>PhysicsJoint</code> 匯入)同樣處理。</li>
+<li><strong>不屬於 articulation 的世界附著 shape</strong> → 一般靜態 MuJoCo 幾何,不是 mocap body。</li>
+</ul>
+<p>建構求解器之後若編輯了固定 root articulation 的 <code>joint_X_p</code>/<code>joint_X_c</code>,要呼叫 <code>notify_model_changed(ModelFlags.JOINT_PROPERTIES)</code> 把更新後的固定 root 位姿同步進 MuJoCo。</p>
+
 <h2 id="其他方法與屬性">其他方法與映射屬性<a class="anchor" href="#其他方法與屬性" aria-hidden="true">#</a></h2>
 <table>
 <thead><tr><th>方法</th><th>說明</th></tr></thead>
@@ -234,6 +361,19 @@ for _ in range(num_frames):
       <a href="#reset">reset()</a>
       <a href="#控制與致動器">控制與致動器</a>
       <a href="#關節支援">關節支援與限制</a>
+      <a href="#映射-關節">關節類型映射</a>
+      <a href="#映射-幾何">幾何類型映射</a>
+      <a href="#映射-致動器">致動器映射</a>
+      <a href="#等式約束">等式約束與 Mimic</a>
+      <a href="#迴圈閉合">迴圈閉合</a>
+      <a href="#狀態同步">執行期狀態同步</a>
+      <a href="#多world">多 world 支援</a>
+      <a href="#margin-gap">Margin/gap 與 multi-CCD</a>
+      <a href="#剛性阻尼轉換">solref 轉換</a>
+      <a href="#自訂屬性">MuJoCo 專屬參數</a>
+      <a href="#不支援功能">不支援的 MuJoCo 功能</a>
+      <a href="#注意事項">注意事項</a>
+      <a href="#kinematic-root">Kinematic root</a>
       <a href="#其他方法與屬性">其他方法與屬性</a>
       <a href="#何時選用">何時選用?</a>
     </nav>

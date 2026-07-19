@@ -14,7 +14,7 @@
     <a href="../index.html">⌂ 文檔大全</a>
     <a href="index.html">首頁</a>
     <a href="docs.html">總覽文檔</a>
-    <a href="https://newton-physics.github.io/newton/stable/api/newton_solvers.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+    <a href="https://newton-physics.github.io/newton/stable/solvers/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
   </nav>
 </header>
 <div class="layout has-toc">
@@ -44,7 +44,7 @@
     <article class="markdown-body">
 <h1 id="求解器">求解器（newton.solvers）<a class="anchor" href="#求解器" aria-hidden="true">#</a></h1>
 <blockquote>
-<p>對應官方 <a href="https://newton-physics.github.io/newton/stable/api/newton_solvers.html">newton.solvers</a> 章節。求解器負責積分 Newton 模型的動力學：輸入 <code>Model</code>＋<code>State</code>＋<code>Control</code>＋<code>Contacts</code>＋時間步長 <code>dt</code>，經 <code>solver.step()</code> 輸出更新後的 <code>State</code>。</p>
+<p>對應官方 <a href="https://newton-physics.github.io/newton/stable/solvers/index.html">Solvers 總覽</a>（1.4.0）章節。求解器負責積分 Newton 模型的動力學：輸入 <code>Model</code>＋<code>State</code>＋<code>Control</code>＋<code>Contacts</code>＋時間步長 <code>dt</code>，經 <code>solver.step()</code> 輸出更新後的 <code>State</code>。建構子與方法細節見 <a href="https://newton-physics.github.io/newton/stable/api/newton_solvers.html">solver API 參考</a>；症狀導向的診斷與參數調校見官方 <a href="https://newton-physics.github.io/newton/stable/concepts/simulation_tuning.html">Simulation Tuning</a>。</p>
 </blockquote>
 
 <h2 id="八種求解器">八種求解器一覽<a class="anchor" href="#八種求解器" aria-hidden="true">#</a></h2>
@@ -56,11 +56,19 @@
 <tr><td><code>SolverVBD</code></td><td>Vertex Block Descent（粒子）＋ Augmented VBD（剛體）隱式求解器，布料強項；<em>實驗性</em></td></tr>
 <tr><td><code>SolverFeatherstone</code></td><td>Featherstone CRBA 半隱式（symplectic Euler）廣義座標求解器，articulation 動力學</td></tr>
 <tr><td><a href="solver-semiimplicit.html"><code>SolverSemiImplicit</code></a></td><td>半隱式 symplectic Euler，最大座標，簡單通用、可微分入門首選。<a href="solver-semiimplicit.html">→ 詳解頁</a></td></tr>
-<tr><td><code>SolverKamino</code></td><td>處理閉鏈（kinematic loops）、欠／過致動、關節極限、硬摩擦接觸與回彈衝擊；<em>實驗性</em></td></tr>
+<tr><td><a href="#kamino"><code>SolverKamino</code></a></td><td>處理閉鏈（kinematic loops）、欠／過致動、關節極限、硬摩擦接觸與回彈衝擊；<em>實驗性</em>。<a href="#kamino">→ 指南摘要</a></td></tr>
 <tr><td><code>SolverImplicitMPM</code></td><td>隱式 MPM（Material Point Method），顆粒與彈塑性材料（沙、雪、泥）</td></tr>
 <tr><td><code>SolverStyle3D</code></td><td>Projective Dynamics 布料專用求解器</td></tr>
 </tbody>
 </table>
+
+<h2 id="選擇求解器">選擇求解器<a class="anchor" href="#選擇求解器" aria-hidden="true">#</a></h2>
+<p>MuJoCo 與 Kamino 目前有專屬的官方後端指南，其餘求解器則透過 API 參考與下方比較表格說明：</p>
+<ul>
+<li><a href="https://newton-physics.github.io/newton/stable/solvers/mujoco.html" target="_blank" rel="noopener">MuJoCo 後端指南</a> —— 廣義座標剛體模擬與 MuJoCo／MJCF 工作流程（本站中文詳解：<a href="solver-mujoco.html">SolverMuJoCo</a>）。</li>
+<li><a href="https://newton-physics.github.io/newton/stable/solvers/kamino.html" target="_blank" rel="noopener">Kamino 後端指南</a> —— 帶運動學迴圈與硬摩擦接觸的約束剛體機構；實驗性（<a href="#kamino">本頁摘要</a>）。</li>
+</ul>
+<p>對於剛體 articulation 機器人，先決定哪種<strong>座標表示</strong>適合你的應用：<code>SolverMuJoCo</code> 與 <code>SolverFeatherstone</code> 使用<strong>廣義座標</strong>（generalized coordinates），而 <code>SolverXPBD</code>、<code>SolverSemiImplicit</code> 與 <code>SolverKamino</code> 使用<strong>最大座標</strong>（maximal coordinates）。若是可變形體、粒子或可微分模擬，先用下方功能矩陣縮小範圍，再循連結閱讀對應 API 文檔。</p>
 
 <h2 id="功能支援矩陣">功能支援矩陣<a class="anchor" href="#功能支援矩陣" aria-hidden="true">#</a></h2>
 <table>
@@ -89,30 +97,78 @@
 <li><strong>可微分入門</strong>：<code>SolverSemiImplicit</code> 或 <code>SolverFeatherstone</code>。</li>
 </ul>
 
+<h2 id="接觸材質支援">接觸材質支援<a class="anchor" href="#接觸材質支援" aria-hidden="true">#</a></h2>
+<p><code>ModelBuilder.ShapeConfig</code> 與對應的 <code>Model</code> shape 材質陣列儲存的是<strong>與求解器無關</strong>的接觸材質資料。下表整理各欄位目前被哪些內建求解器實際使用——外部求解器可能只用其中一部分，或按自己的公式解讀這些欄位：</p>
+<table>
+<thead><tr><th>材質欄位</th><th>使用它的求解器</th></tr></thead>
+<tbody>
+<tr><td><code>mu</code>（摩擦係數）</td><td>全部：Featherstone、SemiImplicit、XPBD、MuJoCo、VBD、Kamino、Style3D、ImplicitMPM</td></tr>
+<tr><td><code>ke</code>／<code>kd</code>（接觸剛性／阻尼）</td><td>Featherstone、SemiImplicit、MuJoCo、VBD</td></tr>
+<tr><td><code>kf</code>／<code>ka</code>（摩擦剛性／黏附）</td><td>Featherstone、SemiImplicit</td></tr>
+<tr><td><code>restitution</code>（回彈係數）</td><td>XPBD（需 <code>enable_restitution=True</code>）、Kamino</td></tr>
+<tr><td><code>mu_torsional</code>／<code>mu_rolling</code>（扭轉／滾動摩擦）</td><td>XPBD、MuJoCo</td></tr>
+<tr><td><code>kh</code>（hydroelastic 模量）</td><td>由 hydroelastic 接觸生成消耗，供使用 Newton 產生接觸的 Featherstone、SemiImplicit，以及 <code>use_mujoco_contacts=False</code> 的 MuJoCo。見官方 <a href="https://newton-physics.github.io/newton/stable/concepts/collisions.html#hydroelastic-contacts" target="_blank" rel="noopener">Hydroelastic Contacts</a></td></tr>
+</tbody>
+</table>
+
 <h2 id="關節支援">關節支援矩陣<a class="anchor" href="#關節支援" aria-hidden="true">#</a></h2>
-<p>只有 <code>SolverFeatherstone</code> 與 <code>SolverMuJoCo</code> 以廣義座標操作 articulation；最大座標求解器（SemiImplicit、XPBD、Kamino）把關節當成成對剛體約束處理；VBD 以軟約束（AVBD）支援部分關節；Style3D 與 ImplicitMPM 不支援關節。</p>
+<p>並非每個求解器都支援所有關節類型與屬性。只有 <code>SolverFeatherstone</code> 與 <code>SolverMuJoCo</code> 以廣義（reduced）座標操作 articulation；最大座標求解器（SemiImplicit、XPBD、Kamino）把關節當成成對剛體約束處理，不使用 articulation 的運動學樹結構；VBD 以軟約束（AVBD）支援部分關節；Style3D 與 ImplicitMPM 不支援關節。</p>
+
+<h3 id="關節類型">關節類型<a class="anchor" href="#關節類型" aria-hidden="true">#</a></h3>
 <table>
 <thead><tr><th>關節類型</th><th>Featherstone</th><th>SemiImplicit</th><th>XPBD</th><th>MuJoCo</th><th>VBD</th><th>Kamino</th></tr></thead>
 <tbody>
 <tr><td>PRISMATIC／REVOLUTE／BALL／FIXED／FREE</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
-<tr><td>DISTANCE</td><td>🟨 視為 FREE</td><td>🟨 視為 FREE</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
+<tr><td>DISTANCE</td><td>🟨 ¹</td><td>🟨 ¹</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
 <tr><td>D6</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>❌</td></tr>
 <tr><td>CABLE</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td><td>❌</td></tr>
 </tbody>
 </table>
+<p>¹ DISTANCE 關節被視為 FREE（不強制距離約束）。</p>
+
+<h3 id="關節屬性">關節屬性<a class="anchor" href="#關節屬性" aria-hidden="true">#</a></h3>
 <table>
-<thead><tr><th>關節屬性／控制</th><th>Featherstone</th><th>SemiImplicit</th><th>XPBD</th><th>MuJoCo</th><th>VBD</th><th>Kamino</th></tr></thead>
+<thead><tr><th>屬性</th><th>Featherstone</th><th>SemiImplicit</th><th>XPBD</th><th>MuJoCo</th><th>VBD</th><th>Kamino</th></tr></thead>
 <tbody>
+<tr><td><code>joint_enabled</code></td><td>❌</td><td>✅</td><td>✅</td><td>❌</td><td>✅</td><td>❌</td></tr>
 <tr><td><code>joint_armature</code></td><td>✅</td><td>❌</td><td>❌</td><td>✅</td><td>❌</td><td>✅</td></tr>
 <tr><td><code>joint_friction</code></td><td>❌</td><td>❌</td><td>❌</td><td>✅</td><td>❌</td><td>❌</td></tr>
-<tr><td><code>joint_limit_lower/upper</code></td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td><code>joint_limit_lower/upper</code></td><td>✅</td><td>✅ ²</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td><code>joint_limit_ke/kd</code></td><td>✅</td><td>✅ ²</td><td>❌</td><td>✅</td><td>✅ ⁴</td><td>❌</td></tr>
 <tr><td><code>joint_effort_limit</code></td><td>❌</td><td>❌</td><td>❌</td><td>✅</td><td>❌</td><td>❌</td></tr>
-<tr><td><code>joint_target_ke/kd</code>（PD 目標）</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
-<tr><td><code>joint_f</code>（前饋力）</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
-<tr><td>等式約束（CONNECT／WELD／JOINT）、Mimic</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td><td>❌</td><td>❌</td></tr>
+<tr><td><code>joint_velocity_limit</code></td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td></tr>
 </tbody>
 </table>
-<blockquote><p>完整逐項表格（含各種注腳）見官方 <a href="https://newton-physics.github.io/newton/stable/api/newton_solvers.html#joint-feature-support">Joint Feature Support</a>。</p></blockquote>
+<p>² SemiImplicit 對 BALL 關節不強制執行。</p>
+
+<h3 id="致動與控制">致動與控制<a class="anchor" href="#致動與控制" aria-hidden="true">#</a></h3>
+<table>
+<thead><tr><th>功能</th><th>Featherstone</th><th>SemiImplicit</th><th>XPBD</th><th>MuJoCo</th><th>VBD</th><th>Kamino</th></tr></thead>
+<tbody>
+<tr><td><code>joint_target_ke/kd</code>（PD 目標增益）</td><td>✅</td><td>✅ ²</td><td>✅</td><td>✅</td><td>✅ ⁴</td><td>✅</td></tr>
+<tr><td><code>joint_target_mode</code></td><td>❌</td><td>❌</td><td>❌</td><td>✅</td><td>❌</td><td>✅</td></tr>
+<tr><td><code>joint_f</code>（前饋力）</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+</tbody>
+</table>
+
+<h3 id="約束">約束<a class="anchor" href="#約束" aria-hidden="true">#</a></h3>
+<table>
+<thead><tr><th>功能</th><th>Featherstone</th><th>SemiImplicit</th><th>XPBD</th><th>MuJoCo</th><th>VBD</th><th>Kamino</th></tr></thead>
+<tbody>
+<tr><td>等式約束（CONNECT／WELD／JOINT）</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td><td>❌</td><td>❌</td></tr>
+<tr><td>Mimic 約束</td><td>❌</td><td>❌</td><td>❌</td><td>✅ ³</td><td>❌</td><td>❌</td></tr>
+</tbody>
+</table>
+<p>³ MuJoCo 的 mimic 約束僅支援 REVOLUTE 與 PRISMATIC 關節。<br>
+⁴ VBD 把 <code>joint_target_kd</code> 與 <code>joint_limit_kd</code> 解讀為物理單位的絕對阻尼係數。</p>
+<blockquote><p>官方原始表格見 <a href="https://newton-physics.github.io/newton/stable/solvers/index.html#joint-feature-support">Joint Feature Support</a>。</p></blockquote>
+
+<h2 id="kamino">SolverKamino 指南摘要<a class="anchor" href="#kamino" aria-hidden="true">#</a></h2>
+<p><code>SolverKamino</code> 以<strong>最大座標</strong>模擬受約束的剛體多體系統，專為帶有<strong>運動學迴圈</strong>（kinematic loops）、欠致動／過致動、關節極限、<strong>硬摩擦接觸</strong>與回彈衝擊的機械組件設計。與其他最大座標求解器不同，Kamino 聚焦於受約束的剛體機械組件，而非粒子或可變形體模擬。</p>
+<blockquote>
+<p>⚠️ <strong>實驗性（BETA 1）</strong>：官方目前不建議依賴 <code>SolverKamino</code>——其公開 API、行為、功能支援、效能與實作都可能在未事先通知的情況下變更。只有當「運動學迴圈＋硬接觸約束」是主要需求、且可以接受實驗性求解器時才評估使用。</p>
+</blockquote>
+<p>建構與設定細節見 <a href="https://newton-physics.github.io/newton/stable/api/_generated/newton.solvers.SolverKamino.html" target="_blank" rel="noopener">SolverKamino API 參考</a>；可執行的工作流程見 <a href="https://github.com/newton-physics/newton/tree/main/newton/examples/kamino" target="_blank" rel="noopener">Kamino examples</a>。</p>
 
 <h2 id="可微分">可微分模擬（DiffSim）<a class="anchor" href="#可微分" aria-hidden="true">#</a></h2>
 <p>典型流程：在 <code>wp.Tape()</code> 內執行前向 rollout → 從模擬狀態算純量 loss → <code>tape.backward(loss)</code> 把梯度填入可微分的 state／control／model 陣列。起點是 <code>finalize(requires_grad=True)</code>：</p>
@@ -151,7 +207,7 @@ initial_velocity_grad = state_in.particle_qd.grad.numpy()
 <p>所有求解器繼承 <code>SolverBase</code>。Newton 的模組化架構明確支援自製求解器、積分器與數值方法，也支援求解器之間的耦合（多物理／協同模擬）——官方已展示單向耦合範例（機械臂操作布料、四足行走於非剛性地形），雙向與隱式耦合在路線圖上。</p>
 
 <footer class="page-footer">
-  <p>本頁整理自 Newton Physics 官方文檔 1.3.0（CC-BY-4.0）。內容以官方為準。下一步：<a href="collisions.html">碰撞與接觸 →</a></p>
+  <p>本頁整理自 Newton Physics 官方文檔 1.4.0（CC-BY-4.0）。內容以官方為準。下一步：<a href="collisions.html">碰撞與接觸 →</a></p>
 </footer>
     </article>
   </main>
@@ -159,8 +215,11 @@ initial_velocity_grad = state_in.particle_qd.grad.numpy()
     <div class="toc-title">本頁目錄</div>
     <nav class="toc">
       <a href="#八種求解器">八種求解器一覽</a>
+      <a href="#選擇求解器">選擇求解器</a>
       <a href="#功能支援矩陣">功能支援矩陣</a>
+      <a href="#接觸材質支援">接觸材質支援</a>
       <a href="#關節支援">關節支援矩陣</a>
+      <a href="#kamino">SolverKamino 指南摘要</a>
       <a href="#可微分">可微分模擬</a>
       <a href="#自訂求解器">自訂求解器</a>
     </nav>
