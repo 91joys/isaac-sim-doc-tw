@@ -78,6 +78,7 @@ docs/
 │   ├── color-rendering.html 色彩對應與渲染（色彩表、傳遞函數、屬性鎖定）
 │   ├── flow.html       流場視覺化（NVIDIA Flow 粒子動畫）
 │   ├── examples.html   範例目錄（時變結構、情境融合、多領域、AI 代理模型）
+│   ├── example-simulation-in-context.html 範例精讀：模擬資料融入情境（逐步教學）
 │   └── legacy.html     1.5 舊版文檔
 └── ndpi/           ← nDPI 中文文檔（nDPI 5.0）
     ├── index.html      nDPI 首頁

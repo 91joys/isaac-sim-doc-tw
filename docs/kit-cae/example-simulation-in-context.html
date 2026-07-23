@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>範例精讀：模擬資料融入情境 — Kit-CAE 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Kit-CAE</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="examples.html">範例目錄</a>
+    <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/examples/simulation-in-context.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="getting-started.html">快速入門</a>
+        <a href="importing-data.html">匯入資料</a>
+        <div class="nav-group-title">核心工作流程</div>
+        <a href="exploring-data.html">探索資料</a>
+        <a href="sources.html">建立來源</a>
+        <a href="operators.html">建立運算子</a>
+        <a href="color-rendering.html">色彩對應與渲染</a>
+        <a href="flow.html">流場視覺化</a>
+        <div class="nav-group-title">範例與參考</div>
+        <a href="examples.html">範例目錄</a>
+        <a href="example-simulation-in-context.html" class="sub current">↳ 精讀：模擬資料融入情境</a>
+        <a href="legacy.html">1.5 舊版文檔</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="標題">範例精讀：模擬資料融入情境<a class="anchor" href="#標題" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/examples/simulation-in-context.html" target="_blank" rel="noopener">Simulation Data in Context</a> 範例的完整逐步教學。這是<a href="examples.html#2-情境">範例目錄・第 2 例</a>的深入版，把每一步的選單路徑、快捷鍵與屬性值都補齊。</p>
+</blockquote>
+
+<h2 id="1-這個範例在做什麼">1. 這個範例在做什麼<a class="anchor" href="#1-這個範例在做什麼" aria-hidden="true">#</a></h2>
+<p>本範例示範如何把<strong>穩態熱模擬資料</strong>疊到一份<strong>高保真的伺服器機架幾何</strong>上：透過 OpenUSD 組合，把 CGNS 熱資料與 USD 機架模型放進同一場景，<strong>兩邊都不轉檔</strong>。</p>
+<p>這正是 Kit-CAE 核心理念的最佳示範——<strong>OpenUSD 是組合層，原生檔案始終是權威來源</strong>。你會得到一個既能看清機架真實外觀、又能在其熱通道（hot-aisle）裡檢視空氣溫度分佈的場景，做「有情境（in context）」的工程判讀。</p>
+
+<h2 id="2-資料集">2. 資料集規格<a class="anchor" href="#2-資料集" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>檔案</th><th>格式</th><th>欄位</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td><code>compute_thermal.cgns</code></td><td>CGNS</td><td>Temperature</td><td>機架附近的穩態空氣溫度（cell 中心值，單位 °C）。</td></tr>
+<tr><td><code>GB300.usd</code></td><td>USD</td><td>幾何</td><td>完整高保真的 GB300 NVL72 伺服器機架模型。</td></tr>
+</tbody>
+</table>
+<p><strong>網格細節：</strong>約 71,500 個節點、約 57,100 個六面體（hexahedral）元素；穩態（單一快照，無時間序列）。</p>
+<div class="callout warn"><strong>前置需求：</strong>需先下載範例資料包（見<a href="getting-started.html#3-範例資料">快速入門・下載範例資料</a>）。本範例檔案位於 <code>kit_cae_user_guide_data/examples/02_simulation-data-in-context/</code> 目錄下。</div>
+
+<h2 id="3-啟動">3. 啟動 Kit-CAE<a class="anchor" href="#3-啟動" aria-hidden="true">#</a></h2>
+<p><strong>Linux：</strong></p>
+<pre><code class="language-bash">./repo.sh launch -n omni.cae.kit</code></pre>
+<p><strong>Windows：</strong></p>
+<pre><code class="language-bat">repo.bat launch -n omni.cae.kit</code></pre>
+
+<h2 id="4-匯入機架幾何">4. 匯入機架幾何<a class="anchor" href="#4-匯入機架幾何" aria-hidden="true">#</a></h2>
+<ol>
+<li>選 <strong>File &gt; Open</strong>。</li>
+<li>瀏覽到 <code>{資料路徑}/kit_cae_user_guide_data/examples/02_simulation-data-in-context/GB300.usd</code>。</li>
+<li>GB300 機架模型即載入視埠（viewport）。</li>
+</ol>
+<div class="callout tip"><strong>為什麼是 Open 而非 Import？</strong>機架幾何本身就是一份 USD，直接以它作為舞台的基底（base layer）最自然；稍後的熱資料才用 <strong>Import</strong>「掛」進這個舞台，兩者於是組合在同一場景。</div>
+
+<h2 id="5-匯入熱資料">5. 匯入熱資料<a class="anchor" href="#5-匯入熱資料" aria-hidden="true">#</a></h2>
+<ol>
+<li>選 <strong>File &gt; Import</strong>。</li>
+<li>瀏覽到 <code>{資料路徑}/kit_cae_user_guide_data/examples/02_simulation-data-in-context/compute_thermal.cgns</code>。</li>
+<li>勾選 <strong>Import to Stage</strong>。</li>
+<li>點 <strong>Import</strong>。</li>
+<li>Stage 面板出現新的 <code>compute_thermal</code> prim。</li>
+</ol>
+
+<h2 id="6-建立邊界框">6. 建立兩個邊界框<a class="anchor" href="#6-建立邊界框" aria-hidden="true">#</a></h2>
+<p>我們要兩個邊界框：一個涵蓋整份熱資料範圍（視覺參考），另一個縮小聚焦到機架後方的<strong>熱通道區</strong>，當作體積運算子的<strong>感興趣區域（ROI）</strong>。</p>
+<h3 id="6-1">① 第一個邊界框（完整範圍）</h3>
+<ol>
+<li>在 Stage 面板展開 <code>/World/compute_thermal/compute_thermal_cgns/Base/Zone/Elements</code>。</li>
+<li>右鍵 <code>Elements</code>。</li>
+<li>選 <strong>Create &gt; CAE Sources &gt; Bounding Box</strong>。</li>
+</ol>
+<h3 id="6-2">② 第二個邊界框（縮小的 ROI）</h3>
+<ol>
+<li>選取第一個邊界框。</li>
+<li>按 <strong>Ctrl+D</strong> 複製。</li>
+<li>按 <strong>R</strong> 叫出縮放（scale）gizmo。</li>
+<li>縮放，聚焦到 GB300 後方的熱通道區。</li>
+<li>按 <strong>W</strong> 回到平移（translate）模式。</li>
+</ol>
+<div class="callout"><strong>操作快捷鍵一覽</strong>
+<table style="margin-top:8px;">
+<thead><tr><th>鍵</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td><strong>Ctrl+D</strong></td><td>複製選取的 prim</td></tr>
+<tr><td><strong>W</strong></td><td>平移（translate）gizmo</td></tr>
+<tr><td><strong>R</strong></td><td>縮放（scale）gizmo</td></tr>
+<tr><td><strong>F</strong></td><td>視角貼合到選取物件</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="7-建立體積運算子">7. 建立體積（Volume）運算子<a class="anchor" href="#7-建立體積運算子" aria-hidden="true">#</a></h2>
+<ol>
+<li>右鍵 <code>Elements</code>。</li>
+<li>選 <strong>Create &gt; CAE Operators &gt; Volume</strong>。</li>
+<li>出現提示時，選 <strong>NanoVDB</strong>（另一選項 <strong>Irregular</strong> 保留精確幾何）。</li>
+</ol>
+<h3 id="7-1">NanoVDB vs. Irregular 怎麼選</h3>
+<table>
+<thead><tr><th>模式</th><th>做法與適用時機</th></tr></thead>
+<tbody>
+<tr><td><strong>Irregular</strong></td><td>直接在非結構化網格上運算，<strong>不做體素化</strong>，保留精確 cell 幾何。當<strong>精度比速度重要</strong>時使用——例如驗證，或邊界附近的細部分析。</td></tr>
+<tr><td><strong>NanoVDB</strong></td><td>先把資料重新取樣到稀疏體素格（sparse voxel grid），再於 GPU 渲染。適合大型資料與互動探索，速度較快。</td></tr>
+</tbody>
+</table>
+
+<h2 id="8-視覺化熱場">8. 視覺化熱場<a class="anchor" href="#8-視覺化熱場" aria-hidden="true">#</a></h2>
+<ol>
+<li>在 Stage 面板選取 Volume 運算子 prim。</li>
+<li>在 Property 面板捲到 <strong>Region-of-interest (ROI)</strong>。</li>
+<li>點 <strong>Add Target</strong>。</li>
+<li>選取<strong>較窄的</strong>那個邊界框。</li>
+<li>捲到 <strong>Colors [Field Selection]</strong>。</li>
+<li>點 <strong>Add Target</strong>。</li>
+<li>瀏覽到 <code>/World/compute_thermal/compute_thermal_cgns/Base/Zone/SolutionCellCenter/Temperature</code>。</li>
+<li>點 <strong>Select</strong>。</li>
+<li>展開 Volume 運算子 &gt; <strong>Material &gt; Colormap</strong>。</li>
+<li>調整色彩範圍（範例：domain <code>31</code> 到 <code>37</code>）與傳遞函數，凸顯溫度梯度。</li>
+</ol>
+<div class="callout tip"><strong>找不到欄位在哪？</strong>本資料的溫度是 <strong>cell 中心值</strong>，所以放在 <code>SolutionCellCenter</code> 之下（而非以節點為中心的 FlowSolution）。這也呼應<a href="exploring-data.html">探索資料</a>裡先用 CAE Insights 摸清欄位位置與範圍的好習慣——<code>31~37</code> 這個 domain 正是從溫度範圍推來的。</div>
+
+<h2 id="9-關鍵訣竅">9. 關鍵訣竅：看清「純資料」與「有情境」<a class="anchor" href="#9-關鍵訣竅" aria-hidden="true">#</a></h2>
+<p>切換 GB300 prim 上的<strong>眼睛圖示</strong>來隱藏機架，即可單看熱場本身；再開回來，就能把結果放回幾何情境中對照。這一開一關，正是本範例的精神——同一份資料，既能獨立分析，也能融入真實硬體情境。</p>
+
+<h2 id="10-學到了什麼">10. 你學到了什麼<a class="anchor" href="#10-學到了什麼" aria-hidden="true">#</a></h2>
+<ul>
+<li><strong>不轉檔的組合：</strong>用 <code>File &gt; Open</code> 開 USD 幾何當基底、用 <code>File &gt; Import</code> 掛入 CGNS 模擬資料，OpenUSD 把兩者組合進單一場景而不改動任何一方。</li>
+<li><strong>雙邊界框策略：</strong>一個作視覺參考、一個縮小成 ROI 限制體積運算的域——複製（Ctrl+D）＋縮放（R）是最快做法。</li>
+<li><strong>NanoVDB／Irregular 取捨：</strong>互動探索用 NanoVDB，精度驗證用 Irregular。</li>
+<li><strong>cell 中心欄位：</strong>知道去 <code>SolutionCellCenter</code> 找 Temperature，並用合理 domain（31~37）調 colormap。</li>
+<li><strong>情境切換：</strong>用眼睛圖示在「純熱場」與「疊在機架上」之間來回對照。</li>
+</ul>
+
+<div class="callout"><strong>延伸：</strong>想把時間軸也加進來，看<a href="examples.html#1-時變結構">時變結構分析</a>；想在單一場景裡同時放 CFD 與結構兩個領域，看<a href="examples.html#3-多領域">多領域模擬</a>。</div>
+
+<footer class="page-footer">
+  <p>本頁整理自 Kit-CAE 官方文檔 2.0 的 <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/examples/simulation-in-context.html" target="_blank" rel="noopener">Simulation Data in Context</a> 範例。內容以官方為準。回到 <a href="examples.html">範例目錄</a>。</p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#1-這個範例在做什麼">1. 這個範例在做什麼</a>
+      <a href="#2-資料集">2. 資料集規格</a>
+      <a href="#3-啟動">3. 啟動 Kit-CAE</a>
+      <a href="#4-匯入機架幾何">4. 匯入機架幾何</a>
+      <a href="#5-匯入熱資料">5. 匯入熱資料</a>
+      <a href="#6-建立邊界框">6. 建立兩個邊界框</a>
+      <a href="#7-建立體積運算子">7. 建立體積運算子</a>
+      <a href="#8-視覺化熱場">8. 視覺化熱場</a>
+      <a href="#9-關鍵訣竅">9. 關鍵訣竅</a>
+      <a href="#10-學到了什麼">10. 你學到了什麼</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>
