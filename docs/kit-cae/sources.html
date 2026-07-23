@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>建立來源 — Kit-CAE 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Kit-CAE</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/sources.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="getting-started.html">快速入門</a>
+        <a href="importing-data.html">匯入資料</a>
+        <div class="nav-group-title">核心工作流程</div>
+        <a href="exploring-data.html">探索資料</a>
+        <a href="sources.html" class="current">建立來源</a>
+        <a href="operators.html">建立運算子</a>
+        <a href="color-rendering.html">色彩對應與渲染</a>
+        <a href="flow.html">流場視覺化</a>
+        <div class="nav-group-title">範例與參考</div>
+        <a href="examples.html">範例目錄</a>
+        <a href="legacy.html">1.5 舊版文檔</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="建立來源">建立來源（Sources）<a class="anchor" href="#建立來源" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/sources.html" target="_blank" rel="noopener">Create Sources</a> 章節。來源是輔助運算子工作的「不可變幾何」，本身不做運算。</p>
+</blockquote>
+
+<h2 id="1-什麼是來源">1. 什麼是來源<a class="anchor" href="#1-什麼是來源" aria-hidden="true">#</a></h2>
+<p><strong>來源（Sources）</strong>是 Kit-CAE 中的<strong>不可變輔助實體</strong>。與運算子不同，它們：</p>
+<ul>
+<li>重載舞台時<strong>不會</strong>重新執行；</li>
+<li>是沒有套用任何 CAE 運算子 API schema 的<strong>普通 USD prim</strong>。</li>
+</ul>
+<p>換句話說，來源就是一些純粹的幾何（框、球），用來當作運算子的「感興趣區域」或「種子」。</p>
+
+<h2 id="2-如何建立">2. 如何建立來源<a class="anchor" href="#2-如何建立" aria-hidden="true">#</a></h2>
+<ol>
+<li>在 Stage 面板選取一個 prim。</li>
+<li>右鍵，選 <strong>Create &gt; CAE Sources</strong>。</li>
+<li>選擇想要的來源類型。</li>
+</ol>
+<div class="callout"><strong>選項依實體型別而定：</strong>所有資料集 prim 預設都提供邊界框與單位球；而像切面（slice）這類特化來源只在特定實體上出現（例如切面來源會出現在體積運算子的結果上）。</div>
+
+<h2 id="3-邊界框">3. 邊界框（Bounding Box）<a class="anchor" href="#3-邊界框" aria-hidden="true">#</a></h2>
+<p>邊界框用來視覺化空間範圍，同時也是限制運算子運算域的<strong>感興趣區域（ROI）</strong>。特性：</p>
+<ul>
+<li>從資料集節點建立。</li>
+<li>建立時取用資料集當下的 bounds，之後即<strong>斷開連結</strong>（不再隨資料變動）。</li>
+<li>可重新命名、變換（transform）與縮放。</li>
+<li>支援自訂尺寸——例如 <code>scale by X: 2, Y: 1, Z: 1</code>，把框往後延伸以涵蓋車輛尾流（wake）區域。</li>
+<li>兼具雙重用途：<strong>視覺參考</strong>＋<strong>運算邊界</strong>（供串流線與體積渲染運算子使用）。</li>
+</ul>
+
+<h2 id="4-單位球">4. 單位球（Unit Sphere）<a class="anchor" href="#4-單位球" aria-hidden="true">#</a></h2>
+<p>單位球為串流線運算子與流場發射器提供<strong>種子幾何（seed geometry）</strong>。特性：</p>
+<ul>
+<li>球體<strong>每個頂點</strong>都成為一條串流線的起點，或一個粒子的發射源。</li>
+<li>依所選物件的 bounds 自動定位與定尺寸。</li>
+<li>可自由移動，用來檢視不同流場區域（進氣口流動、局部渦流循環…）。</li>
+<li>可在運算子設定中，用自訂幾何取代這顆球。</li>
+</ul>
+
+<h2 id="5-試試看">5. 試試看：為串流線與體積鋪路<a class="anchor" href="#5-試試看" aria-hidden="true">#</a></h2>
+<ol>
+<li>選取汽車資料集節點，右鍵 <strong>Create &gt; CAE Sources &gt; Bounding Box</strong>。</li>
+<li>把邊界框 <code>scale X: 2</code>，讓它往車後延伸，涵蓋尾流區。</li>
+<li>再建立一個 <strong>Unit Sphere</strong>，移動到進氣或側面感興趣的位置。</li>
+<li>這兩個來源接著會被<a href="operators.html">串流線運算子</a>拿來當種子與 ROI。</li>
+</ol>
+
+<footer class="page-footer">
+  <p>本頁整理自 Kit-CAE 官方文檔 2.0。內容以官方為準。下一步：<a href="operators.html">建立運算子 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#1-什麼是來源">1. 什麼是來源</a>
+      <a href="#2-如何建立">2. 如何建立來源</a>
+      <a href="#3-邊界框">3. 邊界框</a>
+      <a href="#4-單位球">4. 單位球</a>
+      <a href="#5-試試看">5. 試試看</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

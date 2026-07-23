@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>範例目錄 — Kit-CAE 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Kit-CAE</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/examples/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="getting-started.html">快速入門</a>
+        <a href="importing-data.html">匯入資料</a>
+        <div class="nav-group-title">核心工作流程</div>
+        <a href="exploring-data.html">探索資料</a>
+        <a href="sources.html">建立來源</a>
+        <a href="operators.html">建立運算子</a>
+        <a href="color-rendering.html">色彩對應與渲染</a>
+        <a href="flow.html">流場視覺化</a>
+        <div class="nav-group-title">範例與參考</div>
+        <a href="examples.html" class="current">範例目錄</a>
+        <a href="legacy.html">1.5 舊版文檔</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="範例目錄">範例目錄<a class="anchor" href="#範例目錄" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/examples/index.html" target="_blank" rel="noopener">Examples</a> 章節。四個獨立範例，各自展示 Kit-CAE 在不同工程場景的用法。</p>
+</blockquote>
+<div class="callout warn"><strong>需要範例資料：</strong>這些範例需要 Kit-CAE 儲存庫<strong>未包含</strong>的樣本資料集，須另外下載範例資料包（同一份下載也涵蓋主線指南所需資料）。</div>
+
+<h2 id="1-時變結構">1. 時變結構分析<a class="anchor" href="#1-時變結構" aria-hidden="true">#</a></h2>
+<p><strong>資料集：</strong>保險桿樑（bumper beam）撞擊模擬，<strong>51 個時間步</strong>、約 13,500 個節點，含變形殼網格幾何與兩個欄位變數：PlasticStrain（跨層最大塑性應變）與 ContactPressure（節點接觸壓力），EnSight Gold 二進位格式。</p>
+<h3 id="ex1-steps">工作流程</h3>
+<ol>
+<li><strong>匯入：</strong>File &gt; Import 匯入 <code>bumper_beam.case</code>，<strong>Scale 設 2</strong>，讓時間步在時間軸上相隔兩格，為插補影格預留空間。</li>
+<li><strong>視覺化幾何：</strong>右鍵資料集 → <strong>Create &gt; CAE Operators &gt; Faces</strong>，渲染變形中的網格。</li>
+<li><strong>依欄位著色：</strong>在 CAE 區段把 PlasticStrain 加為 <strong>Colors [Field Selection]</strong> 目標。</li>
+<li><strong>精修：</strong>用 CAE Insights 分析分佈，把色彩 shader 的 domain 設為 <code>0 ~ 0.065</code> 並<strong>鎖定</strong>，維持跨時間步的一致色階。</li>
+<li><strong>時間插補：</strong>對 prim 加入 <strong>Operator Temporal</strong> 並勾選 <strong>Enable Field Interpolation</strong>，讓時間步之間的動畫更平滑。</li>
+</ol>
+<p><strong>關鍵技巧：</strong>多層應變追蹤（上下表面＋最大值）、變形網格動畫與欄位資料同步、以直方圖最佳化範圍、時間插補提升播放品質。</p>
+
+<h2 id="2-情境">2. 模擬資料融入情境<a class="anchor" href="#2-情境" aria-hidden="true">#</a></h2>
+<p><strong>資料集：</strong></p>
+<ul>
+<li><code>compute_thermal.cgns</code>（CGNS）：伺服器機架附近空氣溫度的穩態熱模擬，cell 中心值，單位攝氏。</li>
+<li><code>GB300.usd</code>（USD）：完整高保真的 GB300 NVL72 伺服器機架幾何，約 71,500 節點、57,100 個六面體元素。</li>
+</ul>
+<h3 id="ex2-steps">工作流程</h3>
+<ol>
+<li><strong>載入基礎幾何：</strong>File &gt; Open 開啟 USD 機架模型。</li>
+<li><strong>匯入模擬資料：</strong>File &gt; Import 匯入 CGNS 熱資料，勾 <strong>Import to Stage</strong>。</li>
+<li><strong>建立空間參考：</strong>建兩個邊界框——一個涵蓋整份熱資料，另一個縮放聚焦到機架後方的熱通道（hot-aisle）區。</li>
+<li><strong>設定體積渲染：</strong>建 Volume 運算子，選 NanoVDB 體素化。</li>
+<li><strong>定義 ROI：</strong>把運算子的 ROI 目標接到較窄的那個邊界框。</li>
+<li><strong>對應欄位：</strong>把 Temperature 欄位接到 colormap。</li>
+<li><strong>精修：</strong>調色彩範圍與傳遞函數，強調溫度梯度。</li>
+</ol>
+<p><strong>關鍵技巧——不轉檔的組合：</strong>「Kit-CAE 透過 OpenUSD 把兩者組合進單一場景，兩邊都不轉檔」，既保留資料保真度，又能把模擬結果直接疊在真實伺服器基礎設施的高保真幾何上做情境分析。</p>
+
+<h2 id="3-多領域">3. 多領域模擬<a class="anchor" href="#3-多領域" aria-hidden="true">#</a></h2>
+<p><strong>資料集：</strong>BSCW（Benchmark Supercritical Wing）機翼資料，兩個檔案：</p>
+<ul>
+<li><code>bscw_cfd.cgns</code>（CGNS）：機翼周圍 4,991 個體積節點的壓力係數。</li>
+<li><code>bscw_struct.case</code>（EnSight Gold）：機翼表面的彎曲應力。</li>
+</ul>
+<p>兩者皆含 <strong>101 個時間步</strong>，來自非穩態 URANS CFD（M = 0.74、Re = 4.49 × 10⁶）。</p>
+<h3 id="ex3-steps">工作流程</h3>
+<ol>
+<li><strong>匯入兩份資料集</strong>，不轉檔，進入同一個 USD 舞台。</li>
+<li>用 <strong>Faces</strong> 對結構資料建立機翼表面。</li>
+<li>用 <strong>nanovdb</strong> 對 CFD 壓力場產生體積視覺化。</li>
+<li>對機翼表面套用色彩對應（彎曲應力），<strong>結合兩個領域</strong>。</li>
+<li>用時間軸<strong>同步播放</strong>兩份資料集。</li>
+</ol>
+<p><strong>關鍵技巧：</strong>多格式支援（直接讀各求解器原生格式）、高斯潑濺（Gaussian splatting，範例 radius factor 8.0）、欄位對應（Cp、BendingStress）、時間軸同步、色階鎖定維持跨影格一致。</p>
+
+<h2 id="4-ai代理">4. AI 代理模型模擬資料<a class="anchor" href="#4-ai代理" aria-hidden="true">#</a></h2>
+<p><strong>資料集：</strong>汽車空氣力學推論結果，NumPy <code>.npz</code> 格式，<strong>128,000 個點</strong>，多欄位：速度（3 分量）、壓力（純量）、紊流動能 TKE、紊流黏度、有符號距離場（128×64×64 體積網格），另有 STL 車輛表面網格作參考幾何。來源為「Digital Twins for Fluid Simulation」藍圖的代理模型。</p>
+<h3 id="ex4-steps">工作流程</h3>
+<ol>
+<li><strong>匯入幾何：</strong>以 Z-up 載入 STL 車輛網格，提供空間情境。</li>
+<li><strong>匯入點雲：</strong>把 <code>.npz</code> 以 Point Cloud 型態匯入。</li>
+<li><strong>建立來源：</strong>建資料集邊界框，再加多個單位球種子。</li>
+<li><strong>放置種子：</strong>複製並重定位球，放到不同流場區域。</li>
+<li><strong>建立多種子運算子：</strong>加 Streamlines 運算子，參考多個種子來源。</li>
+<li><strong>設定串流線：</strong>設高斯潑濺 radius factor、前向方向與速度欄位。</li>
+<li><strong>套用色彩對應：</strong>指定欄位（速度或壓力）著色。</li>
+</ol>
+<p><strong>關鍵技巧——代理平權：</strong>「代理模型的推論資料，在匯入、運算子與視覺化演算法上，都與求解器輸出一視同仁」；再加上多種子串流線一次比較多處流動，以及互動式重定位種子、串流線即時更新。</p>
+
+<footer class="page-footer">
+  <p>本頁整理自 Kit-CAE 官方文檔 2.0。內容以官方為準。回到 <a href="index.html">首頁</a> 或閱讀 <a href="docs.html">總覽文檔</a>。</p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#1-時變結構">1. 時變結構分析</a>
+      <a href="#2-情境">2. 模擬資料融入情境</a>
+      <a href="#3-多領域">3. 多領域模擬</a>
+      <a href="#4-ai代理">4. AI 代理模型模擬資料</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

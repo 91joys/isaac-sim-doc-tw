@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>色彩對應與渲染 — Kit-CAE 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Kit-CAE</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/color-and-rendering.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="getting-started.html">快速入門</a>
+        <a href="importing-data.html">匯入資料</a>
+        <div class="nav-group-title">核心工作流程</div>
+        <a href="exploring-data.html">探索資料</a>
+        <a href="sources.html">建立來源</a>
+        <a href="operators.html">建立運算子</a>
+        <a href="color-rendering.html" class="current">色彩對應與渲染</a>
+        <a href="flow.html">流場視覺化</a>
+        <div class="nav-group-title">範例與參考</div>
+        <a href="examples.html">範例目錄</a>
+        <a href="legacy.html">1.5 舊版文檔</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="色彩對應與渲染">色彩對應與渲染<a class="anchor" href="#色彩對應與渲染" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/color-and-rendering.html" target="_blank" rel="noopener">Color Mapping and Rendering</a> 章節。有視覺輸出的運算子都能透過欄位選擇、色彩表與屬性鎖定做純量著色。</p>
+</blockquote>
+
+<h2 id="1-欄位選擇">1. 欄位選擇（著色依據）<a class="anchor" href="#1-欄位選擇" aria-hidden="true">#</a></h2>
+<ol>
+<li>在 Stage 面板選取運算子 prim。</li>
+<li>在 Properties 找到 <strong>Colors [Field Selection]</strong>，點 <strong>Add Target</strong>。</li>
+<li>瀏覽並選取想要的欄位。</li>
+</ol>
+<p>Kit-CAE 支援三種著色方式：</p>
+<table>
+<thead><tr><th>欄位型態</th><th>著色方式</th></tr></thead>
+<tbody>
+<tr><td><strong>單分量欄位</strong>（shape N,1）</td><td>直接純量著色，如壓力、溫度。</td></tr>
+<tr><td><strong>三分量欄位</strong>（shape N,3）</td><td>以計算出的向量模長（magnitude）著色，例如速度 X／Y／Z 以整體速率著色。</td></tr>
+<tr><td><strong>三個獨立單分量欄位</strong></td><td>用 Ctrl／Shift 多選各分量，Kit-CAE 會把它們視為一個向量並以模長著色。</td></tr>
+</tbody>
+</table>
+
+<h2 id="2-色彩表">2. 色彩表（Colormaps）<a class="anchor" href="#2-色彩表" aria-hidden="true">#</a></h2>
+<p>Kit-CAE 內建色彩表：<code>afmhot</code>、<code>cividis</code>、<code>gist_gray</code>、<code>gist_rainbow</code>（預設）。</p>
+<h3 id="faces-etc">Faces／Streamlines／Points／Glyphs</h3>
+<ul>
+<li>展開運算子 prim → <strong>Materials → ScalarColor → Shader</strong>。</li>
+<li>調 <strong>domain</strong> 欄位設定色彩範圍。</li>
+<li>用 <strong>lut</strong> 欄位選擇不同色彩表。</li>
+</ul>
+<h3 id="volume-slice">Volume／Slice</h3>
+<ul>
+<li>展開運算子 → <strong>Material → Colormap</strong>。</li>
+<li>在此設定色彩範圍與傳遞函數（transfer function）。</li>
+</ul>
+
+<h2 id="3-範圍行為">3. 色彩範圍行為（時變資料）<a class="anchor" href="#3-範圍行為" aria-hidden="true">#</a></h2>
+<p>對時變資料，色彩範圍可有三種反應方式，讓動畫過程中色階穩定：</p>
+<table>
+<thead><tr><th>模式</th><th>行為</th></tr></thead>
+<tbody>
+<tr><td><strong>Clamp</strong></td><td>鎖定在目前的數值範圍。</td></tr>
+<tr><td><strong>Grow</strong></td><td>隨時間步出現新值而擴張範圍。</td></tr>
+<tr><td><strong>Do nothing</strong></td><td>維持範圍不變。</td></tr>
+</tbody>
+</table>
+<p>也可直接在 colormap 手動設定 domain 值，做精確控制。</p>
+
+<h2 id="4-鎖定">4. 鎖定機制（Lock）<a class="anchor" href="#4-鎖定" aria-hidden="true">#</a></h2>
+<p>運算子重算時可能把屬性重設回預設值。要避免辛苦調好的設定被覆蓋：</p>
+<ol>
+<li>把屬性設成想要的值。</li>
+<li>右鍵該屬性欄位，選 <strong>Locks &gt; Lock</strong>。</li>
+<li>鎖定值即可穿越重算而保留。</li>
+</ol>
+<p>要恢復自動更新，右鍵選 <strong>Locks &gt; Unlock</strong> 即可。</p>
+<div class="callout tip"><strong>典型用法：</strong>移動串流線種子球時運算子會重算——把 domain（色彩範圍）鎖定，串流線就能在重算時維持一致的配色。</div>
+
+<h2 id="5-shader">5. Shader 參數<a class="anchor" href="#5-shader" aria-hidden="true">#</a></h2>
+<p>體積渲染使用 <strong>MDL</strong> shader，參數透過 API schema 控制，提供明確的渲染行為控制。自訂 shader 的屬性名稱可能不同。多數情況用預設值即可；進階使用者可在 Properties 面板的 <strong>Raw Properties</strong> 檢視所有 shader 參數。</p>
+
+<h2 id="6-試試看">6. 試試看：調校色彩對應<a class="anchor" href="#6-試試看" aria-hidden="true">#</a></h2>
+<h3 id="volume-setup">體積（Volume）</h3>
+<ol>
+<li>隱藏其他運算子，只留 Volume 與 Faces 可見。</li>
+<li>展開 Volume 運算子 → <strong>Material → Colormap</strong>。</li>
+<li>設範圍 min <code>0</code>、max <code>30</code>。</li>
+<li>把 <strong>Domain Boundary Mode</strong> 設為 <code>clampToTransparent</code>（讓超出範圍的值完全透明）。</li>
+<li>調整透明度曲線控制不透明度。</li>
+<li><strong>Lock</strong> 住 Colormap，避免重算重設設定。</li>
+</ol>
+<h3 id="slice-setup">體積切面（Volume Slice）</h3>
+<ol>
+<li>顯示 VolumeSlice，可選擇隱藏 Volume。</li>
+<li>選取切面平面 prim，用變換 gizmo 穿過幾何。</li>
+<li>展開 VolumeSlice → <strong>Material → Colormap</strong>。</li>
+<li>設範圍 min <code>0</code>、max <code>40</code>；<strong>Domain Boundary Mode</strong> 設 <code>clampToEdge</code>。</li>
+</ol>
+<h3 id="streamlines-setup">串流線（Streamlines）</h3>
+<ol>
+<li>顯示 Streamlines 與 Faces。</li>
+<li>選 Streamlines 運算子，捲到 <strong>Colors [Field Selection]</strong>，點 <strong>Add Target</strong>。</li>
+<li>選 Pressure 之類的欄位，或 Shift 多選 Velocity 分量。</li>
+<li>展開 Streamlines → <strong>Materials → ScalarColor → Shader</strong>。</li>
+<li>調 domain 欄位得到有意義的色彩範圍。</li>
+<li>用 lut 資料夾圖示瀏覽其他色彩表。</li>
+<li><strong>Lock</strong> domain 欄位，讓串流線重算時保持配色。移動種子球即可重定位串流線，同時保留鎖定的色彩設定。</li>
+</ol>
+
+<footer class="page-footer">
+  <p>本頁整理自 Kit-CAE 官方文檔 2.0。內容以官方為準。下一步：<a href="flow.html">流場視覺化 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#1-欄位選擇">1. 欄位選擇</a>
+      <a href="#2-色彩表">2. 色彩表</a>
+      <a href="#3-範圍行為">3. 色彩範圍行為</a>
+      <a href="#4-鎖定">4. 鎖定機制</a>
+      <a href="#5-shader">5. Shader 參數</a>
+      <a href="#6-試試看">6. 試試看</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

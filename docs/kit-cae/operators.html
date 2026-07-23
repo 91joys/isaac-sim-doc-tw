@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>建立運算子 — Kit-CAE 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Kit-CAE</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/operators.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="getting-started.html">快速入門</a>
+        <a href="importing-data.html">匯入資料</a>
+        <div class="nav-group-title">核心工作流程</div>
+        <a href="exploring-data.html">探索資料</a>
+        <a href="sources.html">建立來源</a>
+        <a href="operators.html" class="current">建立運算子</a>
+        <a href="color-rendering.html">色彩對應與渲染</a>
+        <a href="flow.html">流場視覺化</a>
+        <div class="nav-group-title">範例與參考</div>
+        <a href="examples.html">範例目錄</a>
+        <a href="legacy.html">1.5 舊版文檔</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="建立運算子">建立運算子（Operators）<a class="anchor" href="#建立運算子" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/operators.html" target="_blank" rel="noopener">Create Operators</a> 章節。運算子是 Kit-CAE 的視覺化主力——動態、即時、GPU 加速。</p>
+</blockquote>
+
+<h2 id="1-什麼是運算子">1. 什麼是運算子<a class="anchor" href="#1-什麼是運算子" aria-hidden="true">#</a></h2>
+<p><strong>運算子（Operators）是動態視覺化實體</strong>，會在<strong>重載舞台時即時重算</strong>，從來源資料當場產生結果。每個運算子 prim 都套用了 <strong>Omni CAE Operator API</strong>。</p>
+<p>建立方式：在 Stage 面板右鍵一個 prim，選 <strong>Create &gt; CAE Operators</strong>。</p>
+
+<h2 id="2-共通屬性">2. 共通屬性<a class="anchor" href="#2-共通屬性" aria-hidden="true">#</a></h2>
+<p>所有運算子在 Properties 面板的 <strong>CAE</strong> 群組下都有這些可調設定：</p>
+<table>
+<thead><tr><th>屬性</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td><strong>Compute Device</strong></td><td>預設 <code>auto</code>（用全域偏好），可逐運算子覆寫為 CPU 或 CUDA。</td></tr>
+<tr><td><strong>Enabled</strong></td><td>執行開關——可停用某運算子以除錯、調效能或先把整條管線配置好再一起開。</td></tr>
+<tr><td><strong>Source</strong></td><td>指定運算子讀取哪個資料集，通常依你的選取自動設定。</td></tr>
+</tbody>
+</table>
+
+<h2 id="3-運算子類型">3. 運算子類型<a class="anchor" href="#3-運算子類型" aria-hidden="true">#</a></h2>
+
+<h3 id="faces">Faces（外表面）</h3>
+<p>從體積網格萃取並渲染邊界表面。適合檢視模擬域外型，或以欄位值（壓力、壁面剪應力）為外表面著色。</p>
+<ul>
+<li>對多面體資料集，請套用在<strong>表面網格區塊</strong>而非體積區塊——「從多面體體積萃取內部面尚未支援」。</li>
+</ul>
+<p><strong>步驟：</strong>右鍵資料集節點 → <strong>Create &gt; CAE Operators &gt; Faces</strong> → 用欄位選擇以純量資料著色。</p>
+
+<h3 id="points">Points（點）</h3>
+<p>在每個網格頂點畫球體，快速概覽資料密度與網格節點分佈；也很適合沒有網格連結性的點雲資料。</p>
+<p><strong>步驟：</strong>右鍵資料集 → <strong>Create &gt; CAE Operators &gt; Points</strong> → 調 <strong>Width</strong> 控制球體大小 → 以欄位著色或依資料值改變尺寸。</p>
+
+<h3 id="glyphs">Glyphs（字形）</h3>
+<p>在資料點放置有方向的 3D 形狀，用來視覺化<strong>向量欄位</strong>。形狀可選箭頭（最適合速度／力）、圓錐（方向指示）、球（僅位置／大小）。</p>
+<p><strong>設定：</strong></p>
+<ul>
+<li><strong>Orientations</strong> 旁點 <strong>Add Target</strong> 選向量欄位分量。</li>
+<li><strong>Scales</strong> 旁 <strong>Add Target</strong> 改變字形大小。</li>
+<li><strong>Colors</strong> 旁 <strong>Add Target</strong> 指定著色。</li>
+</ul>
+<p><strong>關鍵屬性：</strong></p>
+<ul>
+<li><strong>Max Count</strong>：最多渲染幾個字形（預設 10,000,000；設 0 表示全部）。</li>
+<li><strong>Use Cell Points</strong>：只在網格 cell 的點上放字形。</li>
+<li><strong>Orientations Mode</strong>：<code>eulerAngles</code>（預設）或 <code>quaternion</code>。</li>
+</ul>
+
+<h3 id="streamlines">Streamlines（串流線）</h3>
+<p>追蹤粒子在向量欄位中的路徑，揭示流動型態、回流區與尾流結構。需要一個<strong>種子來源</strong>與一個<strong>速度欄位</strong>。</p>
+<p><strong>步驟：</strong></p>
+<ol>
+<li>先建立一個<a href="sources.html#4-單位球">單位球</a>來源，放到感興趣區域。</li>
+<li>右鍵體積資料集 → <strong>Create &gt; CAE Operators &gt; Streamlines</strong>。</li>
+<li><strong>Seeds</strong> 旁 <strong>Add Target</strong> 加入種子來源。</li>
+<li><strong>Velocity</strong> 旁 <strong>Add Target</strong> 加入速度欄位。</li>
+<li>移動球體即可互動式更新串流線。</li>
+</ol>
+<p><strong>關鍵屬性：</strong></p>
+<table>
+<thead><tr><th>屬性</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td><strong>dx</strong></td><td>串流線頂點之間的步長。</td></tr>
+<tr><td><strong>Max Length</strong></td><td>最大追蹤距離。</td></tr>
+<tr><td><strong>Width</strong></td><td>顯示寬度。</td></tr>
+<tr><td><strong>Region of Interest</strong></td><td>用邊界框把追蹤限制在空間子集內。</td></tr>
+</tbody>
+</table>
+<div class="callout tip"><strong>2.0 新增：</strong>支援<strong>多種子（multi-seed）</strong>——一個串流線運算子可同時參考多個種子來源，從不同位置一次追蹤流線做比較分析。</div>
+
+<h3 id="volume">Volume（體積）</h3>
+<p>用 <strong>NVIDIA IndeX</strong> 渲染體積資料，兩種路徑：</p>
+<table>
+<thead><tr><th>方法</th><th>特性</th></tr></thead>
+<tbody>
+<tr><td><strong>NanoVDB</strong>（預設）</td><td>把資料體素化到規則網格，GPU 渲染，大型資料較快。</td></tr>
+<tr><td><strong>Irregular</strong></td><td>直接在 CPU 渲染非結構化網格，保留 cell 拓撲，需三角或四邊形面。</td></tr>
+</tbody>
+</table>
+<p><strong>步驟：</strong>右鍵體積資料集 → <strong>Create &gt; CAE Operators &gt; Volume</strong> → 選渲染方法 → <strong>Field</strong> 旁 <strong>Add Target</strong> 選視覺化欄位 →（可選）設 <strong>Region of Interest</strong>。色彩表在運算子的 Material／Colormap prim 上以互動漸層調整器設定（詳見<a href="color-rendering.html">色彩對應與渲染</a>）。</p>
+
+<h3 id="slice">Slice（切面）</h3>
+<p>對資料集做平面剖切，檢視內部體積資料。</p>
+<p><strong>步驟：</strong></p>
+<ol>
+<li>右鍵資料集 → <strong>Create &gt; CAE Operators &gt; Slice</strong>。</li>
+<li><strong>Field</strong> 旁 <strong>Add Target</strong> 選顯示欄位。</li>
+<li>在 Stage 面板展開運算子，取用 <strong>Plane</strong> prim。</li>
+<li>用變換 gizmo 移動切面。</li>
+</ol>
+<p>可選 <strong>Biplane（雙平面）</strong>或 <strong>Triplane（三平面）</strong>做正交剖面。</p>
+<div class="callout warn"><strong>提示：</strong>切面平面的初始位置可能落在可見範圍外——按 <strong>F</strong> 讓視角貼合（fit）即可找到。</div>
+
+<h2 id="4-體素化">4. 體素化屬性<a class="anchor" href="#4-體素化" aria-hidden="true">#</a></h2>
+<p>套用在 NanoVDB 類運算子（Volume 與 NanoVDB Streamlines）。這些屬性存在運算子 prim 上，確保跨工作階段、跨使用者結果一致：</p>
+<table>
+<thead><tr><th>屬性</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td><strong>Max Resolution</strong></td><td>最長軸上的 cell 數（均勻間距）。</td></tr>
+<tr><td><strong>Voxel Size</strong></td><td>明確指定體素大小（需知道資料 bounds）。</td></tr>
+<tr><td><strong>Region of Interest</strong></td><td>體素化前用邊界框先取子集域。</td></tr>
+<tr><td><strong>Explode Bounds</strong></td><td>把體素化區域擴張到所選 bounds 之外。</td></tr>
+</tbody>
+</table>
+
+<h2 id="5-欄位分量">5. 欄位分量選擇<a class="anchor" href="#5-欄位分量" aria-hidden="true">#</a></h2>
+<p>對向量欄位，運算子允許選特定分量或選<strong>magnitude（模長）</strong>。用 <strong>Add Target</strong> 從資料集的 <code>FlowSolution</code> 或其他欄位容器選欄位；要多分量選擇（如速度 X、Y、Z），在彈出選單中 <strong>Shift-click</strong> 各分量。</p>
+
+<h2 id="6-工作流程訣竅">6. 工作流程訣竅<a class="anchor" href="#6-工作流程訣竅" aria-hidden="true">#</a></h2>
+<ul>
+<li>用 Stage 面板的<strong>眼睛圖示</strong>切換運算子可見性，隔離出想看的結果。</li>
+<li>用變換 gizmo 選取並移動種子來源（如單位球），互動式探索資料集。</li>
+<li>先把整條視覺化管線配置好，再統一開啟 Enabled，方便調效能。</li>
+</ul>
+
+<footer class="page-footer">
+  <p>本頁整理自 Kit-CAE 官方文檔 2.0。內容以官方為準。下一步：<a href="color-rendering.html">色彩對應與渲染 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#1-什麼是運算子">1. 什麼是運算子</a>
+      <a href="#2-共通屬性">2. 共通屬性</a>
+      <a href="#3-運算子類型">3. 運算子類型</a>
+      <a href="#4-體素化">4. 體素化屬性</a>
+      <a href="#5-欄位分量">5. 欄位分量選擇</a>
+      <a href="#6-工作流程訣竅">6. 工作流程訣竅</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

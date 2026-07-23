@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1.5 舊版文檔 — Kit-CAE 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Kit-CAE</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v1/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="getting-started.html">快速入門</a>
+        <a href="importing-data.html">匯入資料</a>
+        <div class="nav-group-title">核心工作流程</div>
+        <a href="exploring-data.html">探索資料</a>
+        <a href="sources.html">建立來源</a>
+        <a href="operators.html">建立運算子</a>
+        <a href="color-rendering.html">色彩對應與渲染</a>
+        <a href="flow.html">流場視覺化</a>
+        <div class="nav-group-title">範例與參考</div>
+        <a href="examples.html">範例目錄</a>
+        <a href="legacy.html" class="current">1.5 舊版文檔</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="舊版">Kit-CAE 1.5 舊版文檔<a class="anchor" href="#舊版" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v1/index.html" target="_blank" rel="noopener">Kit-CAE 1.5（Legacy）</a> 章節。記錄原始的 Kit-CAE 1.5 工作流程。</p>
+</blockquote>
+
+<div class="callout warn"><strong>使用 Kit-CAE 2.0 的讀者：</strong>請改看新版指南（<a href="docs.html">總覽文檔</a>起）。本頁僅供維護以 1.5 建立的舊專案時參考。2.0 是一次重大演進，因此獨立成專屬文檔，而非併入版本說明。</div>
+
+<h2 id="1-涵蓋主題">1. 涵蓋主題<a class="anchor" href="#1-涵蓋主題" aria-hidden="true">#</a></h2>
+<p>舊版文檔包含三大主題：</p>
+<table>
+<thead><tr><th>主題</th><th>內容</th></tr></thead>
+<tbody>
+<tr><td><strong>Get Started</strong></td><td>Kit-CAE 1.5 使用者的基礎入門指引。</td></tr>
+<tr><td><strong>Create a Mesh-Based Dataset</strong></td><td>建立以網格幾何為結構的資料集。</td></tr>
+<tr><td><strong>Create a Points-Based Dataset</strong></td><td>建立以點雲組織的資料集。</td></tr>
+</tbody>
+</table>
+
+<h2 id="2-與20差異">2. 與 2.0 的差異<a class="anchor" href="#2-與20差異" aria-hidden="true">#</a></h2>
+<p>索引頁未詳列逐項功能比較，但文檔明確暗示：Kit-CAE 2.0 相對 1.5 是一次<strong>重大演進</strong>，值得獨立、專屬的文檔，而非以版本說明整合帶過。2.0 的主要方向包括：</p>
+<ul>
+<li>介面明確區分 <strong>Sources／Operators／Flow</strong> 三類實體。</li>
+<li>逐運算子的裝置選擇、執行開關、欄位分量選擇與屬性鎖定。</li>
+<li>新增 OpenFOAM 直接匯入、EnSight 多面體支援、VTK 讀取加速。</li>
+<li>GPU 加速的統計計算與 CAE Insights、AOT 預編譯快取。</li>
+<li>預設改為 Z-up，對齊 CAE 業界慣例。</li>
+</ul>
+
+<div class="callout"><strong>相容性：</strong>在 2.0 中，舊版 CAE 選單預設停用，但仍可用於較早建立的舞台，並可於 <strong>Edit &gt; Preferences &gt; CAE</strong> 的 Legacy Settings 重新啟用。</div>
+
+<h2 id="3-官方連結">3. 官方連結<a class="anchor" href="#3-官方連結" aria-hidden="true">#</a></h2>
+<ul>
+<li><a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v1/index.html" target="_blank" rel="noopener">Legacy Documentation（索引）</a></li>
+<li><a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v1/getting-started.html" target="_blank" rel="noopener">Get Started（1.5）</a></li>
+<li><a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v1/create-mesh-based-dataset.html" target="_blank" rel="noopener">Create a Mesh-Based Dataset</a></li>
+<li><a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v1/create-points-based-dataset.html" target="_blank" rel="noopener">Create a Points-Based Dataset</a></li>
+</ul>
+
+<footer class="page-footer">
+  <p>本頁整理自 Kit-CAE 官方文檔（1.5 Legacy）。內容以官方為準。建議使用 <a href="docs.html">2.0 總覽文檔</a>。</p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#1-涵蓋主題">1. 涵蓋主題</a>
+      <a href="#2-與20差異">2. 與 2.0 的差異</a>
+      <a href="#3-官方連結">3. 官方連結</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

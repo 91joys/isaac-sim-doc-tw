@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>總覽文檔 — Kit-CAE 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Kit-CAE</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html" class="active">總覽文檔</a>
+    <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html" class="current">總覽文檔</a>
+        <a href="getting-started.html">快速入門</a>
+        <a href="importing-data.html">匯入資料</a>
+        <div class="nav-group-title">核心工作流程</div>
+        <a href="exploring-data.html">探索資料</a>
+        <a href="sources.html">建立來源</a>
+        <a href="operators.html">建立運算子</a>
+        <a href="color-rendering.html">色彩對應與渲染</a>
+        <a href="flow.html">流場視覺化</a>
+        <div class="nav-group-title">範例與參考</div>
+        <a href="examples.html">範例目錄</a>
+        <a href="legacy.html">1.5 舊版文檔</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="總覽">Kit-CAE 總覽文檔<a class="anchor" href="#總覽" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/index.html" target="_blank" rel="noopener">Overview</a> 與 <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/kit-cae-v2.html" target="_blank" rel="noopener">Kit-CAE 2.0</a> 章節的中文整理。本頁幫你在 10 分鐘內建立 Kit-CAE 的完整心智模型。</p>
+</blockquote>
+
+<h2 id="1-是什麼">1. Kit-CAE 是什麼<a class="anchor" href="#1-是什麼" aria-hidden="true">#</a></h2>
+<p><strong>Kit-CAE</strong> 是一套用 <strong>OpenUSD</strong>、<strong>NVIDIA CUDA-X 函式庫</strong>與 <strong>NVIDIA Omniverse</strong> 處理工程模擬資料的<strong>參考實作（reference implementation）與開發者工具箱</strong>。原始碼在 <a href="https://github.com/NVIDIA-Omniverse/kit-cae" target="_blank" rel="noopener">GitHub</a> 公開，想擴充或客製的開發者可自由取用。</p>
+<p>它讓你能夠：<strong>在 OpenUSD 中匯入、探索並視覺化工程模擬資料</strong>。工程資料維持在原生格式（CGNS、HDF5、VTK、EnSight、NumPy、OpenFOAM…），OpenUSD 只擔任「組合層（composition layer）」；資料透過可插拔的 delegate 依需求載入，再由 GPU 加速運算子負責處理與視覺化。</p>
+
+<h2 id="2-核心理念">2. 核心理念：不轉檔的組合層<a class="anchor" href="#2-核心理念" aria-hidden="true">#</a></h2>
+<p>Kit-CAE 底層的設計原則很單純：</p>
+<blockquote><p><strong>OpenUSD 作為科學資料集的組合與存取層，而原生檔案始終是唯一的權威資料來源（source of truth）。</strong></p></blockquote>
+<p>Kit-CAE 不去轉換工程資料，而是把「真相之源」直接帶進一個可組合的 OpenUSD 舞台。這種做法能容納多種資料來源，並排並存於同一場景：</p>
+<ul>
+<li><strong>模擬求解器</strong>輸出（CFD、結構、熱傳…）</li>
+<li><strong>感測器</strong>輸入</li>
+<li><strong>AI 代理模型（surrogate model）</strong>推論結果</li>
+</ul>
+<p>對 AI 代理資料而言尤其關鍵——「代理模型的推論資料，在匯入、運算子與視覺化演算法上，都與求解器輸出一視同仁」。</p>
+
+<h2 id="3-三大架構元件">3. 三大架構元件<a class="anchor" href="#3-三大架構元件" aria-hidden="true">#</a></h2>
+<p>實作倚賴三個主要架構元件，你可以直接使用，也可以改造進自有工作流程：</p>
+<table>
+<thead><tr><th>元件</th><th>角色</th></tr></thead>
+<tbody>
+<tr><td><strong>CAE 專用 Schema</strong></td><td>在 USD 上定義工程資料所需的資料模型（資料集、欄位陣列、運算子 API 等），讓 CAE 概念能以 USD prim 表達。</td></tr>
+<tr><td><strong>Data Delegate 介面</strong></td><td>可插拔的資料委派層，負責從原生檔案「依需求」讀取欄位與幾何，避免一次把整份資料灌進記憶體。新格式＝實作新的 delegate。</td></tr>
+<tr><td><strong>視覺化運算子（GPU 加速）</strong></td><td>以 CUDA-X 實作的動態視覺化：外表面、字形、串流線、體積、切面…重載舞台時即時重算。</td></tr>
+</tbody>
+</table>
+<blockquote><p>更深入的 USD schema、Data Delegate API 與運算子規格細節，請參考 <a href="https://github.com/NVIDIA-Omniverse/kit-cae" target="_blank" rel="noopener">GitHub 儲存庫</a>的參考資料。</p></blockquote>
+
+<h2 id="4-三種實體">4. 三種實體：Sources、Operators、Flow<a class="anchor" href="#4-三種實體" aria-hidden="true">#</a></h2>
+<p>Kit-CAE 2.0 的介面把場景中的 CAE 元素清楚地分成三類，這是理解整個工具的關鍵：</p>
+<table>
+<thead><tr><th>實體</th><th>特性</th><th>例子</th></tr></thead>
+<tbody>
+<tr><td><strong>Sources（來源）</strong></td><td><strong>不可變的輔助實體</strong>，重載舞台時不會重新執行；是沒有套用 CAE 運算子 API 的普通 USD prim。</td><td>邊界框、單位球</td></tr>
+<tr><td><strong>Operators（運算子）</strong></td><td><strong>動態視覺化實體</strong>，重載舞台時會即時重算，從來源資料即時產生結果。</td><td>Faces、Streamlines、Volume、Slice、Points、Glyphs</td></tr>
+<tr><td><strong>Flow（流場）</strong></td><td>以 <strong>NVIDIA Flow</strong> 做的粒子動畫式流場視覺化。</td><td>煙霧狀流動動畫</td></tr>
+</tbody>
+</table>
+
+<h2 id="5-工作流程">5. 主線工作流程<a class="anchor" href="#5-工作流程" aria-hidden="true">#</a></h2>
+<p>官方指南以同一份 CFD 汽車空氣力學資料集，用循序漸進的「Try It」段落貫穿主線：</p>
+<ol>
+<li><a href="importing-data.html">匯入資料</a>——把原生檔案帶進 USD 舞台</li>
+<li><a href="exploring-data.html">探索資料</a>——用 CAE Insights 看懂欄位與統計</li>
+<li><a href="sources.html">建立來源</a>——邊界框（ROI）與單位球（種子）</li>
+<li><a href="operators.html">建立運算子</a>——外表面、串流線、體積、切面…</li>
+<li><a href="color-rendering.html">色彩對應與渲染</a>——依欄位著色、色彩表與鎖定</li>
+<li><a href="flow.html">流場視覺化</a>——NVIDIA Flow 粒子動畫</li>
+</ol>
+<p>此外還有四個<a href="examples.html">獨立範例</a>：時變結構分析、模擬資料融入高保真幾何情境、單一場景內多領域模擬、AI 代理模型模擬資料。</p>
+
+<h2 id="6-新特性">6. Kit-CAE 2.0 有什麼新東西<a class="anchor" href="#6-新特性" aria-hidden="true">#</a></h2>
+<h3 id="運算子">運算子強化</h3>
+<ul>
+<li>介面明確區分 <strong>Sources／Operators／Flow</strong> 三類實體。</li>
+<li>逐運算子（per-operator）的裝置選擇、執行開關、指定欄位分量選擇，與<strong>屬性鎖定</strong>（避免重算覆蓋你的設定）。</li>
+<li>多種子（multi-seed）串流線、雙平面／三平面切面，以及可重現的體素化（設定存在運算子 prim 上）。</li>
+</ul>
+<h3 id="格式">格式支援</h3>
+<ul>
+<li>新增直接匯入 <strong>OpenFOAM</strong> case 目錄（含平行分解案例）。</li>
+<li>EnSight Gold 支援多面體（polyhedral）元素並快取中繼資料，加速重讀；VTK 讀取器最佳化，匯入更快。</li>
+</ul>
+<h3 id="效能">效能</h3>
+<ul>
+<li>統計計算（邊界框、欄位範圍、直方圖）改為 <strong>GPU 加速</strong>，大型資料集互動更順。</li>
+<li>視覺化 kernel 採 <strong>AOT 預編譯並快取</strong>，縮短啟動時間。</li>
+<li>時間序列匯入提供 Scale／Offset，把模擬步對應到 USD time sample。</li>
+</ul>
+<h3 id="易用性">易用性</h3>
+<ul>
+<li><strong>CAE Insights</strong>：在 Properties 面板直接檢視欄位陣列中繼資料、四分位與直方圖，並與時間軸同步。</li>
+<li>影片擷取會等待計算完成才錄製；Flow 體素化有合理預設並跳過已體素化資料。</li>
+<li>偏好設定跨工作階段保存；<strong>預設改為 Z-up</strong>，對齊 CAE 業界慣例。</li>
+</ul>
+<div class="callout"><strong>向後相容：</strong>舊版 CAE 選單預設停用，但仍可用於較早建立的舞台，並可在 Preferences 重新啟用。</div>
+
+<h2 id="7-章節對照">7. 官方章節對照表<a class="anchor" href="#7-章節對照" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>官方章節</th><th>本站頁面</th><th>官方原文</th></tr></thead>
+<tbody>
+<tr><td>Overview／Kit-CAE 2.0</td><td>本頁</td><td><a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/kit-cae-v2.html" target="_blank" rel="noopener">連結</a></td></tr>
+<tr><td>Get Started</td><td><a href="getting-started.html">快速入門</a></td><td><a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/getting-started.html" target="_blank" rel="noopener">連結</a></td></tr>
+<tr><td>Import Data</td><td><a href="importing-data.html">匯入資料</a></td><td><a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/importing-data.html" target="_blank" rel="noopener">連結</a></td></tr>
+<tr><td>Explore Your Data</td><td><a href="exploring-data.html">探索資料</a></td><td><a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/exploring-data.html" target="_blank" rel="noopener">連結</a></td></tr>
+<tr><td>Create Sources</td><td><a href="sources.html">建立來源</a></td><td><a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/sources.html" target="_blank" rel="noopener">連結</a></td></tr>
+<tr><td>Create Operators</td><td><a href="operators.html">建立運算子</a></td><td><a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/operators.html" target="_blank" rel="noopener">連結</a></td></tr>
+<tr><td>Color Mapping and Rendering</td><td><a href="color-rendering.html">色彩對應與渲染</a></td><td><a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/color-and-rendering.html" target="_blank" rel="noopener">連結</a></td></tr>
+<tr><td>Flow Visualization</td><td><a href="flow.html">流場視覺化</a></td><td><a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/flow-visualization.html" target="_blank" rel="noopener">連結</a></td></tr>
+<tr><td>Examples</td><td><a href="examples.html">範例目錄</a></td><td><a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/examples/index.html" target="_blank" rel="noopener">連結</a></td></tr>
+<tr><td>Kit-CAE 1.5（Legacy）</td><td><a href="legacy.html">1.5 舊版文檔</a></td><td><a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v1/index.html" target="_blank" rel="noopener">連結</a></td></tr>
+</tbody>
+</table>
+
+<footer class="page-footer">
+  <p>本頁整理自 Kit-CAE 官方文檔 2.0。內容以官方為準。下一步：<a href="getting-started.html">快速入門 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#1-是什麼">1. Kit-CAE 是什麼</a>
+      <a href="#2-核心理念">2. 核心理念：不轉檔的組合層</a>
+      <a href="#3-三大架構元件">3. 三大架構元件</a>
+      <a href="#4-三種實體">4. 三種實體</a>
+      <a href="#5-工作流程">5. 主線工作流程</a>
+      <a href="#6-新特性">6. 2.0 新特性</a>
+      <a href="#7-章節對照">7. 官方章節對照表</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

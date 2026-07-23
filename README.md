@@ -67,6 +67,18 @@ docs/
 │   ├── probabilistic.html 機率式與生成學習（擴散、流匹配）
 │   ├── rl.html         強化學習（PPO 控制 PDE）
 │   └── gradients.html  改良梯度與快速主題
+├── kit-cae/        ← Kit-CAE 中文文檔（NVIDIA Kit-CAE 2.0）
+│   ├── index.html      Kit-CAE 首頁
+│   ├── docs.html       總覽文檔（不轉檔的組合層、三大架構元件、2.0 新特性）
+│   ├── getting-started.html 快速入門（GitHub 建置、啟動、範例資料、偏好設定）
+│   ├── importing-data.html 匯入資料（CGNS／VTK／EnSight／OpenFOAM／NumPy、時間序列）
+│   ├── exploring-data.html 探索資料（Stage 面板、Properties、CAE Insights）
+│   ├── sources.html    建立來源（邊界框 ROI、單位球種子）
+│   ├── operators.html  建立運算子（Faces、Points、Glyphs、Streamlines、Volume、Slice）
+│   ├── color-rendering.html 色彩對應與渲染（色彩表、傳遞函數、屬性鎖定）
+│   ├── flow.html       流場視覺化（NVIDIA Flow 粒子動畫）
+│   ├── examples.html   範例目錄（時變結構、情境融合、多領域、AI 代理模型）
+│   └── legacy.html     1.5 舊版文檔
 └── ndpi/           ← nDPI 中文文檔（nDPI 5.0）
     ├── index.html      nDPI 首頁
     ├── docs.html       總覽文檔
@@ -93,6 +105,7 @@ docs/
 - [NVIDIA Warp 官方文檔](https://nvidia.github.io/warp/v1.14/index.html)（1.14.0）
 - [NVIDIA PhysicsNeMo 官方文檔](https://docs.nvidia.com/physicsnemo/latest/index.html)（26.05／latest）
 - [Physics-Based Deep Learning](https://physicsbaseddeeplearning.org/intro.html)（N. Thuerey 等，TUM Physics-based Simulation Group，v0.3）
+- [NVIDIA Kit-CAE 官方文檔](https://docs.omniverse.nvidia.com/guide-kit-cae/latest/index.html)（2.0）與 [kit-cae GitHub 原始碼](https://github.com/NVIDIA-Omniverse/kit-cae)
 - [ntop/nDPI 官方 GitHub](https://github.com/ntop/nDPI) 與 [DeepWiki](https://deepwiki.com/ntop/nDPI)（nDPI 5.0，索引 2025-12-05）
 
 內容如與最新版官方文檔不符，請以官方為準。本站為非官方學習資源。

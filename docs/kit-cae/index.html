@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kit-CAE 中文文檔</title>
+  <meta name="description" content="NVIDIA Kit-CAE 2.0 官方文檔中文版：以 OpenUSD、CUDA-X 與 Omniverse 匯入、探索、視覺化工程模擬資料的完整中文導覽">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">Kit-CAE</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html" class="active">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="index.html#sections">全部章節</a>
+    <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/index.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+
+<main class="content-full">
+  <section class="hero">
+    <h1><span class="hl">Kit-CAE</span> 中文文檔</h1>
+    <p class="sub">NVIDIA 開源的工程模擬資料工具箱與參考應用——以 OpenUSD 作為組合與存取層，不轉檔就把 CGNS、VTK、EnSight、OpenFOAM 等原生 CFD／結構模擬資料帶進可組合的舞台，再用 CUDA-X 的 GPU 運算子與 RTX 渲染進行視覺化與互動。</p>
+    <div class="badges">
+      <span class="badge">依據官方文檔 2.0</span>
+      <span class="badge">OpenUSD · CUDA-X · Omniverse</span>
+      <span class="badge">開源參考應用</span>
+      <span class="badge">繁體中文</span>
+    </div>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="getting-started.html">快速入門</a>
+      <a class="btn btn-ghost" href="docs.html">閱讀總覽文檔</a>
+    </div>
+  </section>
+
+  <div class="cards">
+    <a class="card" href="docs.html">
+      <div class="icon">📘</div>
+      <h3>總覽文檔</h3>
+      <p>Kit-CAE 是什麼、「不轉檔的 OpenUSD 組合層」核心理念、三大架構元件（Schema／Data Delegate／運算子）與 2.0 新特性，一頁建立完整心智模型。</p>
+      <span class="go">前往閱讀 →</span>
+    </a>
+    <a class="card" href="getting-started.html">
+      <div class="icon">🚀</div>
+      <h3>快速入門</h3>
+      <p>系統需求、從 GitHub 建置與啟動 <code>omni.cae.kit</code>、下載汽車空氣力學範例資料、偏好設定（快取、運算裝置、Z-up）。</p>
+      <span class="go">開始安裝 →</span>
+    </a>
+    <a class="card" href="importing-data.html">
+      <div class="icon">📥</div>
+      <h3>匯入資料</h3>
+      <p>五大原生格式（CGNS、NumPy、VTK、EnSight Gold、OpenFOAM）的匯入流程、時間序列的 Scale／Offset 對應、單位處理與多檔匯入。</p>
+      <span class="go">前往學習 →</span>
+    </a>
+    <a class="card" href="operators.html">
+      <div class="icon">⚙️</div>
+      <h3>建立運算子</h3>
+      <p>Faces、Points、Glyphs、Streamlines、Volume、Slice 六大運算子，逐運算子裝置選擇、執行開關、欄位分量選擇與體素化設定。</p>
+      <span class="go">前往學習 →</span>
+    </a>
+    <a class="card" href="color-rendering.html">
+      <div class="icon">🎨</div>
+      <h3>色彩對應與渲染</h3>
+      <p>依欄位著色、內建色彩表、時變資料的 Clamp／Grow 範圍行為、屬性鎖定（Lock）機制，與體積／切面的傳遞函數調校。</p>
+      <span class="go">前往學習 →</span>
+    </a>
+    <a class="card" href="flow.html">
+      <div class="icon">🌫️</div>
+      <h3>流場視覺化</h3>
+      <p>以 NVIDIA Flow 做粒子動畫式流場——建立 Environment、燃料噴射球、DataSet Injector，四步驟做出煙霧般的流動視覺。</p>
+      <span class="go">前往學習 →</span>
+    </a>
+  </div>
+
+  <section class="section" id="sections">
+    <h2>全部章節</h2>
+    <p>依官方文檔章節組織的中文專題頁，每頁附完整官方原文連結對照。主線章節以同一份 CFD 汽車空氣力學資料集循序漸進。</p>
+    <div class="feature-grid">
+      <a class="card" href="exploring-data.html">
+        <div class="icon">🔍</div>
+        <h3>探索資料</h3>
+        <p>Stage 面板的資料階層、Properties 面板、CAE Insights（裝置／型別／形狀／範圍／四分位／32 格直方圖）。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="sources.html">
+        <div class="icon">🧊</div>
+        <h3>建立來源</h3>
+        <p>不可變的輔助實體：邊界框（ROI 感興趣區域）與單位球（串流線種子／流場發射源）。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="operators.html">
+        <div class="icon">⚙️</div>
+        <h3>建立運算子</h3>
+        <p>動態視覺化實體，重載舞台時即時重算——六大運算子與 NanoVDB／不規則兩種體積渲染路徑。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="color-rendering.html">
+        <div class="icon">🎨</div>
+        <h3>色彩對應與渲染</h3>
+        <p>純量／向量著色、色彩表 LUT、colormap 傳遞函數、Domain 邊界模式與屬性鎖定。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="flow.html">
+        <div class="icon">🌫️</div>
+        <h3>流場視覺化</h3>
+        <p>NVIDIA Flow 粒子動畫、Fuel Injector Sphere、DataSet Injector 與 Inflate Bounds 體素化。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="examples.html">
+        <div class="icon">🧪</div>
+        <h3>範例目錄</h3>
+        <p>四個獨立實戰：時變結構分析、模擬資料融入情境、多領域模擬、AI 代理模型模擬資料。</p>
+        <span class="go">前往 →</span>
+      </a>
+      <a class="card" href="legacy.html">
+        <div class="icon">🗄️</div>
+        <h3>1.5 舊版文檔</h3>
+        <p>Kit-CAE 1.5 的原始工作流程：入門、建立網格式資料集、建立點雲式資料集（僅供維護舊專案參考）。</p>
+        <span class="go">前往 →</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Kit-CAE 的核心理念</h2>
+    <p>Kit-CAE 最重要的一句話：<strong>OpenUSD 是科學資料集的「組合與存取層」，原生檔案始終是唯一的權威資料來源。</strong>它不把工程資料轉成別的格式，而是把「真相之源」直接帶進可組合的 OpenUSD 舞台，資料透過可插拔的 delegate 依需求載入，再由 GPU 加速的運算子處理與渲染。這讓求解器輸出、感測器輸入與 AI 代理模型可以在同一個場景中並存、共同分析。</p>
+    <table class="markdown-body" style="display:table;">
+      <thead>
+        <tr><th>面向</th><th>Kit-CAE 的做法</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>資料來源</td><td>CGNS、VTK、EnSight Gold、OpenFOAM、HDF5、NumPy 等原生格式，不轉檔</td></tr>
+        <tr><td>組合層</td><td>OpenUSD 舞台——把幾何、多領域模擬結果、高保真 CAD 組合進同一場景</td></tr>
+        <tr><td>載入方式</td><td>可插拔 Data Delegate 依需求（on-demand）載入，避免整份灌記憶體</td></tr>
+        <tr><td>運算與渲染</td><td>CUDA-X 的 GPU 運算子 ＋ RTX／NVIDIA IndeX 體積渲染 ＋ NVIDIA Flow 粒子動畫</td></tr>
+        <tr><td>可延伸性</td><td>CAE 專用 Schema、Data Delegate API、視覺化運算子皆開源，可直接用或改造進自有流程</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="section">
+    <h2>建議學習路徑</h2>
+    <ol class="markdown-body" style="padding-left:26px;">
+      <li><a href="docs.html">總覽文檔</a>：先理解 Kit-CAE 的定位（參考應用＋開發者工具箱）與「不轉檔的組合層」核心理念。</li>
+      <li><a href="getting-started.html">快速入門</a>：從 GitHub <code>clone</code> → <code>repo build</code> → <code>launch</code>，跑起 <code>omni.cae.kit</code> 並下載範例資料。</li>
+      <li><a href="importing-data.html">匯入資料</a>：把 <code>auto_aero_solver_result.cgns</code> 匯入舞台，理解時間序列的 Scale／Offset。</li>
+      <li><a href="exploring-data.html">探索資料</a>：用 CAE Insights 看懂欄位範圍與直方圖，再<a href="sources.html">建立來源</a>（邊界框、單位球）。</li>
+      <li><a href="operators.html">建立運算子</a>：依序做出 Faces、Streamlines、Volume、Slice，並學會<a href="color-rendering.html">色彩對應與鎖定</a>。</li>
+      <li><a href="flow.html">流場視覺化</a>：用 NVIDIA Flow 做粒子動畫，最後挑戰 <a href="examples.html">四個獨立範例</a>。</li>
+    </ol>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>本站內容整理自 <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/index.html" target="_blank" rel="noopener">NVIDIA Kit-CAE 官方文檔</a>（2.0）與 <a href="https://github.com/NVIDIA-Omniverse/kit-cae" target="_blank" rel="noopener">kit-cae GitHub 原始碼</a>。內容如與最新版官方文檔不符，請以官方為準。<br>Kit-CAE 為 NVIDIA Omniverse 專案；本站為非官方學習資源。 · <a href="../index.html">返回中文文檔大全</a></p>
+</footer>
+<script src="assets/script.js"></script>
+</body>
+</html>

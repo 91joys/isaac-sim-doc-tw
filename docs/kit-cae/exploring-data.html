@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>探索資料 — Kit-CAE 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Kit-CAE</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/exploring-data.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="getting-started.html">快速入門</a>
+        <a href="importing-data.html">匯入資料</a>
+        <div class="nav-group-title">核心工作流程</div>
+        <a href="exploring-data.html" class="current">探索資料</a>
+        <a href="sources.html">建立來源</a>
+        <a href="operators.html">建立運算子</a>
+        <a href="color-rendering.html">色彩對應與渲染</a>
+        <a href="flow.html">流場視覺化</a>
+        <div class="nav-group-title">範例與參考</div>
+        <a href="examples.html">範例目錄</a>
+        <a href="legacy.html">1.5 舊版文檔</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="探索資料">探索資料<a class="anchor" href="#探索資料" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/exploring-data.html" target="_blank" rel="noopener">Explore Your Data</a> 章節。在做視覺化之前，先用 Stage 面板與 Properties 面板搞懂你手上這份資料。</p>
+</blockquote>
+
+<div class="callout"><strong>先建立心理預期：</strong>Kit-CAE 提供的是通用的視覺化與分析工具，但<strong>它不會替你解讀資料的物理意義或領域含義</strong>——欄位代表什麼、單位是什麼，仍需你自己掌握。</div>
+
+<h2 id="1-stage">1. Stage 面板：資料階層<a class="anchor" href="#1-stage" aria-hidden="true">#</a></h2>
+<p>匯入的資料以樹狀結構顯示在 Stage 面板，結構依格式而異：</p>
+<h3 id="cgns">CGNS 多面體資料集</h3>
+<ul>
+<li>多個 <code>NGON_n</code> 區塊（表面網格）</li>
+<li>一個 <code>NFACE_n</code> 區塊（3D 體積網格）</li>
+<li>一個 coordinates 區塊（共享的點座標）</li>
+</ul>
+<h3 id="numpy">NumPy 資料集</h3>
+<ul>
+<li><code>NumPyDataSet</code> 節點，底下含 <code>NumPyArrays</code>（每個陣列一個）</li>
+</ul>
+<p>元素型別（element type）會顯示在 Properties 面板。</p>
+
+<h2 id="2-properties">2. Properties 面板<a class="anchor" href="#2-properties" aria-hidden="true">#</a></h2>
+<p>選取任何套用了 CAE API 的 prim，即可檢視其屬性。<strong>CAE</strong> 群組會顯示：</p>
+<ul>
+<li><strong>資料集 prim</strong>：資料模型屬性、格式專屬屬性。</li>
+<li><strong>欄位陣列 prim</strong>：欄位專屬屬性與格式細節。</li>
+</ul>
+
+<h2 id="3-insights">3. CAE Insights：欄位中繼資料檢視器<a class="anchor" href="#3-insights" aria-hidden="true">#</a></h2>
+<p>在<strong>欄位陣列 prim</strong> 上會出現 CAE Insights 區段，顯示目前 time sample 的資訊：</p>
+<table>
+<thead><tr><th>項目</th><th>意義</th></tr></thead>
+<tbody>
+<tr><td><strong>Device</strong></td><td>資料所在位置（CPU 或 GPU）。</td></tr>
+<tr><td><strong>Array type</strong></td><td>資料精度，如 float32、int64。</td></tr>
+<tr><td><strong>Shape</strong></td><td>陣列維度與分量數。</td></tr>
+<tr><td><strong>Ranges</strong></td><td>各分量的最小／最大值（向量欄位分開顯示）。</td></tr>
+<tr><td><strong>Quartiles</strong></td><td>Q1、中位數、Q3 分佈統計（僅純量欄位）。</td></tr>
+<tr><td><strong>Histogram</strong></td><td>32 格分佈直方圖（僅純量欄位），可調整 min／max 聚焦分析。</td></tr>
+</tbody>
+</table>
+<div class="callout warn"><strong>重要：</strong>CAE Insights 資料<strong>不會自動更新</strong>。切換選取或改變時間後，需點 <strong>Refresh</strong> 更新中繼資料。四分位與直方圖在 GPU 上計算，處理大型資料集時效能更好。</div>
+
+<h2 id="4-試試看">4. 試試看：檢視車輛資料集<a class="anchor" href="#4-試試看" aria-hidden="true">#</a></h2>
+<ol>
+<li>展開 Stage 樹，找到元素區段（element sections）與 <code>FlowSolution</code> 群組。</li>
+<li>檢視欄位變數：<strong>Pressure（壓力）</strong>與 <strong>Velocity（速度）</strong>分量。</li>
+<li>選取某個欄位，查看 CAE 屬性。</li>
+<li>點 <strong>Refresh</strong>，觀察陣列 shape、數值範圍與直方圖分佈。</li>
+<li>把直方圖範圍縮放到特定區間（例如壓力 <code>-300</code> 到 <code>300</code>），做細部分佈分析。</li>
+</ol>
+<p>掌握了欄位範圍後，這些數字會直接用在<a href="color-rendering.html">色彩對應</a>的 domain 設定上。接著可以開始<a href="sources.html">建立來源</a>與<a href="operators.html">運算子</a>。</p>
+
+<footer class="page-footer">
+  <p>本頁整理自 Kit-CAE 官方文檔 2.0。內容以官方為準。下一步：<a href="sources.html">建立來源 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#1-stage">1. Stage 面板</a>
+      <a href="#2-properties">2. Properties 面板</a>
+      <a href="#3-insights">3. CAE Insights</a>
+      <a href="#4-試試看">4. 試試看</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

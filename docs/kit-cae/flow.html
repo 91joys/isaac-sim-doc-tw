@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>流場視覺化 — Kit-CAE 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Kit-CAE</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/flow-visualization.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="getting-started.html">快速入門</a>
+        <a href="importing-data.html">匯入資料</a>
+        <div class="nav-group-title">核心工作流程</div>
+        <a href="exploring-data.html">探索資料</a>
+        <a href="sources.html">建立來源</a>
+        <a href="operators.html">建立運算子</a>
+        <a href="color-rendering.html">色彩對應與渲染</a>
+        <a href="flow.html" class="current">流場視覺化</a>
+        <div class="nav-group-title">範例與參考</div>
+        <a href="examples.html">範例目錄</a>
+        <a href="legacy.html">1.5 舊版文檔</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="流場視覺化">流場視覺化<a class="anchor" href="#流場視覺化" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/flow-visualization.html" target="_blank" rel="noopener">Flow Visualization</a> 章節。用 NVIDIA Flow 把速度場變成煙霧般的粒子動畫。</p>
+</blockquote>
+
+<h2 id="1-核心概念">1. 核心概念<a class="anchor" href="#1-核心概念" aria-hidden="true">#</a></h2>
+<p>Flow 視覺化提供<strong>粒子動畫式的流場視覺化</strong>，底層採 <strong>NVIDIA Flow</strong> 技術。這套 GPU 加速系統沿著由速度場推導出的路徑推進粒子，做出直覺、煙霧般的效果，揭示流體移動型態。</p>
+<p><strong>適用時機：</strong>能呈現流向、回流與紊流型態，特別適合探索複雜的 3D 流場結構，以及向非技術觀眾展示成果。</p>
+<div class="callout tip"><strong>要更精確的流場型態分析？</strong>官方建議改用 <a href="operators.html#streamlines">Streamlines 運算子</a>——Flow 偏視覺呈現，Streamlines 偏定量分析。</div>
+
+<h2 id="2-設定流程">2. 設定流程（四步驟）<a class="anchor" href="#2-設定流程" aria-hidden="true">#</a></h2>
+
+<h3 id="step1">步驟 1：建立 Flow 環境</h3>
+<p>流場環境是所有視覺化元素的容器。右鍵資料集 prim → <strong>Create &gt; CAE Flow &gt; Environment</strong>。會產生一個 <code>FlowSimulate</code> prim，多數情況建議使用 layer 0。</p>
+
+<h3 id="step2">步驟 2：建立燃料噴射球（Fuel Injector Sphere）</h3>
+<p>這個元件控制粒子的發射點。右鍵資料集節點 → <strong>Create &gt; CAE Flow &gt; Fuel Injector Sphere</strong>。產生的發射器球 prim 可自由移動，從域內不同位置探索流動行為。</p>
+
+<h3 id="step3">步驟 3：設定資料集注入器（DataSet Injector）</h3>
+<p>資料集注入器把流場視覺化連到模擬資料。右鍵 → <strong>Create &gt; CAE Flow &gt; DataSet Injector</strong>，再設定屬性：</p>
+<ul>
+<li><strong>Velocity fields（速度欄位）</strong>：Add Target 加入速度分量欄位。</li>
+<li><strong>Temperature fields（溫度欄位）</strong>：Add Target 加入純量欄位，做額外資料表現。</li>
+</ul>
+
+<h3 id="step4">步驟 4：啟動動畫</h3>
+<p>兩種方式啟動流場：在 <code>FlowSimulate</code> prim 勾選 <strong>Force Simulate</strong>，或按時間軸的 <strong>Play</strong> 鍵。</p>
+
+<h2 id="3-試試看">3. 試試看：車輛空氣力學流場<a class="anchor" href="#3-試試看" aria-hidden="true">#</a></h2>
+<p>把上述概念套到車輛流場分析。關鍵一步是把 <strong>Inflate Bounds (%)</strong> 設為 <code>100</code>，擴大體素化區域，避免粒子逸出分析範圍。</p>
+<ol>
+<li>右鍵汽車資料集 → <strong>Create &gt; CAE Flow &gt; Environment</strong>。</li>
+<li>建立 <strong>Fuel Injector Sphere</strong>，放到進氣或車頭位置。</li>
+<li>建立 <strong>DataSet Injector</strong>，Velocity 加入速度欄位。</li>
+<li>把 <strong>Inflate Bounds (%)</strong> 設 <code>100</code>。</li>
+<li>勾 <strong>Force Simulate</strong> 或按 Play，觀察煙霧般的流動沿車身展開。</li>
+</ol>
+
+<footer class="page-footer">
+  <p>本頁整理自 Kit-CAE 官方文檔 2.0。內容以官方為準。下一步：<a href="examples.html">範例目錄 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#1-核心概念">1. 核心概念</a>
+      <a href="#2-設定流程">2. 設定流程</a>
+      <a href="#3-試試看">3. 試試看</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

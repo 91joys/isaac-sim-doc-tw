@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>匯入資料 — Kit-CAE 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Kit-CAE</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/importing-data.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="getting-started.html">快速入門</a>
+        <a href="importing-data.html" class="current">匯入資料</a>
+        <div class="nav-group-title">核心工作流程</div>
+        <a href="exploring-data.html">探索資料</a>
+        <a href="sources.html">建立來源</a>
+        <a href="operators.html">建立運算子</a>
+        <a href="color-rendering.html">色彩對應與渲染</a>
+        <a href="flow.html">流場視覺化</a>
+        <div class="nav-group-title">範例與參考</div>
+        <a href="examples.html">範例目錄</a>
+        <a href="legacy.html">1.5 舊版文檔</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="匯入資料">匯入資料<a class="anchor" href="#匯入資料" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/importing-data.html" target="_blank" rel="noopener">Import Data</a> 章節。Kit-CAE 不轉檔——工程資料維持原生格式，匯入只是把它「掛」進 OpenUSD 舞台。</p>
+</blockquote>
+
+<h2 id="1-支援格式">1. 支援的檔案格式<a class="anchor" href="#1-支援格式" aria-hidden="true">#</a></h2>
+<table>
+<thead><tr><th>格式</th><th>副檔名／型態</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td><strong>CGNS</strong></td><td><code>.cgns</code></td><td>階層式科學資料，完整支援 SIDS 資料模型。最適合來自商用 CFD 求解器的結構化與非結構化網格。</td></tr>
+<tr><td><strong>NumPy</strong></td><td><code>.npz</code>／<code>.npy</code></td><td>來自 Python 工作流程的點雲與陣列資料，適合機器學習管線與快速原型。</td></tr>
+<tr><td><strong>VTK</strong></td><td>VTI／VTU／VTP／VTS 與 legacy</td><td>結構化與非結構化網格。針對大型 VTU 檔案有讀取最佳化。</td></tr>
+<tr><td><strong>EnSight Gold</strong></td><td><code>.case</code></td><td>網格與欄位資料，支援多面體（polyhedral）元素並快取中繼資料以加速重讀。商用求解器常見輸出格式。</td></tr>
+<tr><td><strong>OpenFOAM</strong></td><td>case 目錄</td><td>直接匯入 OpenFOAM case 目錄，含平行分解（decomposed）案例，無需轉檔。</td></tr>
+</tbody>
+</table>
+<div class="callout tip"><strong>2.0 新增：</strong>OpenFOAM 直接匯入為 2.0 新功能；EnSight Gold 的多面體支援與 VTK 讀取器加速也是本版重點。</div>
+
+<h2 id="2-匯入流程">2. 匯入流程<a class="anchor" href="#2-匯入流程" aria-hidden="true">#</a></h2>
+<ol>
+<li>開啟 <strong>File &gt; Import</strong>，瀏覽到資料目錄。</li>
+<li>確認檔案類型篩選符合你的格式（如 <code>*.cgns</code>、<code>*.npz</code>、<code>*.*</code>）。</li>
+<li>勾選 <strong>Import to Stage</strong>（建議）把資料直接載入目前舞台。</li>
+<li>點 <strong>Import</strong>。</li>
+</ol>
+<p>匯入後，資料會以新的 prim 出現在 Stage 面板的 <code>/World</code> 底下。</p>
+<div class="callout warn"><strong>注意：</strong>匯入完成後<strong>不會</strong>立即出現任何視覺化——必須先<a href="operators.html">建立視覺化運算子</a>，畫面上才看得到東西。</div>
+
+<h2 id="3-時間序列">3. 時間序列匯入<a class="anchor" href="#3-時間序列" aria-hidden="true">#</a></h2>
+<p>對含多個時間步的檔案，先分清兩個概念（以 CGNS 為例）：</p>
+<table>
+<thead><tr><th>概念</th><th>意義</th></tr></thead>
+<tbody>
+<tr><td><strong>Time step（時間步）</strong></td><td>整數索引：0、1、2、3…</td></tr>
+<tr><td><strong>Time value（時間值）</strong></td><td>實際模擬時間，例如 0.001s、0.002s…</td></tr>
+</tbody>
+</table>
+<p>匯入時可用兩個對應控制，把模擬步映射到 USD 的 time sample：</p>
+<table>
+<thead><tr><th>控制</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td><strong>Scale（縮放）</strong></td><td>乘以時間步索引。Scale 設 10 時，step 1 會落在 sample 10——為兩步之間預留插補影格。</td></tr>
+<tr><td><strong>Offset（偏移）</strong></td><td>把所有 time sample 平移一個常數。</td></tr>
+</tbody>
+</table>
+<p>這些設定讓時間步之間能平滑插補，供動畫使用。</p>
+
+<h2 id="4-多檔匯入">4. 多檔匯入<a class="anchor" href="#4-多檔匯入" aria-hidden="true">#</a></h2>
+<p>可一次選取多個檔案，並為每個檔案設定各自的匯入選項。</p>
+<div class="callout warn"><strong>目前限制：</strong>尚無法「選取多檔並一次套用相同選項」——每個檔案的選項需個別設定。</div>
+
+<h2 id="5-單位處理">5. 單位處理<a class="anchor" href="#5-單位處理" aria-hidden="true">#</a></h2>
+<ul>
+<li>Kit-CAE 以 <strong>公分（cm）</strong>為預設單位。</li>
+<li>匯入時<strong>不做</strong>任何自動單位換算。</li>
+<li>若你的資料使用不同單位，需自行以變換（transform）調整。</li>
+</ul>
+
+<h2 id="6-試試看">6. 試試看：匯入汽車空氣力學資料<a class="anchor" href="#6-試試看" aria-hidden="true">#</a></h2>
+<ol>
+<li><strong>File &gt; Import</strong>，選擇 <code>auto_aero_solver_result.cgns</code>。</li>
+<li>確認篩選為 <code>*.cgns</code>，勾選 <strong>Import to Stage</strong>。</li>
+<li>點 <strong>Import</strong>，等待約 790 萬節點的資料掛入舞台。</li>
+<li>到 Stage 面板 <code>/World</code> 下確認新 prim 已出現。</li>
+<li>接著前往<a href="exploring-data.html">探索資料</a>，用 CAE Insights 檢視欄位。</li>
+</ol>
+
+<footer class="page-footer">
+  <p>本頁整理自 Kit-CAE 官方文檔 2.0。內容以官方為準。下一步：<a href="exploring-data.html">探索資料 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#1-支援格式">1. 支援的檔案格式</a>
+      <a href="#2-匯入流程">2. 匯入流程</a>
+      <a href="#3-時間序列">3. 時間序列匯入</a>
+      <a href="#4-多檔匯入">4. 多檔匯入</a>
+      <a href="#5-單位處理">5. 單位處理</a>
+      <a href="#6-試試看">6. 試試看</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>

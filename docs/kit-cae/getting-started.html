@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>快速入門 — Kit-CAE 中文文檔</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="開關目錄">☰ 目錄</button>
+  <a class="brand" href="index.html"><span class="brand-mark">Kit-CAE</span> 中文文檔</a>
+  <nav class="topnav">
+    <a href="../index.html">⌂ 文檔大全</a>
+    <a href="index.html">首頁</a>
+    <a href="docs.html">總覽文檔</a>
+    <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/getting-started.html" target="_blank" rel="noopener">官方文檔 ↗</a>
+  </nav>
+</header>
+<div class="layout has-toc">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-title">站內導覽</div>
+    <nav class="site-nav">
+        <div class="nav-group-title">入門</div>
+        <a href="docs.html">總覽文檔</a>
+        <a href="getting-started.html" class="current">快速入門</a>
+        <a href="importing-data.html">匯入資料</a>
+        <div class="nav-group-title">核心工作流程</div>
+        <a href="exploring-data.html">探索資料</a>
+        <a href="sources.html">建立來源</a>
+        <a href="operators.html">建立運算子</a>
+        <a href="color-rendering.html">色彩對應與渲染</a>
+        <a href="flow.html">流場視覺化</a>
+        <div class="nav-group-title">範例與參考</div>
+        <a href="examples.html">範例目錄</a>
+        <a href="legacy.html">1.5 舊版文檔</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <article class="markdown-body">
+<h1 id="快速入門">快速入門<a class="anchor" href="#快速入門" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>對應官方 <a href="https://docs.omniverse.nvidia.com/guide-kit-cae/latest/v2/getting-started.html" target="_blank" rel="noopener">Get Started</a> 章節。從零把 Kit-CAE 從 GitHub 建置起來、啟動應用、下載範例資料，並完成基本偏好設定。</p>
+</blockquote>
+
+<h2 id="1-系統需求">1. 系統需求<a class="anchor" href="#1-系統需求" aria-hidden="true">#</a></h2>
+<h3 id="硬體">硬體</h3>
+<ul>
+<li>一張 <strong>NVIDIA RTX GPU</strong>（渲染與 GPU 加速運算必備）。</li>
+</ul>
+<h3 id="軟體">軟體先決條件</h3>
+<table>
+<thead><tr><th>平台</th><th>需求</th></tr></thead>
+<tbody>
+<tr><td><strong>Windows</strong></td><td>Git（git-scm.com）、Git LFS（git-lfs.com）、Visual Studio 2019／2022／2026 並勾選「使用 C++ 的桌面開發（Desktop development with C++）」工作負載。</td></tr>
+<tr><td><strong>Linux</strong></td><td>標準開發環境，含 GCC C++ 編譯器。</td></tr>
+</tbody>
+</table>
+<p>安裝完 Git LFS 後，執行一次初始化：</p>
+<pre><code class="language-bash">git lfs install</code></pre>
+
+<h2 id="2-建置">2. 取得並建置應用<a class="anchor" href="#2-建置" aria-hidden="true">#</a></h2>
+<h3 id="clone">① 複製儲存庫</h3>
+<pre><code class="language-bash">git clone https://github.com/NVIDIA-Omniverse/kit-cae.git
+cd kit-cae</code></pre>
+<h3 id="build">② 建置應用</h3>
+<p><strong>Windows：</strong></p>
+<pre><code class="language-bat">repo.bat build -r</code></pre>
+<p><strong>Linux：</strong></p>
+<pre><code class="language-bash">./repo.sh build -r</code></pre>
+<p>建置會下載相依套件並編譯應用，首次執行需數分鐘。</p>
+
+<h2 id="3-範例資料">3. 下載範例資料<a class="anchor" href="#3-範例資料" aria-hidden="true">#</a></h2>
+<p>從官方提供的連結下載範例資料集，解壓縮到方便存取的位置。主線指南使用一份穩態空氣力學模擬檔：</p>
+<table>
+<thead><tr><th>檔案</th><th>內容</th></tr></thead>
+<tbody>
+<tr><td><code>auto_aero_solver_result.cgns</code></td><td>汽車空氣力學穩態模擬，含壓力與速度分量，約 <strong>790 萬個節點</strong>、<strong>720 萬個 cell</strong>。</td></tr>
+</tbody>
+</table>
+<div class="callout tip"><strong>提示：</strong>此資料下載也涵蓋<a href="examples.html">四個獨立範例</a>所需的資料集，一次下載即可。</div>
+
+<h2 id="4-啟動">4. 啟動應用<a class="anchor" href="#4-啟動" aria-hidden="true">#</a></h2>
+<p><strong>Windows：</strong></p>
+<pre><code class="language-bat">repo.bat launch -n omni.cae.kit</code></pre>
+<p><strong>Linux：</strong></p>
+<pre><code class="language-bash">./repo.sh launch -n omni.cae.kit</code></pre>
+<p>首次啟動時會因為 GPU shader 編譯而短暫停頓，屬正常現象。</p>
+
+<h2 id="5-偏好設定">5. 偏好設定（Preferences）<a class="anchor" href="#5-偏好設定" aria-hidden="true">#</a></h2>
+<p>從 <strong>Edit &gt; Preferences &gt; CAE</strong> 頁面調整設定：</p>
+<table>
+<thead><tr><th>設定</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td><strong>Caching（快取）</strong></td><td>控制資料與計算快取，影響效能。</td></tr>
+<tr><td><strong>Default Operator Enabled</strong></td><td>建立運算子後立即執行（否則需手動開啟 Enabled）。</td></tr>
+<tr><td><strong>Compute Device（運算裝置）</strong></td><td>選擇 CPU、CUDA 或其他可用裝置。</td></tr>
+<tr><td><strong>Bounding Box（邊界框）</strong></td><td>選擇以 cell 為基礎（預設）或以 point 為基礎的計算方式。</td></tr>
+<tr><td><strong>Legacy Settings（舊版設定）</strong></td><td>需要時可重新啟用較早的選單選項。</td></tr>
+</tbody>
+</table>
+<div class="callout warn"><strong>座標軸：</strong>Kit-CAE 2.0 <strong>預設使用 Z-up</strong>，對齊多數 CAE 求解器的慣例。若你的資料使用不同座標軸，需自行旋轉。</div>
+
+<h2 id="6-下一步">6. 下一步<a class="anchor" href="#6-下一步" aria-hidden="true">#</a></h2>
+<p>應用啟動後，進入主線工作流程的第一步——把範例 CGNS 檔匯入舞台。</p>
+<ol>
+<li><a href="importing-data.html">匯入資料</a>：把 <code>auto_aero_solver_result.cgns</code> 匯入 <code>/World</code>。</li>
+<li><a href="exploring-data.html">探索資料</a>：用 CAE Insights 看懂欄位範圍與直方圖。</li>
+<li><a href="operators.html">建立運算子</a>：做出第一個視覺化。</li>
+</ol>
+
+<footer class="page-footer">
+  <p>本頁整理自 Kit-CAE 官方文檔 2.0。內容以官方為準。下一步：<a href="importing-data.html">匯入資料 →</a></p>
+</footer>
+    </article>
+  </main>
+  <aside class="toc-panel">
+    <div class="toc-title">本頁目錄</div>
+    <nav class="toc">
+      <a href="#1-系統需求">1. 系統需求</a>
+      <a href="#2-建置">2. 取得並建置應用</a>
+      <a href="#3-範例資料">3. 下載範例資料</a>
+      <a href="#4-啟動">4. 啟動應用</a>
+      <a href="#5-偏好設定">5. 偏好設定</a>
+      <a href="#6-下一步">6. 下一步</a>
+    </nav>
+  </aside>
+</div>
+<script src="assets/script.js"></script>
+</body>
+</html>
